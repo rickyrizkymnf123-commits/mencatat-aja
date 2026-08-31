@@ -1,0 +1,74 @@
+[
+  {
+    "id": "b1_usr_budi",
+    "user_id": "usr_budi",
+    "category_id": "c1",
+    "monthly_limit": 2000000,
+    "current_spent": 0,
+    "period": "2026-08",
+    "categories": {
+      "name": "Makanan",
+      "emoji": "🍜"
+    }
+  },
+  {
+    "id": "b2_usr_budi",
+    "user_id": "usr_budi",
+    "category_id": "c2",
+    "monthly_limit": 1000000,
+    "current_spent": 0,
+    "period": "2026-08",
+    "categories": {
+      "name": "Transport",
+      "emoji": "🚗"
+    }
+  },
+  {
+    "id": "b1_usr_admin",
+    "user_id": "usr_admin",
+    "category_id": "c1",
+    "monthly_limit": 2000000,
+    "current_spent": 0,
+    "period": "2026-08",
+    "categories": {
+      "name": "Makanan",
+      "emoji": "🍜"
+    }
+  },
+  {
+    "id": "b2_usr_admin",
+    "user_id": "usr_admin",
+    "category_id": "c2",
+    "monthly_limit": 1000000,
+    "current_spent": 0,
+    "period": "2026-08",
+    "categories": {
+      "name": "Transport",
+      "emoji": "🚗"
+    }
+  },
+  {
+    "id": "b1_usr_demo_user",
+    "user_id": "usr_demo_user",
+    "category_id": "c1",
+    "monthly_limit": 2000000,
+    "current_spent": 0,
+    "period": "2026-08",
+    "categories": {
+      "name": "Makanan",
+      "emoji": "🍜"
+    }
+  },
+  {
+    "id": "b2_usr_demo_user",
+    "user_id": "usr_demo_user",
+    "category_id": "c2",
+    "monthly_limit": 1000000,
+    "current_spent": 0,
+    "period": "2026-08",
+    "categories": {
+      "name": "Transport",
+      "emoji": "🚗"
+    }
+  }
+]

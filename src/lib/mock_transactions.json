@@ -1,0 +1,230 @@
+[
+  {
+    "id": "tx_mock_1787374123389",
+    "user_id": "usr_budi",
+    "wallet_id": "w_cash_usr_budi",
+    "category_id": "c6",
+    "amount": 5000000,
+    "type": "income",
+    "description": "Pemasukan dari gaji dari BCA",
+    "transfer_to_wallet_id": null,
+    "transaction_date": "2026-08-22T04:48:43.389Z",
+    "source": "telegram",
+    "wallets": {
+      "name": "Cash"
+    },
+    "categories": {
+      "name": "Gaji",
+      "emoji": "💼"
+    }
+  },
+  {
+    "id": "tx_mock_1787373667466",
+    "user_id": "usr_budi",
+    "wallet_id": "w_cash_usr_budi",
+    "category_id": "c6",
+    "amount": 5000000,
+    "type": "income",
+    "description": "Pemasukan dari gaji ke BCA",
+    "transfer_to_wallet_id": null,
+    "transaction_date": "2026-08-22T04:41:07.466Z",
+    "source": "telegram",
+    "wallets": {
+      "name": "Cash"
+    },
+    "categories": {
+      "name": "Gaji",
+      "emoji": "💼"
+    }
+  },
+  {
+    "id": "tx_mock_1787373509390",
+    "user_id": "usr_budi",
+    "wallet_id": "w_cash_usr_budi",
+    "category_id": "c6",
+    "amount": 2000000,
+    "type": "income",
+    "description": "Pemasukan dari gaji BCA",
+    "transfer_to_wallet_id": null,
+    "transaction_date": "2026-08-22T04:38:29.390Z",
+    "source": "telegram",
+    "wallets": {
+      "name": "Cash"
+    },
+    "categories": {
+      "name": "Gaji",
+      "emoji": "💼"
+    }
+  },
+  {
+    "id": "tx_mock_1787373341691",
+    "user_id": "usr_budi",
+    "wallet_id": "w_cash_usr_budi",
+    "category_id": "c6",
+    "amount": 2000000,
+    "type": "income",
+    "description": "pemasukan dari gaji BCA 2 juta",
+    "transfer_to_wallet_id": null,
+    "transaction_date": "2026-08-22T04:35:41.691Z",
+    "source": "telegram",
+    "wallets": {
+      "name": "Cash"
+    },
+    "categories": {
+      "name": "Gaji",
+      "emoji": "💼"
+    }
+  },
+  {
+    "id": "tx_mock_1787373207642",
+    "user_id": "usr_budi",
+    "wallet_id": "w_cash_usr_budi",
+    "category_id": "c7",
+    "amount": 5000,
+    "type": "income",
+    "description": "Masuk dari BCA",
+    "transfer_to_wallet_id": null,
+    "transaction_date": "2026-08-22T04:33:27.642Z",
+    "source": "telegram",
+    "wallets": {
+      "name": "Cash"
+    },
+    "categories": {
+      "name": "Lainnya",
+      "emoji": "📦"
+    }
+  },
+  {
+    "id": "tx_mock_1787373075318",
+    "user_id": "usr_budi",
+    "wallet_id": "w_cash_usr_budi",
+    "category_id": "c7",
+    "amount": 4000,
+    "type": "expense",
+    "description": "Beli cilok",
+    "transfer_to_wallet_id": null,
+    "transaction_date": "2026-08-22T04:31:15.318Z",
+    "source": "telegram",
+    "wallets": {
+      "name": "Cash"
+    },
+    "categories": {
+      "name": "Lainnya",
+      "emoji": "📦"
+    }
+  },
+  {
+    "id": "tx_mock_1787373036853",
+    "user_id": "usr_budi",
+    "wallet_id": "w_cash_usr_budi",
+    "category_id": "c7",
+    "amount": 3000,
+    "type": "expense",
+    "description": "Beli cilok",
+    "transfer_to_wallet_id": null,
+    "transaction_date": "2026-08-22T04:30:36.853Z",
+    "source": "telegram",
+    "wallets": {
+      "name": "Cash"
+    },
+    "categories": {
+      "name": "Lainnya",
+      "emoji": "📦"
+    }
+  },
+  {
+    "id": "tx_mock_1787372838358",
+    "user_id": "usr_budi",
+    "wallet_id": "w_cash_usr_budi",
+    "category_id": "c1",
+    "amount": 22000,
+    "type": "expense",
+    "description": "Beli kopi susu",
+    "transfer_to_wallet_id": null,
+    "transaction_date": "2026-08-22T04:27:18.358Z",
+    "source": "telegram",
+    "wallets": {
+      "name": "Cash"
+    },
+    "categories": {
+      "name": "Makanan",
+      "emoji": "🍜"
+    }
+  },
+  {
+    "id": "tx_mock_1787372472014",
+    "user_id": "usr_budi",
+    "wallet_id": "w_cash_usr_budi",
+    "category_id": "c1",
+    "amount": 22000,
+    "type": "expense",
+    "description": "Beli kopi susu",
+    "transfer_to_wallet_id": null,
+    "transaction_date": "2026-08-22T04:21:12.014Z",
+    "source": "telegram",
+    "wallets": {
+      "name": "Cash"
+    },
+    "categories": {
+      "name": "Makanan",
+      "emoji": "🍜"
+    }
+  },
+  {
+    "id": "tx_mock_1787371476965",
+    "user_id": "usr_budi",
+    "wallet_id": "w_bca_usr_budi",
+    "category_id": "c6",
+    "amount": 3000000,
+    "type": "income",
+    "description": "Pemasukan gajih",
+    "transfer_to_wallet_id": null,
+    "transaction_date": "2026-08-22T04:04:36.965Z",
+    "source": "telegram",
+    "wallets": {
+      "name": "Cash"
+    },
+    "categories": {
+      "name": "Gaji",
+      "emoji": "💼"
+    }
+  },
+  {
+    "id": "tx_mock_1787314013731",
+    "user_id": "usr_budi",
+    "wallet_id": "w_bca_usr_budi",
+    "category_id": "c6",
+    "amount": 2000000,
+    "type": "income",
+    "description": "Gajih",
+    "transfer_to_wallet_id": null,
+    "transaction_date": "2026-08-21T12:06:53.731Z",
+    "source": "telegram",
+    "wallets": {
+      "name": "Cash"
+    },
+    "categories": {
+      "name": "Gaji",
+      "emoji": "💼"
+    }
+  },
+  {
+    "id": "tx_mock_1787312189242",
+    "user_id": "usr_budi",
+    "wallet_id": "w_bca_usr_budi",
+    "category_id": "c1",
+    "amount": 20000,
+    "type": "expense",
+    "description": "Beli baso",
+    "transfer_to_wallet_id": null,
+    "transaction_date": "2026-08-21T11:36:29.242Z",
+    "source": "telegram",
+    "wallets": {
+      "name": "BCA"
+    },
+    "categories": {
+      "name": "Makanan",
+      "emoji": "🍜"
+    }
+  }
+]
