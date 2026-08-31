@@ -17,8 +17,11 @@
 8. **Admin-Assisted OTP & Email Auth:** Menggunakan API `/api/auth/session` untuk mendaftarkan dan memverifikasi pengguna baru di level Supabase Auth Admin. Ini memfasilitasi pengujian bebas SMS Gateway/SMTP SMTP lokal namun dengan keandalan Supabase asli.
 9. **Midtrans Webhook & Approval Pro:** Alur pembayaran Midtrans diproses otomatis via `/api/payments/midtrans-webhook`. Pilihan manual approval superadmin juga memicu mutasi plan Pro secara real-time.
 
-## Kredensial Pengujian (Demo Localhost)
-- **OTP Verifikasi HP:** Masukkan kode `123456` di layar OTP untuk melewati verifikasi di localhost.
+## Kredensial Pengujian & Live Production Links (Update Sesi 42)
+- **Public Web URL (Vercel):** [https://mencatat-aja.vercel.app](https://mencatat-aja.vercel.app)
+- **GitHub Repository:** [https://github.com/rickyrizkymnf123-commits/mencatat-aja](https://github.com/rickyrizkymnf123-commits/mencatat-aja)
+- **Supabase Cloud Project:** `mencatat-aja` (`flcpkvwpjtxjxvfyvers`, Region: `ap-southeast-1`)
+- **OTP Verifikasi HP:** Masukkan kode `123456` di layar OTP untuk melewati verifikasi.
 - **Kredensial Login Email:** Pengujian manual dapat menggunakan email simulasi / Google OAuth satu tombol.
 
 ## Status Integrasi Telegram Bot (Update Sesi 19)

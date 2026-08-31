@@ -9,82 +9,25 @@ import { supabase, supabaseUrl } from '@/lib/supabase';
 export default function AuthPage() {
   const router = useRouter();
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [method, setMethod] = useState<'email' | 'phone'>('phone');
   
   // Form inputs
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
   
   // Onboarding questions
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingAnswer, setOnboardingAnswer] = useState('');
   const [selectedWallets, setSelectedWallets] = useState<string[]>(['Cash', 'BCA']);
   
-  // OTP logic
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
+  // State
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   
   // Mock User ID for local session simulations
   const [tempUserId, setTempUserId] = useState('');
 
-  const handleGoogleLogin = async () => {
-    try {
-      setIsLoading(true);
-      const isPlaceholder = !supabaseUrl || 
-        supabaseUrl.includes('your-supabase-project-id') || 
-        supabaseUrl.includes('placeholder-project');
-      
-      if (isPlaceholder) {
-        console.log('Using simulated Google Login fallback because Supabase URL is not configured.');
-        
-        localStorage.setItem('Mencatat Aja_user_id', 'usr_google_demo');
-        localStorage.setItem('Mencatat Aja_user_name', 'Demo User Google');
-        localStorage.setItem('Mencatat Aja_user_phone', '081234567890');
-        localStorage.setItem('Mencatat Aja_plan', 'Pro'); // default Pro for demo ease
-        localStorage.setItem('Mencatat Aja_telegram_token', 'TD-LINKED');
-        
-        alert('🌐 Mode Demo Localhost: Menggunakan akun simulasi Google.');
-        router.push('/dashboard');
-        return;
-      }
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`
-        }
-      });
-      if (error) {
-        setErrorMessage(error.message);
-      }
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Gagal login menggunakan Google.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phoneNumber) {
-      setErrorMessage('Nomor HP wajib diisi');
-      return;
-    }
-    setErrorMessage('');
-    setIsLoading(true);
-
-    // Simulate OTP sending
-    setTimeout(() => {
-      setIsLoading(false);
-      setOtpSent(true);
-    }, 1000);
-  };
-
-  const handleVerifyOtpOrRegister = async (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setIsLoading(true);
@@ -94,13 +37,11 @@ export default function AuthPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          method: method,
+          method: 'email',
           action: mode,
-          email: method === 'email' ? email : undefined,
-          password: method === 'email' ? password : undefined,
-          phoneNumber: method === 'phone' ? phoneNumber : undefined,
+          email: email,
+          password: password,
           fullName: fullName || undefined,
-          otpCode: method === 'phone' ? otpCode : undefined
         }),
       });
 
@@ -121,7 +62,7 @@ export default function AuthPage() {
         // Successful login
         localStorage.setItem('Mencatat Aja_user_id', user.id);
         localStorage.setItem('Mencatat Aja_user_name', user.user_metadata?.full_name || user.email?.split('@')[0] || 'Nasabah Mencatat Aja');
-        localStorage.setItem('Mencatat Aja_user_phone', user.phone || phoneNumber || '');
+        localStorage.setItem('Mencatat Aja_user_phone', user.phone || '');
         localStorage.setItem('Mencatat Aja_plan', 'Starter');
         router.push('/dashboard');
       }
@@ -144,8 +85,7 @@ export default function AuthPage() {
           userId: tempUserId,
           onboardingAnswer,
           defaultWallets: selectedWallets,
-          fullName: fullName || 'Budi Santoso',
-          phoneNumber: phoneNumber || '081234567890',
+          fullName: fullName || 'Nasabah Mencatat Aja',
         }),
       });
 
@@ -159,8 +99,7 @@ export default function AuthPage() {
 
       // Save user session details
       localStorage.setItem('Mencatat Aja_user_id', tempUserId);
-      localStorage.setItem('Mencatat Aja_user_name', fullName || 'Budi Santoso');
-      localStorage.setItem('Mencatat Aja_user_phone', phoneNumber || '081234567890');
+      localStorage.setItem('Mencatat Aja_user_name', fullName || 'Nasabah Mencatat Aja');
       localStorage.setItem('Mencatat Aja_telegram_token', resData.telegramLinkToken);
       localStorage.setItem('Mencatat Aja_plan', 'Starter');
       
@@ -458,7 +397,7 @@ export default function AuthPage() {
                     <h2>Selamat Datang Kembali</h2>
                     <p>
                       Belum punya akun?{' '}
-                      <a href="#" onClick={(e) => { e.preventDefault(); setMode('register'); setOtpSent(false); }}>
+                      <a href="#" onClick={(e) => { e.preventDefault(); setMode('register'); }}>
                         Daftar Gratis
                       </a>
                     </p>
@@ -468,7 +407,7 @@ export default function AuthPage() {
                     <h2>Mulai Kelola Uangmu</h2>
                     <p>
                       Sudah memiliki akun?{' '}
-                      <a href="#" onClick={(e) => { e.preventDefault(); setMode('login'); setOtpSent(false); }}>
+                      <a href="#" onClick={(e) => { e.preventDefault(); setMode('login'); }}>
                         Masuk Sekarang
                       </a>
                     </p>
@@ -478,140 +417,47 @@ export default function AuthPage() {
 
               {errorMessage && <div className="alert-error">{errorMessage}</div>}
 
-              {/* Method selection tabs */}
-              <div className="method-tabs">
-                <button
-                  onClick={() => { setMethod('phone'); setOtpSent(false); }}
-                  className={`tab-btn ${method === 'phone' ? 'active' : ''}`}
-                >
-                  Nomor HP (Verifikasi OTP)
-                </button>
-                <button
-                  onClick={() => { setMethod('email'); setOtpSent(false); }}
-                  className={`tab-btn ${method === 'email' ? 'active' : ''}`}
-                >
-                  Email & Password
-                </button>
-              </div>
-
-              {/* Verification Form */}
-              {method === 'phone' ? (
-                /* Phone flow */
-                !otpSent ? (
-                  <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {mode === 'register' && (
-                      <div className="form-group">
-                        <label htmlFor="fullName">Nama Lengkap</label>
-                        <input
-                          id="fullName"
-                          type="text"
-                          required
-                          placeholder="Masukkan nama lengkap Anda"
-                          value={fullName}
-                          onChange={e => setFullName(e.target.value)}
-                        />
-                      </div>
-                    )}
-                    <div className="form-group">
-                      <label htmlFor="phoneNumber">Nomor Handphone (Link ke Telegram)</label>
-                      <input
-                        id="phoneNumber"
-                        type="tel"
-                        required
-                        placeholder="Contoh: 08123456789"
-                        value={phoneNumber}
-                        onChange={e => setPhoneNumber(e.target.value)}
-                      />
-                      <span style={{ fontSize: '0.75rem', color: '--text-light' }}>
-                        Nomor HP digunakan untuk mencocokkan chat dari Telegram Bot Anda.
-                      </span>
-                    </div>
-                    <button type="submit" disabled={isLoading} className="btn btn-primary btn-submit">
-                      {isLoading ? 'Mengirim OTP...' : 'Kirim Kode OTP'}
-                    </button>
-                  </form>
-                ) : (
-                  <form onSubmit={handleVerifyOtpOrRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div className="form-group">
-                      <label htmlFor="otpCode">Kode Verifikasi OTP (6 digit)</label>
-                      <input
-                        id="otpCode"
-                        type="text"
-                        required
-                        maxLength={6}
-                        placeholder="Masukkan 6 digit kode OTP"
-                        value={otpCode}
-                        onChange={e => setOtpCode(e.target.value)}
-                      />
-                      <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: '600' }}>
-                        💡 Masukkan kode demo <b>123456</b> untuk melewati verifikasi localhost.
-                      </span>
-                    </div>
-                    <button type="submit" disabled={isLoading} className="btn btn-primary btn-submit">
-                      {isLoading ? 'Verifikasi...' : 'Verifikasi & Lanjutkan'}
-                    </button>
-                    <a
-                      href="#"
-                      onClick={(e) => { e.preventDefault(); setOtpSent(false); }}
-                      style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '8px' }}
-                    >
-                      Kembali masukkan nomor HP
-                    </a>
-                  </form>
-                )
-              ) : (
-                /* Email flow */
-                <form onSubmit={handleVerifyOtpOrRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {mode === 'register' && (
-                    <div className="form-group">
-                      <label htmlFor="fullName">Nama Lengkap</label>
-                      <input
-                        id="fullName"
-                        type="text"
-                        required
-                        placeholder="Masukkan nama lengkap"
-                        value={fullName}
-                        onChange={e => setFullName(e.target.value)}
-                      />
-                    </div>
-                  )}
+              {/* Email & Password Form */}
+              <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {mode === 'register' && (
                   <div className="form-group">
-                    <label htmlFor="email">Alamat Email</label>
+                    <label htmlFor="fullName">Nama Lengkap</label>
                     <input
-                      id="email"
-                      type="email"
+                      id="fullName"
+                      type="text"
                       required
-                      placeholder="nama@email.com"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
+                      placeholder="Masukkan nama lengkap Anda"
+                      value={fullName}
+                      onChange={e => setFullName(e.target.value)}
                     />
                   </div>
-                  <div className="form-group">
-                    <label htmlFor="password">Kata Sandi (Password)</label>
-                    <input
-                      id="password"
-                      type="password"
-                      required
-                      placeholder="Minimal 6 karakter"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                    />
-                  </div>
-                  <button type="submit" disabled={isLoading} className="btn btn-primary btn-submit">
-                    {isLoading ? 'Memproses...' : mode === 'login' ? 'Masuk' : 'Daftar Sekarang'}
-                  </button>
-                </form>
-              )}
-
-              {/* Google OAuth Login */}
-              <div className="oauth-divider">atau menggunakan</div>
-              <button
-                onClick={handleGoogleLogin}
-                className="btn-google"
-                disabled={isLoading}
-              >
-                <span style={{ fontSize: '1.2rem' }}>🌐</span> Lanjutkan dengan Google
-              </button>
+                )}
+                <div className="form-group">
+                  <label htmlFor="email">Alamat Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    placeholder="nama@email.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="password">Kata Sandi (Password)</label>
+                  <input
+                    id="password"
+                    type="password"
+                    required
+                    placeholder="Minimal 6 karakter"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                  />
+                </div>
+                <button type="submit" disabled={isLoading} className="btn btn-primary btn-submit">
+                  {isLoading ? 'Memproses...' : mode === 'login' ? 'Masuk' : 'Daftar Sekarang'}
+                </button>
+              </form>
             </div>
           )}
         </div>

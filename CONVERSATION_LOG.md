@@ -366,6 +366,19 @@
   * **Navigasi Sidebar Glass & Period Filter Tabs:** Sidebar dan tombol filter periode (HARIAN, MINGGUAN, BULANAN, TAHUNAN) kini memakai gaya tab terpusat ala shadcn UI dengan aksen hijau Emerald bercahaya.
 - **Verifikasi Build Sukses:** Kompilasi Next.js berhasil diselesaikan 100% dengan sukses (0 error).
 
+## Sesi 42: Migrasi & Deployment Publik (Supabase, GitHub, Vercel)
+- **Supabase Cloud Provisioning:**
+  * Membuat proyek Supabase produksi baru `mencatat-aja` (ID: `flcpkvwpjtxjxvfyvers`) di region Singapore (`ap-southeast-1`).
+  * Mengeksekusi migrasi skema database `supabase/migrations/20260802000000_schema.sql` via Management API.
+  * Verifikasi sukses: 10 kategori seed terbuat dan RLS aktif.
+- **GitHub Repository Push:**
+  * Membuat repository publik `https://github.com/rickyrizkymnf123-commits/mencatat-aja`.
+  * Memilih branch `main` dan melakukan push seluruh kode aplikasi.
+- **Vercel Production Deployment:**
+  * Membuat proyek Vercel `mencatat-aja` dan menghubungkannya ke GitHub.
+  * Menginjeksi *Environment Variables* produksi (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ENCRYPTION_KEY`).
+  * Memicu deployment produksi otomatis. URL Publik Live: `https://mencatat-aja.vercel.app` (Status Code 200 OK).
+
 
 
 
