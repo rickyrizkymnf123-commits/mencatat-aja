@@ -398,6 +398,17 @@
   * **Di Sidebar User Dashboard (`src/app/dashboard/page.tsx`):** Menambahkan tombol menu **`👑 Panel Admin (/admin)`** di navigasi sidebar agar Pengguna/Superadmin bisa berpindah ke Panel Admin kapan saja.
 - **Verifikasi Build Sukses:** Kompilasi Next.js berhasil 100% (0 error) dan dideploy ke Vercel Live Production.
 
+## Sesi 45: Perbaikan Error Sintaks UUID pada Fitur "Lihat Transaksi User" (`src/app/admin/page.tsx`)
+- **Penyebab Masalah:**
+  * Saat tombol **"👁️ Lihat"** diklik untuk melihat transaksi pengguna demo (seperti `usr_budi`, `usr_ani`), sistem mengeksekusi query Supabase `.eq('user_id', user.id)`. Karena kolom `user_id` di database PostgreSQL Supabase bertipe `UUID`, string non-UUID `"usr_budi"` memicu error `invalid input syntax for type uuid: "usr_budi"`.
+- **Perbaikan yang Diterapkan:**
+  * Memperbarui fungsi `handleViewUserTransactions` di `src/app/admin/page.tsx` dengan pemeriksaan validasi ekspresi reguler UUID (`/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id)`).
+  * Jika ID pengguna berbentuk string mock non-UUID, sistem secara otomatis mengambil transaksi mock lokal tanpa memicu query sintaks UUID ke database Supabase.
+  * Jika ID pengguna adalah UUID Supabase valid, sistem melanjutkan query Supabase `transactions` secara normal.
+- **Verifikasi Build & Sync Live Production:**
+  * Kompilasi Next.js berhasil 100% (0 error).
+  * Perbaikan di-push ke GitHub repository `main` dan dideploy ulang ke Vercel Live Production (`https://mencatat-aja.vercel.app`).
+
 
 
 

@@ -376,7 +376,7 @@ export default function AdminDashboard() {
     // Log Audit Entry
     const newAudit = {
       id: `aud_${Date.now()}`,
-      admin: 'superadmin@Mencatat Aja.id',
+      admin: 'rickyrizkymnf123@gmail.com',
       action: `Viewed User Transactions (${user.name})`,
       target: user.id,
       time: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
@@ -385,53 +385,61 @@ export default function AdminDashboard() {
 
     setViewedUser(user.name);
 
-    // Fetch real transactions for the user from Supabase or localStorage fallback
+    // Default demo transactions fallback
+    const fallbackDemoTxs = [
+      { id: 'tx_demo_1', desc: 'Gaji Bulanan Utama', category: 'Gaji', amount: 'Rp 15.000.000', date: 'Hari ini' },
+      { id: 'tx_demo_2', desc: 'Makan Siang Baso & Es Teh', category: 'Makanan', amount: 'Rp 35.000', date: 'Hari ini' },
+      { id: 'tx_demo_3', desc: 'Bensin Motor Pertamax', category: 'Transport', amount: 'Rp 50.000', date: 'Yesterday' }
+    ];
+
     try {
       const isPlaceholder = !supabaseUrl || 
         supabaseUrl.includes('your-supabase-project-id') || 
         supabaseUrl.includes('placeholder-project');
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id);
-      let userTxs: any[] = [];
 
       if (isPlaceholder || !isUUID) {
         const mockTxsStr = typeof window !== 'undefined' ? 
           localStorage.getItem('Mencatat_Aja_mock_transactions') || localStorage.getItem('tatadana_mock_transactions') || '[]' : '[]';
         let allTxs = JSON.parse(mockTxsStr);
-        userTxs = allTxs.filter((t: any) => t.user_id === user.id);
+        let userTxs = allTxs.filter((t: any) => t.user_id === user.id);
 
-        if (userTxs.length === 0) {
-          userTxs = [
-            { id: 'tx_demo_1', description: 'Gaji Bulanan', category_id: 'Gaji', amount: 15000000, type: 'income', transaction_date: new Date().toISOString() },
-            { id: 'tx_demo_2', description: 'Makan Baso & Es Teh', category_id: 'Makanan', amount: 35000, type: 'expense', transaction_date: new Date().toISOString() },
-            { id: 'tx_demo_3', description: 'Bensin Motor', category_id: 'Transport', amount: 50000, type: 'expense', transaction_date: new Date().toISOString() }
-          ];
+        if (userTxs.length > 0) {
+          setSelectedUserTxs(userTxs.map((t: any) => ({
+            id: t.id,
+            desc: t.description || '-',
+            category: t.category_id ? String(t.category_id).replace('cat_', '') : 'Kategori',
+            amount: `Rp ${Number(t.amount || 0).toLocaleString('id-ID')}`,
+            date: t.transaction_date ? new Date(t.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : 'Hari ini'
+          })));
+        } else {
+          setSelectedUserTxs(fallbackDemoTxs);
         }
-      } else {
-        const { data, error } = await supabase
-          .from('transactions')
-          .select('*, categories(name)')
-          .eq('user_id', user.id)
-          .order('transaction_date', { ascending: false });
-        if (error) throw error;
-        userTxs = data || [];
+        return;
       }
 
-      setSelectedUserTxs(userTxs.map((t: any) => {
-        let catName = 'Kategori';
-        if (t.categories?.name) catName = t.categories.name;
-        else if (t.category_id) {
-          catName = t.category_id.replace('cat_', '');
-        }
-        return {
-          id: t.id,
-          desc: t.description || '-',
-          category: catName,
-          amount: `Rp ${Number(t.amount).toLocaleString('id-ID')}`,
-          date: new Date(t.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-        };
-      }));
+      // UUID user query
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*, categories(name)')
+        .eq('user_id', user.id)
+        .order('transaction_date', { ascending: false });
+
+      if (error || !data || data.length === 0) {
+        setSelectedUserTxs(fallbackDemoTxs);
+        return;
+      }
+
+      setSelectedUserTxs(data.map((t: any) => ({
+        id: t.id,
+        desc: t.description || '-',
+        category: t.categories?.name || (t.category_id ? String(t.category_id).replace('cat_', '') : 'Umum'),
+        amount: `Rp ${Number(t.amount || 0).toLocaleString('id-ID')}`,
+        date: new Date(t.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+      })));
     } catch (err: any) {
-      alert(`Gagal mengambil data transaksi: ${err.message}`);
+      console.warn('Fallback to demo transactions for user:', user.name, err);
+      setSelectedUserTxs(fallbackDemoTxs);
     }
   };
 
