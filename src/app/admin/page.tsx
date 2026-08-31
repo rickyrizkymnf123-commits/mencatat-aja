@@ -390,12 +390,22 @@ export default function AdminDashboard() {
       const isPlaceholder = !supabaseUrl || 
         supabaseUrl.includes('your-supabase-project-id') || 
         supabaseUrl.includes('placeholder-project');
-
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id);
       let userTxs: any[] = [];
-      if (isPlaceholder) {
-        const mockTxsStr = typeof window !== 'undefined' ? localStorage.getItem('tatadana_mock_transactions') || '[]' : '[]';
+
+      if (isPlaceholder || !isUUID) {
+        const mockTxsStr = typeof window !== 'undefined' ? 
+          localStorage.getItem('Mencatat_Aja_mock_transactions') || localStorage.getItem('tatadana_mock_transactions') || '[]' : '[]';
         let allTxs = JSON.parse(mockTxsStr);
         userTxs = allTxs.filter((t: any) => t.user_id === user.id);
+
+        if (userTxs.length === 0) {
+          userTxs = [
+            { id: 'tx_demo_1', description: 'Gaji Bulanan', category_id: 'Gaji', amount: 15000000, type: 'income', transaction_date: new Date().toISOString() },
+            { id: 'tx_demo_2', description: 'Makan Baso & Es Teh', category_id: 'Makanan', amount: 35000, type: 'expense', transaction_date: new Date().toISOString() },
+            { id: 'tx_demo_3', description: 'Bensin Motor', category_id: 'Transport', amount: 50000, type: 'expense', transaction_date: new Date().toISOString() }
+          ];
+        }
       } else {
         const { data, error } = await supabase
           .from('transactions')
