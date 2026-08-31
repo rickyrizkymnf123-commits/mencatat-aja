@@ -365,83 +365,7 @@ export default function AdminDashboard() {
     router.push('/dashboard');
   };
 
-  // View User Transactions with Audit Logging
-  const handleViewUserTransactions = async (user: any) => {
-    const confirmView = window.confirm(
-      `⚠️ PERINGATAN PRIVASI\nAnda sedang mengakses data transaksi privat milik ${user.name}.\nTindakan ini akan dicatat dalam Log Audit Sistem.\n\nApakah Anda yakin ingin melanjutkan?`
-    );
 
-    if (!confirmView) return;
-
-    // Log Audit Entry
-    const newAudit = {
-      id: `aud_${Date.now()}`,
-      admin: 'rickyrizkymnf123@gmail.com',
-      action: `Viewed User Transactions (${user.name})`,
-      target: user.id,
-      time: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
-    };
-    setAuditLogs(prev => [newAudit, ...prev]);
-
-    setViewedUser(user.name);
-
-    // Default demo transactions fallback
-    const fallbackDemoTxs = [
-      { id: 'tx_demo_1', desc: 'Gaji Bulanan Utama', category: 'Gaji', amount: 'Rp 15.000.000', date: 'Hari ini' },
-      { id: 'tx_demo_2', desc: 'Makan Siang Baso & Es Teh', category: 'Makanan', amount: 'Rp 35.000', date: 'Hari ini' },
-      { id: 'tx_demo_3', desc: 'Bensin Motor Pertamax', category: 'Transport', amount: 'Rp 50.000', date: 'Yesterday' }
-    ];
-
-    try {
-      const isPlaceholder = !supabaseUrl || 
-        supabaseUrl.includes('your-supabase-project-id') || 
-        supabaseUrl.includes('placeholder-project');
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id);
-
-      if (isPlaceholder || !isUUID) {
-        const mockTxsStr = typeof window !== 'undefined' ? 
-          localStorage.getItem('Mencatat_Aja_mock_transactions') || localStorage.getItem('tatadana_mock_transactions') || '[]' : '[]';
-        let allTxs = JSON.parse(mockTxsStr);
-        let userTxs = allTxs.filter((t: any) => t.user_id === user.id);
-
-        if (userTxs.length > 0) {
-          setSelectedUserTxs(userTxs.map((t: any) => ({
-            id: t.id,
-            desc: t.description || '-',
-            category: t.category_id ? String(t.category_id).replace('cat_', '') : 'Kategori',
-            amount: `Rp ${Number(t.amount || 0).toLocaleString('id-ID')}`,
-            date: t.transaction_date ? new Date(t.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : 'Hari ini'
-          })));
-        } else {
-          setSelectedUserTxs(fallbackDemoTxs);
-        }
-        return;
-      }
-
-      // UUID user query
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*, categories(name)')
-        .eq('user_id', user.id)
-        .order('transaction_date', { ascending: false });
-
-      if (error || !data || data.length === 0) {
-        setSelectedUserTxs(fallbackDemoTxs);
-        return;
-      }
-
-      setSelectedUserTxs(data.map((t: any) => ({
-        id: t.id,
-        desc: t.description || '-',
-        category: t.categories?.name || (t.category_id ? String(t.category_id).replace('cat_', '') : 'Umum'),
-        amount: `Rp ${Number(t.amount || 0).toLocaleString('id-ID')}`,
-        date: new Date(t.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-      })));
-    } catch (err: any) {
-      console.warn('Fallback to demo transactions for user:', user.name, err);
-      setSelectedUserTxs(fallbackDemoTxs);
-    }
-  };
 
   // User Management Actions
   const handleAddUser = () => {
@@ -1835,13 +1759,6 @@ export default function AdminDashboard() {
                             🕵️ Impersonate
                           </button>
                           <button
-                            onClick={() => handleViewUserTransactions(u)}
-                            className="btn btn-outline"
-                            style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                          >
-                            👁️ Lihat
-                          </button>
-                          <button
                             onClick={() => handleDeleteUser(u.id, u.name)}
                             className="btn btn-outline"
                             style={{ padding: '6px 12px', fontSize: '0.8rem', color: 'var(--error)', borderColor: 'var(--error)' }}
@@ -1855,47 +1772,6 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
-
-            {/* Privately Audited Transaction Viewer */}
-            {selectedUserTxs && (
-              <div className="card animate-slide-up" style={{ marginTop: '32px', borderColor: 'var(--primary)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <h3>🔍 Transaksi Privat User: {viewedUser}</h3>
-                  <button onClick={() => setSelectedUserTxs(null)} className="btn btn-outline" style={{ padding: '4px 10px', fontSize: '0.8rem' }}>
-                    Tutup
-                  </button>
-                </div>
-                {selectedUserTxs.length === 0 ? (
-                  <p style={{ color: 'var(--text-light)', fontSize: '0.95rem' }}>Belum ada data transaksi.</p>
-                ) : (
-                  <div className="tx-table-container">
-                    <table className="tx-table">
-                      <thead>
-                        <tr>
-                          <th>Tanggal</th>
-                          <th>Kategori</th>
-                          <th>Keterangan</th>
-                          <th>Nominal</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedUserTxs.map((t, idx) => (
-                          <tr key={idx}>
-                            <td>{t.date}</td>
-                            <td>{t.category || '-'}</td>
-                            <td>{t.desc}</td>
-                            <td style={{ color: 'var(--error)', fontWeight: '700' }}>{t.amount}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-                <p style={{ fontSize: '0.75rem', color: 'var(--error)', marginTop: '12px', fontWeight: '600' }}>
-                  🛡️ Akses data ini diaudit secara ketat. Log aktivitas Anda dicatat dalam sistem keamanan internal Mencatat Aja.
-                </p>
-              </div>
-            )}
           </>
         )}
 
