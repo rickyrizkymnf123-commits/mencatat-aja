@@ -379,6 +379,17 @@
   * Menginjeksi *Environment Variables* produksi (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ENCRYPTION_KEY`).
   * Memicu deployment produksi otomatis. URL Publik Live: `https://mencatat-aja.vercel.app` (Status Code 200 OK).
 
+## Sesi 43: Penyederhanaan Otentikasi (Penghapusan Opsi Login Google & Nomor HP)
+- **Penyederhanaan Form Login & Pendaftaran (`src/app/auth/page.tsx`):**
+  * Menghapus tombol login OAuth Google ("🌐 Lanjutkan dengan Google") dan pembatas "atau menggunakan".
+  * Menghapus opsi verifikasi Nomor HP via OTP beserta tab pengalih metode login.
+  * Mengonsolidasikan alur pendaftaran dan login agar **100% menggunakan Alamat Email dan Kata Sandi (Password)**.
+  * Mode Pendaftaran (*Register*): Menampilkan input Nama Lengkap, Alamat Email, Kata Sandi, dan tombol "Daftar Sekarang".
+  * Mode Masuk (*Login*): Menampilkan input Alamat Email, Kata Sandi, dan tombol "Masuk".
+- **Verifikasi Build & Sync Live Production:**
+  * Kompilasi Next.js berhasil diselesaikan 100% sukses (0 error).
+  * Pembaruan di-push ke GitHub repository `main` dan otomatis dideploy ulang ke Vercel Live Production.
+
 
 
 

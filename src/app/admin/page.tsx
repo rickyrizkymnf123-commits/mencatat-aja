@@ -105,7 +105,7 @@ export default function AdminDashboard() {
 
   // Local Audit Logs state (audited activities)
   const [auditLogs, setAuditLogs] = useState<any[]>([
-    { id: 'aud_1', admin: 'superadmin@Mencatat Aja.id', action: 'System Initialized', target: 'system', time: '14 Aug 2026, 21:00 WIB' }
+    { id: 'aud_1', admin: 'rickyrizkymnf123@gmail.com', action: 'Superadmin Initialized', target: 'system', time: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) }
   ]);
 
   // Support State for User Transaction Viewer
