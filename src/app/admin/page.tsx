@@ -1600,6 +1600,9 @@ export default function AdminDashboard() {
           Tata Kelola Sistem
         </div>
         <ul className="sidebar-menu" style={{ marginBottom: '16px', gap: '4px', flex: 'none' }}>
+          <Link href="/dashboard" className="menu-item" style={{ padding: '8px 12px', fontSize: '0.88rem', color: '#059669', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', textDecoration: 'none', marginBottom: '8px', fontWeight: '700' }}>
+            🏠 Buka Dashboard User (/dashboard)
+          </Link>
           <li onClick={() => { setActiveTab('users'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'users' ? 'active' : ''}`} style={{ padding: '8px 12px', fontSize: '0.9rem' }}>
             👥 Kelola Pengguna
           </li>

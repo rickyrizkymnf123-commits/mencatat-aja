@@ -1739,6 +1739,9 @@ export default function DashboardPage() {
           <li onClick={() => { setActiveTab('profile'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'profile' ? 'active' : ''}`}>
             👤 Profil & Kredit
           </li>
+          <Link href="/admin" className="menu-item" style={{ color: '#059669', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.25)', fontWeight: '700', textDecoration: 'none', marginTop: '12px' }}>
+            👑 Panel Admin (/admin)
+          </Link>
         </ul>
         <div className="sidebar-profile" style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'stretch' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
