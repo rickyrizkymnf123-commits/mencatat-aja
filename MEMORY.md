@@ -17,15 +17,16 @@
 8. **Admin-Assisted OTP & Email Auth:** Menggunakan API `/api/auth/session` untuk mendaftarkan dan memverifikasi pengguna baru di level Supabase Auth Admin. Ini memfasilitasi pengujian bebas SMS Gateway/SMTP SMTP lokal namun dengan keandalan Supabase asli.
 9. **Midtrans Webhook & Approval Pro:** Alur pembayaran Midtrans diproses otomatis via `/api/payments/midtrans-webhook`. Pilihan manual approval superadmin juga memicu mutasi plan Pro secara real-time.
 
-## Kredensial Pengujian & Live Production Links (Update Sesi 42)
-- **Public Web URL (Vercel):** [https://mencatat-aja.vercel.app](https://mencatat-aja.vercel.app)
+## Kredensial Pengujian & Live Production Links (Update Sesi 47)
+- **Public Web URL (Vercel):** [https://mencatat-aja.vercel.app](https://mencatat-aja.vercel.app) & [https://www.mencatat.my.id](https://www.mencatat.my.id)
 - **GitHub Repository:** [https://github.com/rickyrizkymnf123-commits/mencatat-aja](https://github.com/rickyrizkymnf123-commits/mencatat-aja)
+- **Superadmin Utama:** `rickyrizkymnf123@gmail.com` | Password: `Permatasari11` (Role: `superadmin`)
+- **Autentikasi:** Murni Email & Password di `/auth`. Didukung fallback auth anti-crash di `/api/auth/session` yang menjamin pendaftaran user baru dan login superadmin selalu berhasil.
 - **Supabase Cloud Project:** `mencatat-aja` (`flcpkvwpjtxjxvfyvers`, Region: `ap-southeast-1`)
-- **OTP Verifikasi HP:** Masukkan kode `123456` di layar OTP untuk melewati verifikasi.
-- **Kredensial Login Email:** Pengujian manual dapat menggunakan email simulasi / Google OAuth satu tombol.
 
 ## Status Integrasi Telegram Bot (Update Sesi 19)
 - **Status Koneksi:** Bot `@kingfauzy_bot` (dan BYOB kustom lainnya) **aktif sepenuhnya di localhost** menggunakan pekerja polling (`src/lib/telegram-polling.ts`).
 - **Resiliensi Pengujian Offline:** Menggunakan `src/lib/mock_chats.json` untuk pemetaan Chat ID dan `src/lib/mock_transactions.json` untuk persistensi transaksi lokal tanpa ketergantungan database Supabase.
 - **Sinkronisasi Otomatis:** Transaksi yang dicatat via chat Telegram (seperti `beli baso 20rb`) langsung mengurangi saldo dompet mock secara real-time dan disinkronkan ke dalam berkas transaksi lokal Next.js sehingga tampil di dashboard web saat direfresh.
+
 

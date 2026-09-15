@@ -214,10 +214,17 @@ export default function DashboardPage() {
 
     try {
       const customToken = typeof window !== 'undefined' ? localStorage.getItem('tatadana_custom_bot_token') || '' : '';
-      const wRes = await fetch(`/api/wallets?userId=${userIdStr}&custom_token=${encodeURIComponent(customToken)}`);
-      const cRes = await fetch(`/api/categories?userId=${userIdStr}`);
-      const tRes = await fetch(`/api/transactions?userId=${userIdStr}`);
-      const bRes = await fetch(`/api/budgets?userId=${userIdStr}`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const fetchOpts = { signal: controller.signal };
+
+      const wRes = await fetch(`/api/wallets?userId=${userIdStr}&custom_token=${encodeURIComponent(customToken)}`, fetchOpts);
+      const cRes = await fetch(`/api/categories?userId=${userIdStr}`, fetchOpts);
+      const tRes = await fetch(`/api/transactions?userId=${userIdStr}`, fetchOpts);
+      const bRes = await fetch(`/api/budgets?userId=${userIdStr}`, fetchOpts);
+
+      clearTimeout(timeoutId);
 
       const wData = await wRes.json();
       const cData = await cRes.json();
@@ -245,7 +252,7 @@ export default function DashboardPage() {
         setBudget: bData.length > 0
       });
     } catch (err) {
-      console.warn('Backend API request failed, using persistent local mock:', err);
+      console.warn('Backend API request failed or timed out, using persistent local mock:', err);
       setDbStatusMsg('💡 Database Local Mock Aktif (Atur SUPABASE_URL di .env untuk Supabase asli)');
       loadMockData(token);
     } finally {
@@ -258,37 +265,46 @@ export default function DashboardPage() {
     let mockPollingInterval: any = null;
 
     const initSessionAndSubscribe = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
       let storedId = localStorage.getItem('Mencatat Aja_user_id') || 'usr_demo_user';
       let storedName = localStorage.getItem('Mencatat Aja_user_name') || 'Budi Santoso';
       let storedPhone = localStorage.getItem('Mencatat Aja_user_phone') || '081234567890';
       let storedToken = localStorage.getItem('Mencatat Aja_telegram_token') || 'TD-729402';
       let storedPlan = localStorage.getItem('Mencatat Aja_plan') || 'Starter';
 
-      if (session?.user) {
-        const user = session.user;
-        storedId = user.id;
-        storedName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Nasabah';
-        storedPhone = user.phone || user.user_metadata?.phone_number || '';
-        
-        localStorage.setItem('Mencatat Aja_user_id', storedId);
-        localStorage.setItem('Mencatat Aja_user_name', storedName);
-        localStorage.setItem('Mencatat Aja_user_phone', storedPhone);
+      try {
+        const { data } = await supabase.auth.getSession();
+        const session = data?.session;
 
-        // Fetch latest profile status
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-        
-        if (profile) {
-          storedPlan = profile.plan || 'Starter';
-          storedToken = profile.telegram_link_token || '';
-          localStorage.setItem('Mencatat Aja_plan', storedPlan);
-          localStorage.setItem('Mencatat Aja_telegram_token', storedToken);
+        if (session?.user) {
+          const user = session.user;
+          storedId = user.id;
+          storedName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Nasabah';
+          storedPhone = user.phone || user.user_metadata?.phone_number || '';
+          
+          localStorage.setItem('Mencatat Aja_user_id', storedId);
+          localStorage.setItem('Mencatat Aja_user_name', storedName);
+          localStorage.setItem('Mencatat Aja_user_phone', storedPhone);
+
+          try {
+            // Fetch latest profile status
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', user.id)
+              .maybeSingle();
+            
+            if (profile) {
+              storedPlan = profile.plan || 'Starter';
+              storedToken = profile.telegram_link_token || '';
+              localStorage.setItem('Mencatat Aja_plan', storedPlan);
+              localStorage.setItem('Mencatat Aja_telegram_token', storedToken);
+            }
+          } catch (profileErr) {
+            console.warn('Profiles fetch error:', profileErr);
+          }
         }
+      } catch (authErr) {
+        console.warn('Supabase auth session fetch error, continuing with stored session:', authErr);
       }
 
       // Check if user is approved from the mock users list
@@ -314,8 +330,8 @@ export default function DashboardPage() {
       setUserPlan(storedPlan);
       setIsAdminMode(localStorage.getItem('Mencatat Aja_admin_mode') === 'true');
 
-      // Initial load
-      fetchDashboardData(storedId, storedToken);
+      // Initial load - guaranteed to be called
+      await fetchDashboardData(storedId, storedToken);
 
       const isPlaceholder = !supabaseUrl || 
         supabaseUrl.includes('your-supabase-project-id') || 
@@ -327,26 +343,30 @@ export default function DashboardPage() {
           fetchDashboardData(storedId, storedToken);
         }, 1500);
       } else {
-        // Realtime listener setup with a unique channel name to avoid cached collisions in Strict Mode
-        const channelName = `realtime-user-${storedId}-${Math.random().toString(36).substring(2, 9)}`;
-        activeChannel = supabase
-          .channel(channelName)
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${storedId}` },
-            () => fetchDashboardData(storedId, storedToken)
-          )
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'wallets', filter: `user_id=eq.${storedId}` },
-            () => fetchDashboardData(storedId, storedToken)
-          )
-          .on(
-            'postgres_changes',
-            { event: '*', schema: 'public', table: 'budgets', filter: `user_id=eq.${storedId}` },
-            () => fetchDashboardData(storedId, storedToken)
-          )
-          .subscribe();
+        try {
+          // Realtime listener setup with a unique channel name to avoid cached collisions in Strict Mode
+          const channelName = `realtime-user-${storedId}-${Math.random().toString(36).substring(2, 9)}`;
+          activeChannel = supabase
+            .channel(channelName)
+            .on(
+              'postgres_changes',
+              { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${storedId}` },
+              () => fetchDashboardData(storedId, storedToken)
+            )
+            .on(
+              'postgres_changes',
+              { event: '*', schema: 'public', table: 'wallets', filter: `user_id=eq.${storedId}` },
+              () => fetchDashboardData(storedId, storedToken)
+            )
+            .on(
+              'postgres_changes',
+              { event: '*', schema: 'public', table: 'budgets', filter: `user_id=eq.${storedId}` },
+              () => fetchDashboardData(storedId, storedToken)
+            )
+            .subscribe();
+        } catch (subErr) {
+          console.warn('Supabase realtime subscribe error:', subErr);
+        }
       }
     };
 
@@ -354,7 +374,7 @@ export default function DashboardPage() {
 
     return () => {
       if (activeChannel) {
-        supabase.removeChannel(activeChannel);
+        try { supabase.removeChannel(activeChannel); } catch (e) {}
       }
       if (mockPollingInterval) {
         clearInterval(mockPollingInterval);
