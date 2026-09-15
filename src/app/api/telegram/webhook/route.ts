@@ -230,13 +230,62 @@ export async function POST(request: Request) {
       }
     }
     
-    // 3.5 Disconnect Check: If bot is disconnected, return early without replying
+    // 3.5 Disconnect & Auto-pairing Check
     if (!isPlaceholder) {
-      // If queryUserId is set (BYOB mode), but telegram_bot_token is missing/null, user disconnected BYOB.
-      // Or if telegram_chat_id is missing, user disconnected.
-      if (!userProfile || (queryUserId && !userProfile.telegram_bot_token) || !userProfile.telegram_chat_id) {
-        console.log(`Telegram Bot disconnected for user ${queryUserId || 'unknown'}, ignoring message.`);
-        return NextResponse.json({ ok: true });
+      if (queryUserId) {
+        // BYOB mode: User must have an active telegram_bot_token
+        if (!userProfile || !userProfile.telegram_bot_token) {
+          console.log(`Telegram Bot disconnected for user ${queryUserId}, ignoring message.`);
+          return NextResponse.json({ ok: true });
+        }
+        
+        // If telegram_chat_id is missing or updated, pair it automatically now
+        if (!userProfile.telegram_chat_id || String(userProfile.telegram_chat_id) !== String(chatId)) {
+          console.log(`Pairing telegram_chat_id ${chatId} to profile ${queryUserId}...`);
+          await supabaseAdmin
+            .from('profiles')
+            .update({ telegram_chat_id: String(chatId) })
+            .eq('id', queryUserId);
+          userProfile.telegram_chat_id = String(chatId);
+
+          // Send Welcome Notification message to Telegram chat
+          const welcomeMsg = `🚀 <b>Selamat Datang di Mencatat Aja Bot!</b> 🚀\n\n` +
+            `Halo <b>${userProfile.full_name || message.from?.first_name || 'Nasabah'}</b>, koneksi bot kustom Anda telah berhasil diaktifkan! Asisten keuangan AI Anda kini aktif 24/7.\n\n` +
+            `📖 <b>Panduan Singkat Penggunaan:</b>\n` +
+            `• <code>beli bakso 15rb</code> (Mencatat pengeluaran)\n` +
+            `• <code>gaji freelance 2.5jt</code> (Mencatat pemasukan)\n` +
+            `• <code>transfer dari BCA ke Gopay 500rb</code> (Mencatat transfer)\n\n` +
+            `Ketik /bantuan di chat ini kapan saja untuk melihat panduan lengkap.\n` +
+            `Gunakan tombol menu di bawah ini untuk pintasan cepat navigasi Anda! 👇`;
+          
+          await telegram.sendMessage(botToken, chatId, welcomeMsg, keyboardMarkup);
+
+          if (textContent === '/start') {
+            return NextResponse.json({ ok: true });
+          }
+        } else if (textContent === '/start') {
+          // If already paired and user types /start
+          const welcomeMsg = `🚀 <b>Selamat Datang Kembali di Mencatat Aja Bot!</b> 🚀\n\n` +
+            `Halo <b>${userProfile.full_name || message.from?.first_name || 'Nasabah'}</b>, bot keuangan AI Anda aktif 24/7!\n\n` +
+            `📖 <b>Panduan Singkat Penggunaan:</b>\n` +
+            `• <code>beli bakso 15rb</code> (Mencatat pengeluaran)\n` +
+            `• <code>gaji freelance 2.5jt</code> (Mencatat pemasukan)\n` +
+            `• <code>transfer dari BCA ke Gopay 500rb</code> (Mencatat transfer)\n\n` +
+            `Ketik /bantuan di chat ini kapan saja untuk melihat panduan lengkap.`;
+          await telegram.sendMessage(botToken, chatId, welcomeMsg, keyboardMarkup);
+          return NextResponse.json({ ok: true });
+        }
+      } else {
+        // Shared bot mode: Must have userProfile matching telegram_chat_id
+        if (!userProfile) {
+          console.log(`No user profile linked for telegram_chat_id ${chatId}, ignoring non-pairing message.`);
+          return NextResponse.json({ ok: true });
+        }
+        if (textContent === '/start') {
+          const welcomeMsg = `🚀 <b>Selamat Datang Kembali di Mencatat Aja Bot!</b> 🚀\n\nHalo <b>${userProfile.full_name || 'Nasabah'}</b>! Ketik /bantuan untuk melihat panduan.`;
+          await telegram.sendMessage(botToken, chatId, welcomeMsg, keyboardMarkup);
+          return NextResponse.json({ ok: true });
+        }
       }
     }
 
