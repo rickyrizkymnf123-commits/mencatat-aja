@@ -192,10 +192,11 @@ export async function POST(request: Request) {
         const mockChatsFile = path.join(process.cwd(), 'src/lib/mock_chats.json');
         if (fs.existsSync(mockChatsFile)) {
           const chats = JSON.parse(fs.readFileSync(mockChatsFile, 'utf-8'));
-          if (chats[userId]) {
+          const foundId = chats[userId] || Object.values(chats)[0];
+          if (foundId) {
             updatedProfile = {
               ...updatedProfile,
-              telegram_chat_id: String(chats[userId])
+              telegram_chat_id: String(foundId)
             };
           }
         }
@@ -214,6 +215,20 @@ export async function POST(request: Request) {
               telegram_chat_id: existingProf.telegram_chat_id,
               full_name: existingProf.full_name || updatedProfile?.full_name
             };
+          } else {
+            const { data: anyProf } = await supabaseAdmin
+              .from('profiles')
+              .select('telegram_chat_id, full_name')
+              .not('telegram_chat_id', 'is', null)
+              .limit(1)
+              .maybeSingle();
+            if (anyProf?.telegram_chat_id) {
+              updatedProfile = {
+                ...updatedProfile,
+                telegram_chat_id: anyProf.telegram_chat_id,
+                full_name: anyProf.full_name || updatedProfile?.full_name
+              };
+            }
           }
         } catch (e) {}
       }

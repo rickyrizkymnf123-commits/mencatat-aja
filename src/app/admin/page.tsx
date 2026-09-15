@@ -230,8 +230,8 @@ export default function AdminDashboard() {
 
     // 2. Fetch Users
     const defaultMockUsers = [
-      { id: 'usr_budi', name: 'Budi Santoso (Demo)', phone: '081234567890', plan: 'Pro', telegram: 'Terhubung (@budi_Mencatat Aja)', txCount: 12, is_approved: true },
-      { id: 'usr_ani', name: 'Ani Wijaya (Demo)', phone: '089876543210', plan: 'Starter', telegram: 'Terhubung (@ani_wijaya)', txCount: 3, is_approved: true },
+      { id: 'usr_budi', name: 'Budi Santoso (Demo)', phone: '081234567890', plan: 'Pro', telegram: 'Terhubung (@budi_Mencatat Aja)', txCount: 0, is_approved: true },
+      { id: 'usr_ani', name: 'Ani Wijaya (Demo)', phone: '089876543210', plan: 'Starter', telegram: 'Terhubung (@ani_wijaya)', txCount: 0, is_approved: true },
       { id: 'usr_catur', name: 'Catur Nugroho (Demo)', phone: '085522334455', plan: 'Pro', telegram: 'Belum Terhubung', txCount: 0, is_approved: false }
     ];
 
@@ -260,7 +260,7 @@ export default function AdminDashboard() {
             is_approved: u.is_approved !== false
           };
         }));
-        setUsers([...resolvedUsers, ...defaultMockUsers]);
+        setUsers(resolvedUsers);
       } else {
         setUsers(defaultMockUsers);
       }
@@ -315,17 +315,11 @@ export default function AdminDashboard() {
           time: new Date(l.created_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
         })));
       } else {
-        setAiLogs([
-          { id: '1', user: 'Budi Santoso', provider: 'litellm (Kobo)', action: 'parsing_text', tokens: '120 / 45', cost: '$0.000125', status: 'success', time: 'Hari ini, 18:00 WIB' },
-          { id: '2', user: 'Ani Wijaya', provider: 'litellm (Kobo)', action: 'transcribe_audio', tokens: '0 / 0', cost: '$0.015000', status: 'success', time: 'Hari ini, 17:45 WIB' }
-        ]);
+        setAiLogs([]);
       }
     } catch (err) {
       console.error('Error fetching AI logs:', err);
-      setAiLogs([
-        { id: '1', user: 'Budi Santoso', provider: 'litellm (Kobo)', action: 'parsing_text', tokens: '120 / 45', cost: '$0.000125', status: 'success', time: 'Hari ini, 18:00 WIB' },
-        { id: '2', user: 'Ani Wijaya', provider: 'litellm (Kobo)', action: 'transcribe_audio', tokens: '0 / 0', cost: '$0.015000', status: 'success', time: 'Hari ini, 17:45 WIB' }
-      ]);
+      setAiLogs([]);
     }
     
     setIsLoading(false);
