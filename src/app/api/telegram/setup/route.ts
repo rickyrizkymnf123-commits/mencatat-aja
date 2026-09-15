@@ -84,15 +84,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Telegram API mengembalikan status error' }, { status: 400 });
     }
 
-    // 3. Set Webhook: POST setWebhook with user_id query param
-    const webhookBaseUrl = process.env.WEBHOOK_BASE_URL || 'http://localhost:3000';
+    // 3. Set Webhook: POST setWebhook with user_id and bot_token query params
+    const host = request.headers.get('host') || '';
+    const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+    const autoBaseUrl = `${proto}://${host}`;
+
+    const webhookBaseUrl = process.env.WEBHOOK_BASE_URL && process.env.WEBHOOK_BASE_URL.startsWith('https://')
+      ? process.env.WEBHOOK_BASE_URL
+      : (autoBaseUrl.startsWith('https://') ? autoBaseUrl : 'http://localhost:3000');
+
     const isHttps = webhookBaseUrl.startsWith('https://');
     let webhookRegistered = false;
     let webhookErrorMsg = '';
 
     if (isHttps) {
       const setWebhookUrl = `https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(
-        `${webhookBaseUrl}/api/telegram/webhook?user_id=${userId}`
+        `${webhookBaseUrl}/api/telegram/webhook?user_id=${userId}&bot_token=${encodeURIComponent(token)}`
       )}`;
       
       try {
@@ -107,7 +114,7 @@ export async function POST(request: Request) {
         webhookErrorMsg = err.message || 'Error koneksi setWebhook';
       }
     } else {
-      webhookErrorMsg = 'Telegram memerlukan URL webhook HTTPS. Gunakan tunnel HTTPS seperti ngrok untuk meneruskan pesan.';
+      webhookErrorMsg = 'Telegram memerlukan URL webhook HTTPS. Di localhost gunakan ngrok atau Vercel live URL.';
     }
 
     // 4. Save encrypted token and connection status

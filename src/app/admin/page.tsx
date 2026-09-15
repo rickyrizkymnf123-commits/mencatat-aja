@@ -563,9 +563,33 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/ai-config');
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load AI config');
-      setAiBaseUrl(data.baseUrl);
-      setAiApiKey(data.apiKey);
-      setDefaultAiModel(data.defaultModel);
+      const loadedBaseUrl = data.baseUrl || 'https://api.koboillm.com/v1';
+      const loadedApiKey = data.apiKey || '';
+      const loadedModel = data.defaultModel || 'gemini-1.5-flash';
+
+      setAiBaseUrl(loadedBaseUrl);
+      setAiApiKey(loadedApiKey);
+      setDefaultAiModel(loadedModel);
+
+      // Auto-fetch real models list from provider API via server route
+      try {
+        const fetchRes = await fetch('/api/admin/fetch-models', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ baseUrl: loadedBaseUrl, apiKey: loadedApiKey })
+        });
+        const fetchData = await fetchRes.json();
+        if (fetchRes.ok && fetchData.models && Array.isArray(fetchData.models) && fetchData.models.length > 0) {
+          setModelsList(fetchData.models);
+          if (fetchData.models.includes(loadedModel)) {
+            setDefaultAiModel(loadedModel);
+          } else {
+            setDefaultAiModel(fetchData.models[0]);
+          }
+        }
+      } catch (e) {
+        console.warn('Auto fetch models error:', e);
+      }
     } catch (e: any) {
       console.error('Failed to load AI config:', e);
     }
@@ -604,7 +628,7 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save config');
-      alert('🟢 Pengaturan AI Central berhasil disimpan!');
+      alert(`🟢 Pengaturan AI Central berhasil disimpan! Default model: "${defaultAiModel}"`);
     } catch (e: any) {
       alert(`⚠️ Gagal menyimpan pengaturan: ${e.message}`);
     } finally {
@@ -645,31 +669,28 @@ export default function AdminDashboard() {
     }
     setIsFetchingModels(true);
     try {
-      const url = aiBaseUrl.endsWith('/') ? `${aiBaseUrl}models` : `${aiBaseUrl}/models`;
-      const headers: HeadersInit = { 'Content-Type': 'application/json' };
-      if (aiApiKey) {
-        headers['Authorization'] = `Bearer ${aiApiKey}`;
-      }
-      
-      const res = await fetch(url, { headers });
-      if (!res.ok) throw new Error(`Model API returned status ${res.status}`);
-      
+      const res = await fetch('/api/admin/fetch-models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ baseUrl: aiBaseUrl, apiKey: aiApiKey })
+      });
       const data = await res.json();
-      if (data && Array.isArray(data.data)) {
-        const fetched = data.data.map((m: any) => m.id);
-        if (fetched.length > 0) {
-          setModelsList(fetched);
-          setDefaultAiModel(fetched[0]);
-          alert(`🟢 Berhasil memuat ${fetched.length} model dari provider!`);
-          return;
+      if (!res.ok) throw new Error(data.error || 'Gagal memuat model dari provider API');
+
+      if (data.models && Array.isArray(data.models) && data.models.length > 0) {
+        setModelsList(data.models);
+        if (!data.models.includes(defaultAiModel)) {
+          setDefaultAiModel(data.models[0]);
         }
+        alert(`🟢 Berhasil memuat ${data.models.length} model asli dari provider AI!`);
+        return;
       }
-      throw new Error('Daftar model kosong atau format tidak sesuai');
+      throw new Error('Daftar model kosong dari provider API');
     } catch (e: any) {
-      const mockModels = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gpt-4o', 'gpt-4o-mini', 'deepseek-chat', 'deepseek-coder'];
-      setModelsList(mockModels);
-      setDefaultAiModel(mockModels[0]);
-      alert(`⚠️ Menggunakan daftar model fallback: ${e.message}`);
+      console.warn('Fetch models error:', e);
+      const fallbackModels = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gpt-4o', 'gpt-4o-mini', 'deepseek-chat', 'deepseek-coder', 'claude-3-5-sonnet'];
+      setModelsList(fallbackModels);
+      alert(`⚠️ ${e.message}. Menggunakan daftar model standar.`);
     } finally {
       setIsFetchingModels(false);
     }
@@ -1534,43 +1555,49 @@ export default function AdminDashboard() {
       </div>
 
       {/* ADMIN SIDEBAR */}
-      <aside className={`sidebar admin-nav animate-fade-in ${sidebarOpen ? 'active' : ''}`}>
-        <div className="sidebar-logo">
-          <span>👑</span> Mencatat Aja Admin
+      <aside className={`sidebar admin-nav animate-fade-in ${sidebarOpen ? 'active' : ''}`} style={{ width: '270px', padding: '24px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div>
+          <div className="sidebar-logo" style={{ marginBottom: '24px', fontSize: '1.15rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)' }}>
+            <span style={{ fontSize: '1.4rem' }}>👑</span>
+            <span>Mencatat Aja Admin</span>
+          </div>
+
+          <div style={{ padding: '0 8px', marginBottom: '10px', fontSize: '0.68rem', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>
+            Tata Kelola Sistem
+          </div>
+
+          <ul className="sidebar-menu" style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: 0, margin: 0, listStyle: 'none' }}>
+            <Link href="/dashboard" className="menu-item" style={{ padding: '10px 14px', fontSize: '0.85rem', color: '#059669', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.25)', textDecoration: 'none', borderRadius: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap' }}>
+              <span>🏠</span> <span>Dashboard User</span>
+            </Link>
+            <li onClick={() => { setActiveTab('users'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'users' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>👥</span> <span>Kelola Pengguna</span>
+            </li>
+            <li onClick={() => { setActiveTab('payments'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'payments' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>💰</span> <span>Approval Pembayaran</span>
+            </li>
+            <li onClick={() => { setActiveTab('ai_config'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'ai_config' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>🤖</span> <span>AI Configuration</span>
+            </li>
+            <li onClick={() => { setActiveTab('ai_logs'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'ai_logs' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>📊</span> <span>Log & Biaya AI</span>
+            </li>
+            <li onClick={() => { setActiveTab('audit_logs'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'audit_logs' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>🛡️</span> <span>Log Audit Keamanan</span>
+            </li>
+          </ul>
         </div>
-        <div style={{ padding: '0 16px', margin: '16px 0 8px 0', fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-light)', letterSpacing: '1px', textTransform: 'uppercase' }}>
-          Tata Kelola Sistem
-        </div>
-        <ul className="sidebar-menu" style={{ marginBottom: '16px', gap: '4px', flex: 'none' }}>
-          <Link href="/dashboard" className="menu-item" style={{ padding: '8px 12px', fontSize: '0.88rem', color: '#059669', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', textDecoration: 'none', marginBottom: '8px', fontWeight: '700' }}>
-            🏠 Buka Dashboard User (/dashboard)
-          </Link>
-          <li onClick={() => { setActiveTab('users'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'users' ? 'active' : ''}`} style={{ padding: '8px 12px', fontSize: '0.9rem' }}>
-            👥 Kelola Pengguna
-          </li>
-          <li onClick={() => { setActiveTab('payments'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'payments' ? 'active' : ''}`} style={{ padding: '8px 12px', fontSize: '0.9rem' }}>
-            💰 Approval Pembayaran
-          </li>
-          <li onClick={() => { setActiveTab('ai_config'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'ai_config' ? 'active' : ''}`} style={{ padding: '8px 12px', fontSize: '0.9rem' }}>
-            🤖 AI Configuration
-          </li>
-          <li onClick={() => { setActiveTab('ai_logs'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'ai_logs' ? 'active' : ''}`} style={{ padding: '8px 12px', fontSize: '0.9rem' }}>
-            📊 Log & Biaya AI
-          </li>
-          <li onClick={() => { setActiveTab('audit_logs'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'audit_logs' ? 'active' : ''}`} style={{ padding: '8px 12px', fontSize: '0.9rem' }}>
-            🛡️ Log Audit Keamanan
-          </li>
-        </ul>
-        <div className="sidebar-profile" style={{ borderColor: 'var(--border)', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'stretch' }}>
+
+        <div className="sidebar-profile" style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div className="profile-avatar" style={{ background: 'var(--primary-bg-gradient)', color: '#ffffff' }}>SA</div>
-            <div className="profile-details">
-              <h5 style={{ color: 'var(--text-main)', margin: 0 }}>Super Admin</h5>
-              <span className="plan-badge starter" style={{ marginTop: '2px' }}>Owner</span>
+            <div className="profile-avatar" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', width: '38px', height: '38px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.85rem' }}>SA</div>
+            <div className="profile-details" style={{ flex: 1 }}>
+              <h5 style={{ color: 'var(--text-main)', margin: 0, fontSize: '0.88rem', fontWeight: '700' }}>Super Admin</h5>
+              <span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#059669', background: 'rgba(16, 185, 129, 0.12)', padding: '2px 8px', borderRadius: '99px', display: 'inline-block', marginTop: '2px' }}>Owner</span>
             </div>
           </div>
-          <Link href="/" className="btn btn-outline" style={{ textDecoration: 'none', padding: '6px 12px', fontSize: '0.8rem', color: 'var(--error)', borderColor: 'var(--error)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-            <span>🚪</span> Log Out
+          <Link href="/" className="btn" style={{ textDecoration: 'none', padding: '8px 14px', fontSize: '0.82rem', color: '#ef4444', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: '700' }}>
+            <span>🚪</span> <span>Log Out</span>
           </Link>
         </div>
       </aside>
