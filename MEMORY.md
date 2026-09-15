@@ -24,9 +24,9 @@
 - **Autentikasi & Resiliensi:** Murni Email & Password di `/auth`. Dilengkapi pelindung *try-catch* dan *network timeout* 3.5 detik di `/dashboard` untuk mencegah masalah skeleton loading menggantung saat jaringan/server lambat.
 - **Supabase Cloud Project:** `mencatat-aja` (`flcpkvwpjtxjxvfyvers`, Region: `ap-southeast-1`)
 
-## Status Integrasi Telegram Bot (Update Sesi 19)
-- **Status Koneksi:** Bot `@kingfauzy_bot` (dan BYOB kustom lainnya) **aktif sepenuhnya di localhost** menggunakan pekerja polling (`src/lib/telegram-polling.ts`).
-- **Resiliensi Pengujian Offline:** Menggunakan `src/lib/mock_chats.json` untuk pemetaan Chat ID dan `src/lib/mock_transactions.json` untuk persistensi transaksi lokal tanpa ketergantungan database Supabase.
-- **Sinkronisasi Otomatis:** Transaksi yang dicatat via chat Telegram (seperti `beli baso 20rb`) langsung mengurangi saldo dompet mock secara real-time dan disinkronkan ke dalam berkas transaksi lokal Next.js sehingga tampil di dashboard web saat direfresh.
+## Status Integrasi Telegram Bot (Update Sesi 56)
+- **Status Koneksi:** Bot `@kingfauzy_bot` (dan BYOB kustom lainnya) **terhubung penuh secara live di production** via webhook Vercel dan Supabase Cloud.
+- **Sinkronisasi Database UUID:** Seluruh endpoint API (`/api/wallets`, `/api/transactions`, `/api/categories`, `/api/budgets`) dan frontend dashboard telah dilengkapi dengan `isUUID()` resolver yang memetakan user ID ke UUID Superadmin Supabase (`58c09700-965d-4104-a344-6e599c46deff`).
+- **Live Real-Time Dashboard Sync:** Dashboard web dilengkapi background polling 3 detik dan listener Supabase Realtime sehingga dompet baru dan transaksi Telegram langsung muncul seketika secara live di tools web.
 
 

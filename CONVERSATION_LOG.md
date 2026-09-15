@@ -749,3 +749,34 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 - **Kompilasi & Live Deployment:**
   * `npm run build` sukses 100%.
   * Di-commit ke Git dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
+
+## Sesi 56: Sinkronisasi Total Data Dompet/Transaksi Antara Web Dashboard & Bot Telegram serta Pembaruan Live Real-Time
+- **Identifikasi Masalah:**
+  * Pengguna menambahkan dompet baru (misal: "Dana" Rp 1.000.000) di dashboard web, namun saat dicek di bot Telegram via `/saldo`, bot tidak mendeteksi dompet tersebut dan hanya menampilkan dompet default saldo Rp 0.
+  * Ketika pengguna mencatat transaksi melalui bot Telegram (misal: `beli bakso 15rb`), transaksi belum langsung muncul secara live di dashboard web.
+- **Akar Masalah (Root Cause):**
+  * Di Supabase PostgreSQL, kolom `user_id` pada tabel `profiles`, `wallets`, `transactions`, `budgets`, dan `categories` bertipe `UUID`.
+  * Dashboard web sebelumnya menggunakan `userId` non-UUID (`usr_demo_user` atau `usr_budi`) yang menyebabkan semua endpoint `/api/wallets`, `/api/transactions`, `/api/categories`, dan `/api/budgets` gagal dengan PostgreSQL error `22P02: invalid input syntax for type uuid: "usr_demo_user"`.
+  * Akibat kegagalan tersebut, dashboard web beralih menggunakan simulasi `localStorage` di browser, sehingga dompet yang ditambahkan user hanya tersimpan di browser lokal dan tidak pernah masuk ke database Supabase.
+  * Sebaliknya, webhook Telegram membaca dan menulis langsung ke database Supabase milik Superadmin (`58c09700-965d-4104-a344-6e599c46deff`), sehingga data kedua sisi tidak pernah bertemu (desinkronisasi).
+  * Di sisi frontend dashboard, realtime listener Supabase postgres_changes tidak memiliki fallback interval polling pada mode Supabase nyata, sehingga jika event realtime tertunda/terputus, transaksi Telegram tidak langsung muncul tanpa refresh manual.
+- **Solusi & Perbaikan yang Diterapkan:**
+  1. **UUID Resolver Universal di Semua API Endpoints:**
+     - Menambahkan fungsi resolver `isUUID()` dan mapping otomatis ke UUID Superadmin (`58c09700-965d-4104-a344-6e599c46deff`) pada seluruh endpoint:
+       * `/api/wallets` (GET, POST, PUT, DELETE)
+       * `/api/transactions` (GET, POST)
+       * `/api/categories` (GET, POST, PUT, DELETE)
+       * `/api/budgets` (GET, POST)
+     - Setiap penambahan atau perubahan dompet di dashboard web kini tersimpan langsung dan permanen ke database Supabase.
+  2. **Penyelarasan ID Pengguna di Dashboard Frontend (`src/app/dashboard/page.tsx`):**
+     - Memastikan `storedId` di `initSessionAndSubscribe` divalidasi dengan `isUUID()`. Jika masih bernilai string demo, otomatis di-resolve dan disimpan sebagai UUID Superadmin asli.
+     - Auto-select dompet default saat form transaksi baru dimuat.
+  3. **Live Real-Time Dashboard Sync:**
+     - Menambahkan background polling ringan interval 3 detik di dashboard web.
+     - Saat pengguna mengirim transaksi di Telegram, dalam 1-3 detik transaksi otomatis muncul langsung di tabel transaksi dashboard dan saldo dompet langsung terpotong secara live tanpa perlu me-refresh browser.
+  4. **Resiliensi AI Natural Language Parser (`src/lib/ai.ts`):**
+     - Mengubah fallback parser lokal berbasis rule regex agar selalu aktif tanpa syarat jika provider AI eksternal lambat atau mengalami gangguan kuota, memastikan bot selalu merespons pencatatan keuangan seketika.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% tanpa error TypeScript.
+  * Perubahan di-commit dan di-push ke GitHub repository `main`.
+  * Dideploy dan dipromosikan ke Vercel Live Production (`https://www.mencatat.my.id`).
