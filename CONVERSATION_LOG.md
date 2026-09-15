@@ -707,3 +707,16 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 - **Kompilasi & Live Vercel Deployment:**
   * `npm run build` sukses tanpa error (0 TypeScript error).
   * Di-push ke GitHub repository `main` dan dideploy ulang ke Vercel Live Production.
+
+## Sesi 53: Perbaikan Bug Notifikasi "Test Koneksi" & Penautan Otomatis Chat ID pada Webhook Telegram
+- **Identifikasi Akar Masalah:**
+  * Ketika user menghubungkan Bot Telegram baru (BYOB), `telegram_bot_token` tersimpan di database tetapi `telegram_chat_id` masih `NULL` (karena Telegram `getUpdates` mengembalikan array kosong saat webhook aktif).
+  * Pada kode pengecekan terdahulu di `webhook/route.ts`, syarat `!userProfile.telegram_chat_id` memvonis pesan pertama pengguna (`/start` atau `p`) sebagai "User Terputus (Disconnected)".
+  * Akibatnya, `webhook/route.ts` mengabaikan pesan tersebut dan batal menyimpan `telegram_chat_id` ke database Supabase serta batal mengirimkan notifikasi sambutan.
+- **Perbaikan yang Diterapkan (`src/app/api/telegram/webhook/route.ts`):**
+  * Memperbarui logika penanganan BYOB: Jika `userProfile` memiliki `telegram_bot_token` aktif (tidak null), bot dianggap **TERHUBUNG**.
+  * Jika `telegram_chat_id` di database belum tersimpan atau berubah, webhook secara otomatis memperbarui `telegram_chat_id` di Supabase `profiles` dari pesan pertama yang masuk.
+  * Secara otomatis mengirimkan pesan Notifikasi Sambutan Resmi + Tombol Menu Navigasi (`/saldo`, `/budget`, `/hari_ini`, `/sheet`, `/bantuan`) ke chat Telegram pengguna, serta langsung membalas perintah pengguna berikutnya.
+- **Kompilasi & Deployment:**
+  * `npm run build` sukses 100% tanpa error TypeScript.
+  * Di-commit dan dideploy ulang ke Vercel Live Production.
