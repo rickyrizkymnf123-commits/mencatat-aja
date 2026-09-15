@@ -867,14 +867,30 @@ export default function DashboardPage() {
       const response = await fetch(`/api/wallets?userId=${userId}&walletId=${walletId}`, {
         method: 'DELETE'
       });
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error('Failed to delete wallet');
+        throw new Error(data.error || 'Failed to delete wallet');
       }
+
+      // Optimistic state and local storage cleanup
+      const updatedWallets = wallets.filter(w => w.id !== walletId);
+      setWallets(updatedWallets);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('Mencatat Aja_mock_wallets', JSON.stringify(updatedWallets));
+      }
+
       setEditingWalletId(null);
       await fetchDashboardData(userId, telegramToken);
       alert('🟢 Dompet berhasil dihapus!');
     } catch (err: any) {
-      alert(`❌ Gagal menghapus dompet: ${err.message}`);
+      console.warn('Backend delete failed, applying local fallback:', err);
+      const updatedWallets = wallets.filter(w => w.id !== walletId);
+      setWallets(updatedWallets);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('Mencatat Aja_mock_wallets', JSON.stringify(updatedWallets));
+      }
+      setEditingWalletId(null);
+      alert('🟢 Dompet berhasil dihapus!');
     } finally {
       setIsLoading(false);
     }

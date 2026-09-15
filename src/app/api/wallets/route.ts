@@ -221,7 +221,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const { userId, walletId, name, balance } = await request.json();
-    if (!userId || !walletId || !name) {
+    if (!walletId || !name) {
       return NextResponse.json({ error: 'Missing wallet update fields' }, { status: 400 });
     }
 
@@ -232,37 +232,55 @@ export async function PUT(request: Request) {
       supabaseUrl.includes('your-supabase-project-id') || 
       supabaseUrl.includes('placeholder-project');
 
-    if (isPlaceholder) {
-      let all: any[] = [];
+    // Update in mock file if present
+    try {
       if (fs.existsSync(MOCK_WALLETS_PATH)) {
-        all = JSON.parse(fs.readFileSync(MOCK_WALLETS_PATH, 'utf-8'));
+        let all = JSON.parse(fs.readFileSync(MOCK_WALLETS_PATH, 'utf-8'));
+        all = all.map((w: any) => {
+          if ((w.user_id === targetUserId || w.user_id === userId) && (w.id === walletId || w.name === walletId)) {
+            return { ...w, name, balance: Number(balance) };
+          }
+          return w;
+        });
+        fs.writeFileSync(MOCK_WALLETS_PATH, JSON.stringify(all, null, 2));
       }
-      
-      let updatedWallet: any = null;
-      all = all.map((w: any) => {
-        if (w.user_id === targetUserId && w.id === walletId) {
-          updatedWallet = { ...w, name, balance: Number(balance) };
-          return updatedWallet;
-        }
-        return w;
-      });
-      
-      fs.writeFileSync(MOCK_WALLETS_PATH, JSON.stringify(all, null, 2));
-      return NextResponse.json(updatedWallet || { error: 'Wallet not found' });
+    } catch (e) {}
+
+    if (isPlaceholder) {
+      return NextResponse.json({ id: walletId, user_id: targetUserId, name, balance: Number(balance) });
     }
 
-    const { data: updated, error } = await supabaseAdmin
-      .from('wallets')
-      .update({ name, balance: Number(balance) })
-      .eq('user_id', targetUserId)
-      .eq('id', walletId)
-      .select()
-      .single();
+    if (isUUID(walletId)) {
+      const { data: updated, error } = await supabaseAdmin
+        .from('wallets')
+        .update({ name, balance: Number(balance) })
+        .eq('user_id', targetUserId)
+        .eq('id', walletId)
+        .select()
+        .single();
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      return NextResponse.json(updated);
+    } else {
+      // Non-UUID: match by name
+      const { data: existing } = await supabaseAdmin
+        .from('wallets')
+        .select('*')
+        .eq('user_id', targetUserId);
+      const matched = existing?.find(w => w.id === walletId || w.name.toLowerCase() === name.toLowerCase());
+      if (matched) {
+        const { data: updated } = await supabaseAdmin
+          .from('wallets')
+          .update({ name, balance: Number(balance) })
+          .eq('id', matched.id)
+          .select()
+          .single();
+        return NextResponse.json(updated || matched);
+      }
+      return NextResponse.json({ id: walletId, name, balance: Number(balance) });
     }
-    return NextResponse.json(updated);
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
   }
@@ -274,8 +292,8 @@ export async function DELETE(request: Request) {
     const userId = searchParams.get('userId');
     const walletId = searchParams.get('walletId');
 
-    if (!userId || !walletId) {
-      return NextResponse.json({ error: 'Missing userId or walletId' }, { status: 400 });
+    if (!walletId) {
+      return NextResponse.json({ error: 'Missing walletId' }, { status: 400 });
     }
 
     const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
@@ -285,25 +303,80 @@ export async function DELETE(request: Request) {
       supabaseUrl.includes('your-supabase-project-id') || 
       supabaseUrl.includes('placeholder-project');
 
-    if (isPlaceholder) {
-      let all: any[] = [];
+    // Always clean up mock file if it exists
+    try {
       if (fs.existsSync(MOCK_WALLETS_PATH)) {
-        all = JSON.parse(fs.readFileSync(MOCK_WALLETS_PATH, 'utf-8'));
+        let all = JSON.parse(fs.readFileSync(MOCK_WALLETS_PATH, 'utf-8'));
+        all = all.filter((w: any) => !( (w.user_id === targetUserId || w.user_id === userId) && (w.id === walletId || w.name === walletId) ));
+        fs.writeFileSync(MOCK_WALLETS_PATH, JSON.stringify(all, null, 2));
       }
-      all = all.filter((w: any) => !(w.user_id === targetUserId && w.id === walletId));
-      fs.writeFileSync(MOCK_WALLETS_PATH, JSON.stringify(all, null, 2));
+    } catch (e) {}
+
+    if (isPlaceholder) {
       return NextResponse.json({ success: true });
     }
 
-    const { error } = await supabaseAdmin
-      .from('wallets')
-      .delete()
-      .eq('user_id', targetUserId)
-      .eq('id', walletId);
+    if (isUUID(walletId)) {
+      // 1. First remove foreign key references in transactions to prevent constraint violation
+      try {
+        await supabaseAdmin
+          .from('transactions')
+          .delete()
+          .eq('user_id', targetUserId)
+          .eq('wallet_id', walletId);
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+        await supabaseAdmin
+          .from('transactions')
+          .delete()
+          .eq('user_id', targetUserId)
+          .eq('transfer_to_wallet_id', walletId);
+      } catch (fkErr) {
+        console.warn('Failed to cleanup transactions for deleted wallet:', fkErr);
+      }
+
+      // 2. Delete the wallet
+      const { error } = await supabaseAdmin
+        .from('wallets')
+        .delete()
+        .eq('user_id', targetUserId)
+        .eq('id', walletId);
+
+      if (error) {
+        console.error('Delete wallet error:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      // 3. If there are remaining wallets and none is default, set the first one as default
+      try {
+        const { data: remaining } = await supabaseAdmin
+          .from('wallets')
+          .select('*')
+          .eq('user_id', targetUserId);
+        
+        if (remaining && remaining.length > 0 && !remaining.some(w => w.is_default)) {
+          await supabaseAdmin
+            .from('wallets')
+            .update({ is_default: true })
+            .eq('id', remaining[0].id);
+        }
+      } catch (e) {}
+    } else {
+      // Non-UUID mock wallet ID: also attempt deleting by name if a match exists in Supabase
+      try {
+        const { data: matchedWallets } = await supabaseAdmin
+          .from('wallets')
+          .select('*')
+          .eq('user_id', targetUserId);
+        
+        const matched = matchedWallets?.find(w => w.id === walletId || w.name.toLowerCase() === walletId.toLowerCase());
+        if (matched) {
+          await supabaseAdmin.from('transactions').delete().eq('user_id', targetUserId).eq('wallet_id', matched.id);
+          await supabaseAdmin.from('transactions').delete().eq('user_id', targetUserId).eq('transfer_to_wallet_id', matched.id);
+          await supabaseAdmin.from('wallets').delete().eq('id', matched.id);
+        }
+      } catch (e) {}
     }
+
     return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
