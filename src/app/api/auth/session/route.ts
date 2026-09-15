@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         user: {
-          id: 'usr_ricky_superadmin',
+          id: '58c09700-965d-4104-a344-6e599c46deff',
           email: 'rickyrizkymnf123@gmail.com',
           phone: '08123456789',
           user_metadata: {

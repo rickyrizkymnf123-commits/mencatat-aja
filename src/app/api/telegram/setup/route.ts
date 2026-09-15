@@ -2,9 +2,13 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { encrypt } from '@/lib/crypto';
 
+const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+const SUPERADMIN_ID = '58c09700-965d-4104-a344-6e599c46deff';
+
 export async function POST(request: Request) {
   try {
     const { token, userId, action } = await request.json();
+    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
 
     if (action === 'disconnect') {
       try {
@@ -29,6 +33,7 @@ export async function POST(request: Request) {
         if (fs.existsSync(mockChatsFile)) {
           let chats = JSON.parse(fs.readFileSync(mockChatsFile, 'utf-8'));
           delete chats[userId];
+          delete chats[targetUserId];
           fs.writeFileSync(mockChatsFile, JSON.stringify(chats, null, 2), 'utf-8');
         }
 
@@ -45,11 +50,11 @@ export async function POST(request: Request) {
         supabaseUrl.includes('your-supabase-project-id') || 
         supabaseUrl.includes('placeholder-project');
 
-      if (!isPlaceholder && userId) {
+      if (!isPlaceholder && targetUserId) {
         await supabaseAdmin
           .from('profiles')
           .update({ telegram_bot_token: null, telegram_chat_id: null })
-          .eq('id', userId);
+          .eq('id', targetUserId);
       }
       
       return NextResponse.json({ success: true, message: 'Disconnected' });
@@ -74,7 +79,7 @@ export async function POST(request: Request) {
           
         if (allProfiles) {
           const { decrypt } = await import('@/lib/crypto');
-          const isDuplicate = allProfiles.some(p => p.id !== userId && decrypt(p.telegram_bot_token) === token);
+          const isDuplicate = allProfiles.some(p => p.id !== targetUserId && decrypt(p.telegram_bot_token) === token);
           if (isDuplicate) {
             return NextResponse.json({ error: 'Token ini sudah digunakan oleh pengguna lain!' }, { status: 400 });
           }
@@ -100,7 +105,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Telegram API mengembalikan status error' }, { status: 400 });
     }
 
-    // 3. Detect chat ID of the user who interacted with the bot (Clear webhook temporarily for getUpdates if needed)
+    // 3. Detect chat ID of the user who interacted with the bot
     let detectedChatId: number | null = null;
     let detectedName: string | null = null;
     try {
@@ -126,7 +131,7 @@ export async function POST(request: Request) {
       console.warn('Failed to fetch getUpdates for dynamic pairing:', e);
     }
 
-    // 4. Set Webhook: POST setWebhook with user_id and bot_token query params
+    // 4. Set Webhook: POST setWebhook with targetUserId and bot_token query params
     const host = request.headers.get('host') || '';
     const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
     const autoBaseUrl = `${proto}://${host}`;
@@ -141,7 +146,7 @@ export async function POST(request: Request) {
 
     if (isHttps) {
       const setWebhookUrl = `https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(
-        `${webhookBaseUrl}/api/telegram/webhook?user_id=${userId}&bot_token=${encodeURIComponent(token)}`
+        `${webhookBaseUrl}/api/telegram/webhook?user_id=${targetUserId}&bot_token=${encodeURIComponent(token)}`
       )}`;
       
       try {
@@ -165,13 +170,22 @@ export async function POST(request: Request) {
 
     if (!isPlaceholder) {
       try {
+        // Query existing profile to keep existing chat ID if any
+        const { data: existingProf } = await supabaseAdmin
+          .from('profiles')
+          .select('telegram_chat_id, full_name')
+          .eq('id', targetUserId)
+          .maybeSingle();
+
+        const activeChatId = detectedChatId ? String(detectedChatId) : (existingProf?.telegram_chat_id || null);
+
         const upsertData: any = {
-          id: userId,
+          id: targetUserId,
           telegram_bot_token: encryptedToken,
-          full_name: detectedName || (userId === 'usr_admin' ? 'Super Admin' : userId === 'usr_budi' ? 'Budi Santoso' : 'Nasabah')
+          full_name: detectedName || existingProf?.full_name || 'Ricky Rizky (Superadmin)'
         };
-        if (detectedChatId) {
-          upsertData.telegram_chat_id = String(detectedChatId);
+        if (activeChatId) {
+          upsertData.telegram_chat_id = activeChatId;
         }
 
         const { data: up, error: dbError } = await supabaseAdmin
@@ -183,17 +197,17 @@ export async function POST(request: Request) {
         if (!dbError && up) {
           updatedProfile = up;
         } else {
-          console.warn('Supabase DB profile upsert skipped/errored, using fallback persistence:', dbError);
+          console.warn('Supabase DB profile upsert failed:', dbError);
           updatedProfile = {
-            telegram_chat_id: detectedChatId ? String(detectedChatId) : null,
-            full_name: detectedName || (userId === 'usr_admin' ? 'Super Admin' : 'Nasabah')
+            telegram_chat_id: activeChatId,
+            full_name: detectedName || existingProf?.full_name || 'Ricky Rizky'
           };
         }
       } catch (err) {
-        console.warn('Supabase DB token save exception, falling back to local persistence:', err);
+        console.warn('Supabase DB token save exception:', err);
         updatedProfile = {
           telegram_chat_id: detectedChatId ? String(detectedChatId) : null,
-          full_name: detectedName || (userId === 'usr_admin' ? 'Super Admin' : 'Nasabah')
+          full_name: detectedName || 'Ricky Rizky'
         };
       }
     } else {
@@ -211,7 +225,7 @@ export async function POST(request: Request) {
         const mockChatsFile = path.join(process.cwd(), 'src/lib/mock_chats.json');
         if (fs.existsSync(mockChatsFile)) {
           const chats = JSON.parse(fs.readFileSync(mockChatsFile, 'utf-8'));
-          const foundId = chats[userId] || Object.values(chats)[0];
+          const foundId = chats[userId] || chats[targetUserId] || Object.values(chats)[0];
           if (foundId) {
             updatedProfile = {
               ...updatedProfile,
@@ -223,31 +237,18 @@ export async function POST(request: Request) {
 
       if (!updatedProfile?.telegram_chat_id && !isPlaceholder) {
         try {
-          const { data: existingProf } = await supabaseAdmin
+          const { data: anyProf } = await supabaseAdmin
             .from('profiles')
             .select('telegram_chat_id, full_name')
-            .eq('id', userId)
+            .not('telegram_chat_id', 'is', null)
+            .limit(1)
             .maybeSingle();
-          if (existingProf?.telegram_chat_id) {
+          if (anyProf?.telegram_chat_id) {
             updatedProfile = {
               ...updatedProfile,
-              telegram_chat_id: existingProf.telegram_chat_id,
-              full_name: existingProf.full_name || updatedProfile?.full_name
+              telegram_chat_id: anyProf.telegram_chat_id,
+              full_name: anyProf.full_name || updatedProfile?.full_name
             };
-          } else {
-            const { data: anyProf } = await supabaseAdmin
-              .from('profiles')
-              .select('telegram_chat_id, full_name')
-              .not('telegram_chat_id', 'is', null)
-              .limit(1)
-              .maybeSingle();
-            if (anyProf?.telegram_chat_id) {
-              updatedProfile = {
-                ...updatedProfile,
-                telegram_chat_id: anyProf.telegram_chat_id,
-                full_name: anyProf.full_name || updatedProfile?.full_name
-              };
-            }
           }
         } catch (e) {}
       }
@@ -268,7 +269,7 @@ export async function POST(request: Request) {
           one_time_keyboard: false
         };
         const testMsg = `🚀 <b>Selamat Datang di Mencatat Aja Bot!</b> 🚀\n\n` +
-          `Halo <b>${updatedProfile.full_name || 'Nasabah'}</b>, koneksi bot kustom Anda telah berhasil diaktifkan! Asisten keuangan AI Anda kini aktif 24/7.\n\n` +
+          `Halo <b>${updatedProfile.full_name || 'Nasabah'}</b>, koneksi bot kustom Anda (@${getMeData.result.username}) telah berhasil diaktifkan! Asisten keuangan AI Anda kini aktif 24/7.\n\n` +
           `📖 <b>Panduan Singkat Penggunaan:</b>\n` +
           `• <code>beli bakso 15rb</code> (Mencatat pengeluaran)\n` +
           `• <code>gaji freelance 2.5jt</code> (Mencatat pemasukan)\n` +

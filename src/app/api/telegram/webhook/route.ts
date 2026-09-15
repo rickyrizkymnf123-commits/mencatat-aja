@@ -6,6 +6,9 @@ import * as ai from '@/lib/ai';
 import fs from 'fs';
 import path from 'path';
 
+const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+const SUPERADMIN_ID = '58c09700-965d-4104-a344-6e599c46deff';
+
 // Date Helper for WIB
 function getFormattedWIBDate(dateInput?: Date | string) {
   const date = dateInput ? new Date(dateInput) : new Date();
@@ -147,12 +150,13 @@ export async function POST(request: Request) {
         monthly_transaction_limit: 1000
       };
     } else {
+      const targetUserId = (queryUserId && isUUID(queryUserId)) ? queryUserId : SUPERADMIN_ID;
       if (queryUserId) {
         // BYOB: private bot config (lookup by query param user_id)
         const { data } = await supabaseAdmin
           .from('profiles')
           .select('*')
-          .eq('id', queryUserId)
+          .eq('id', targetUserId)
           .maybeSingle();
         userProfile = data;
         
@@ -232,21 +236,37 @@ export async function POST(request: Request) {
     
     // 3.5 Disconnect & Auto-pairing Check
     if (!isPlaceholder) {
+      const targetUserId = (queryUserId && isUUID(queryUserId)) ? queryUserId : SUPERADMIN_ID;
       if (queryUserId) {
         // BYOB mode: User must have an active telegram_bot_token
         if (!userProfile || !userProfile.telegram_bot_token) {
-          console.log(`Telegram Bot disconnected for user ${queryUserId}, ignoring message.`);
-          return NextResponse.json({ ok: true });
+          // If queryBotToken exists, user is connecting their custom bot
+          if (queryBotToken) {
+            botToken = queryBotToken;
+          } else {
+            console.log(`Telegram Bot disconnected for user ${queryUserId}, ignoring message.`);
+            return NextResponse.json({ ok: true });
+          }
         }
         
         // If telegram_chat_id is missing or updated, pair it automatically now
-        if (!userProfile.telegram_chat_id || String(userProfile.telegram_chat_id) !== String(chatId)) {
-          console.log(`Pairing telegram_chat_id ${chatId} to profile ${queryUserId}...`);
+        if (!userProfile?.telegram_chat_id || String(userProfile.telegram_chat_id) !== String(chatId)) {
+          console.log(`Pairing telegram_chat_id ${chatId} to profile ${targetUserId}...`);
           await supabaseAdmin
             .from('profiles')
             .update({ telegram_chat_id: String(chatId) })
-            .eq('id', queryUserId);
-          userProfile.telegram_chat_id = String(chatId);
+            .eq('id', targetUserId);
+          if (userProfile) {
+            userProfile.telegram_chat_id = String(chatId);
+          } else {
+            userProfile = {
+              id: targetUserId,
+              full_name: message.from?.first_name || 'Nasabah',
+              plan: 'Pro',
+              telegram_chat_id: String(chatId),
+              monthly_transaction_limit: 1000
+            };
+          }
 
           // Send Welcome Notification message to Telegram chat
           const welcomeMsg = `🚀 <b>Selamat Datang di Mencatat Aja Bot!</b> 🚀\n\n` +
