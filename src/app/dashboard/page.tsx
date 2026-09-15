@@ -1025,7 +1025,8 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'disconnect',
-          userId: userId
+          userId: userId,
+          token: botTokenInput
         })
       });
       if (!response.ok) {

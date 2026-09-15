@@ -234,20 +234,33 @@ export async function POST(request: Request) {
       }
     }
     
-    // 3.5 Disconnect & Auto-pairing Check
+    // 3.5 Disconnect & Token Mismatch Check
     if (!isPlaceholder) {
       const targetUserId = (queryUserId && isUUID(queryUserId)) ? queryUserId : SUPERADMIN_ID;
       if (queryUserId) {
-        // BYOB mode: User must have an active telegram_bot_token
-        if (!userProfile || !userProfile.telegram_bot_token) {
-          // If queryBotToken exists, user is connecting their custom bot
-          if (queryBotToken) {
-            botToken = queryBotToken;
-          } else {
-            console.log(`Telegram Bot disconnected for user ${queryUserId}, ignoring message.`);
-            return NextResponse.json({ ok: true });
-          }
+        let activeBotToken: string | null = null;
+        if (userProfile && userProfile.telegram_bot_token) {
+          activeBotToken = decrypt(userProfile.telegram_bot_token);
         }
+
+        // Case A: User has disconnected their bot
+        if (!activeBotToken) {
+          console.log(`Telegram Bot disconnected for user ${queryUserId}, deleting webhook and ignoring.`);
+          if (queryBotToken) {
+            fetch(`https://api.telegram.org/bot${queryBotToken}/deleteWebhook`).catch(() => {});
+          }
+          return NextResponse.json({ ok: true });
+        }
+
+        // Case B: Update came from an old/replaced bot (e.g. Bot A when active is Bot B)
+        if (queryBotToken && activeBotToken && queryBotToken !== activeBotToken) {
+          console.log(`Update from replaced bot token (${queryBotToken.substring(0, 8)}), active is (${activeBotToken.substring(0, 8)}). Deleting old webhook and ignoring.`);
+          fetch(`https://api.telegram.org/bot${queryBotToken}/deleteWebhook`).catch(() => {});
+          return NextResponse.json({ ok: true });
+        }
+
+        // Active bot token is verified
+        botToken = activeBotToken;
         
         // If telegram_chat_id is missing or updated, pair it automatically now
         if (!userProfile?.telegram_chat_id || String(userProfile.telegram_chat_id) !== String(chatId)) {
