@@ -153,31 +153,39 @@ export async function POST(request: Request) {
           .from('profiles')
           .select('*')
           .eq('id', queryUserId)
-          .single();
+          .maybeSingle();
         userProfile = data;
         
         if (userProfile && userProfile.telegram_bot_token) {
           botToken = decrypt(userProfile.telegram_bot_token);
         }
 
-        // Automatically link telegram_chat_id if not set or different for custom bot
-        if (userProfile && userProfile.telegram_chat_id !== chatId) {
-          const { error: updateChatIdErr } = await supabaseAdmin
+        // Upsert if userProfile is missing or update telegram_chat_id if changed
+        if (!userProfile) {
+          const { data: upserted } = await supabaseAdmin
             .from('profiles')
-            .update({ telegram_chat_id: chatId })
-            .eq('id', userProfile.id);
-          
-          if (!updateChatIdErr) {
-            userProfile.telegram_chat_id = chatId;
+            .upsert({
+              id: queryUserId,
+              telegram_chat_id: String(chatId),
+              full_name: message.from?.first_name || (queryUserId === 'usr_admin' ? 'Super Admin' : queryUserId === 'usr_budi' ? 'Budi Santoso' : 'Nasabah'),
+              plan: 'Pro'
+            }, { onConflict: 'id' })
+            .select('*')
+            .maybeSingle();
             
-            // Send automatic connection confirmation notification
-            await telegram.sendMessage(
-              botToken,
-              chatId,
-              `🟢 <b>Mencatat Aja Berhasil Terhubung!</b>\nHalo <b>${userProfile.full_name || 'Nasabah'}</b>, akun Anda berhasil terhubung dengan Telegram bot kustom ini.\n\nSekarang Anda bisa mulai mencatat pemasukan dan pengeluaran Anda kapan saja. Cukup ketik seperti:\n• <i>"beli bakso 15rb"</i>\n• <i>"gaji freelance 2.5jt"</i>\n• <i>"transfer kasir ke dompet BCA 500k"</i>\n\nKetik /bantuan untuk melihat daftar perintah.`,
-              keyboardMarkup
-            );
-          }
+          userProfile = upserted || {
+            id: queryUserId,
+            full_name: message.from?.first_name || 'Nasabah',
+            plan: 'Pro',
+            telegram_chat_id: String(chatId),
+            monthly_transaction_limit: 1000
+          };
+        } else if (String(userProfile.telegram_chat_id) !== String(chatId)) {
+          await supabaseAdmin
+            .from('profiles')
+            .update({ telegram_chat_id: String(chatId) })
+            .eq('id', userProfile.id);
+          userProfile.telegram_chat_id = String(chatId);
         }
       } else {
         // Shared bot config (lookup by telegram_chat_id)

@@ -149,22 +149,25 @@ export async function POST(request: Request) {
 
     if (!isPlaceholder) {
       try {
-        const updateData: any = { telegram_bot_token: encryptedToken };
+        const upsertData: any = {
+          id: userId,
+          telegram_bot_token: encryptedToken,
+          full_name: detectedName || (userId === 'usr_admin' ? 'Super Admin' : userId === 'usr_budi' ? 'Budi Santoso' : 'Nasabah')
+        };
         if (detectedChatId) {
-          updateData.telegram_chat_id = String(detectedChatId);
+          upsertData.telegram_chat_id = String(detectedChatId);
         }
 
         const { data: up, error: dbError } = await supabaseAdmin
           .from('profiles')
-          .update(updateData)
-          .eq('id', userId)
+          .upsert(upsertData, { onConflict: 'id' })
           .select('telegram_chat_id, full_name')
           .maybeSingle();
 
         if (!dbError && up) {
           updatedProfile = up;
         } else {
-          console.warn('Supabase DB profile update skipped/errored, using fallback persistence:', dbError);
+          console.warn('Supabase DB profile upsert skipped/errored, using fallback persistence:', dbError);
           updatedProfile = {
             telegram_chat_id: detectedChatId ? String(detectedChatId) : null,
             full_name: detectedName || (userId === 'usr_admin' ? 'Super Admin' : 'Nasabah')
