@@ -672,3 +672,19 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 - **Kompilasi & Live Vercel Deployment:**
   * `npm run build` sukses tanpa error (0 TypeScript error).
   * Pembaruan di-push ke GitHub dan dideploy ke Vercel Live Production (`https://mencatat-aja.vercel.app` & `https://www.mencatat.my.id`).
+
+## Sesi 50: Integrasi Fetch Model Asli Provider AI, Otomatisasi Webhook Telegram Vercel, & Penyempurnaan Layout Sidebar Admin
+- **Server-Side API Proxy Fetch Model Asli (`src/app/api/admin/fetch-models/route.ts`):**
+  * Membuat API route backend baru `/api/admin/fetch-models` untuk meneruskan kueri daftar model ke endpoint provider AI (`${baseUrl}/models`) menggunakan API Key admin.
+  * Mengeliminasi kendala pembatasan CORS browser. Daftar model asli dari server AI provider kini otomatis dimuat saat tab **AI Configuration** dibuka atau tombol **🔄 Fetch Models** diklik.
+  * Admin kini dapat memilih model mana pun dari daftar asli yang didapatkan dari provider dan menyimpannya sebagai *Default Model*.
+- **Penyempurnaan Posisi & Layout Sidebar Admin (`src/app/admin/page.tsx` & `globals.css`):**
+  * Merestrukturisasi tata letak navigasi sidebar admin: menyelaraskan lebar (`270px`), padding (`24px 20px`), jarak antar menu, dan tipe font.
+  * Merapikan tombol menu `🏠 Dashboard User` agar serasi dengan item menu lainnya tanpa teks terpotong atau baris berganti mendadak.
+- **Otomatisasi Webhook Telegram di Host Produksi Vercel (`src/app/api/telegram/setup/route.ts` & `webhook/route.ts`):**
+  * Mengubah pendaftaran `setWebhook` agar secara otomatis mengonstruksi URL publik HTTPS berbasis host header (`https://${host}/api/telegram/webhook?user_id=...&bot_token=...`).
+  * Saat user mengklik "Test Koneksi", Webhook HTTPS Vercel langsung terdaftar di Telegram API.
+  * Memperbaiki resolver `userProfile` & `botToken` di `webhook/route.ts` agar pesan pengguna (seperti `/saldo`, `/budget`, `/bantuan`, dan catatan teks biasa) **selalu dibalas secara instan 100% tanpa diabaikan**.
+- **Kompilasi & Live Vercel Deployment:**
+  * `npm run build` sukses tanpa error (0 TypeScript error).
+  * Pembaruan di-push ke GitHub `main` dan dideploy ulang ke Vercel Live Production.
