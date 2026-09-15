@@ -8,6 +8,14 @@ export async function POST(request: Request) {
 
     if (action === 'disconnect') {
       try {
+        if (token) {
+          await fetch(`https://api.telegram.org/bot${token}/deleteWebhook`);
+        }
+      } catch (e) {
+        console.error('Failed to delete webhook from Telegram API:', e);
+      }
+
+      try {
         const fs = require('fs');
         const path = require('path');
         const fallbackPath = path.join(process.cwd(), 'src/lib/ai_config_fallback.json');
@@ -16,6 +24,14 @@ export async function POST(request: Request) {
           delete parsed.botToken;
           fs.writeFileSync(fallbackPath, JSON.stringify(parsed, null, 2), 'utf-8');
         }
+
+        const mockChatsFile = path.join(process.cwd(), 'src/lib/mock_chats.json');
+        if (fs.existsSync(mockChatsFile)) {
+          let chats = JSON.parse(fs.readFileSync(mockChatsFile, 'utf-8'));
+          delete chats[userId];
+          fs.writeFileSync(mockChatsFile, JSON.stringify(chats, null, 2), 'utf-8');
+        }
+
         const globalRef = global as any;
         if (globalRef.activePolls) {
           globalRef.activePolls.clear();
@@ -29,10 +45,10 @@ export async function POST(request: Request) {
         supabaseUrl.includes('your-supabase-project-id') || 
         supabaseUrl.includes('placeholder-project');
 
-      if (!isPlaceholder) {
+      if (!isPlaceholder && userId) {
         await supabaseAdmin
           .from('profiles')
-          .update({ telegram_bot_token: null })
+          .update({ telegram_bot_token: null, telegram_chat_id: null })
           .eq('id', userId);
       }
       

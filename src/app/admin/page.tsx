@@ -202,10 +202,23 @@ export default function AdminDashboard() {
     }
 
     // 1. Fetch AI Providers
+    const defaultMockUsers = [
+      { id: 'usr_budi', name: 'Budi Santoso (Demo)', phone: '081234567890', plan: 'Pro', telegram: 'Terhubung (@budi_Mencatat Aja)', txCount: 0, is_approved: true },
+      { id: 'usr_ani', name: 'Ani Wijaya (Demo)', phone: '089876543210', plan: 'Starter', telegram: 'Terhubung (@ani_wijaya)', txCount: 0, is_approved: true },
+      { id: 'usr_catur', name: 'Catur Nugroho (Demo)', phone: '085522334455', plan: 'Pro', telegram: 'Belum Terhubung', txCount: 0, is_approved: false }
+    ];
+
     try {
-      const { data: provs } = await supabase.from('ai_providers').select('*');
-      if (provs && provs.length > 0) {
-        setProviders(provs.map(p => ({
+      const [provsRes, profsRes, paysRes, logsRes] = await Promise.all([
+        supabase.from('ai_providers').select('*'),
+        supabase.from('profiles').select('*'),
+        supabase.from('payments').select('*, profiles (full_name, id)').order('created_at', { ascending: false }),
+        supabase.from('ai_logs').select('*, profiles (full_name)').order('created_at', { ascending: false }).limit(20)
+      ]);
+
+      // 1. Providers
+      if (provsRes.data && provsRes.data.length > 0) {
+        setProviders(provsRes.data.map(p => ({
           id: p.id,
           name: p.name,
           is_active: p.is_active,
@@ -219,26 +232,10 @@ export default function AdminDashboard() {
           { id: '3', name: 'deepseek', is_active: false, mode: 'single', token: '' }
         ]);
       }
-    } catch (err) {
-      console.error('Error fetching AI providers:', err);
-      setProviders([
-        { id: '1', name: 'gemini', is_active: true, mode: 'single', token: '••••••••••••••••' },
-        { id: '2', name: 'openai', is_active: false, mode: 'single', token: '' },
-        { id: '3', name: 'deepseek', is_active: false, mode: 'single', token: '' }
-      ]);
-    }
 
-    // 2. Fetch Users
-    const defaultMockUsers = [
-      { id: 'usr_budi', name: 'Budi Santoso (Demo)', phone: '081234567890', plan: 'Pro', telegram: 'Terhubung (@budi_Mencatat Aja)', txCount: 0, is_approved: true },
-      { id: 'usr_ani', name: 'Ani Wijaya (Demo)', phone: '089876543210', plan: 'Starter', telegram: 'Terhubung (@ani_wijaya)', txCount: 0, is_approved: true },
-      { id: 'usr_catur', name: 'Catur Nugroho (Demo)', phone: '085522334455', plan: 'Pro', telegram: 'Belum Terhubung', txCount: 0, is_approved: false }
-    ];
-
-    try {
-      const { data: profs } = await supabase.from('profiles').select('*');
-      if (profs && profs.length > 0) {
-        const resolvedUsers = await Promise.all(profs.map(async (u) => {
+      // 2. Users
+      if (profsRes.data && profsRes.data.length > 0) {
+        const resolvedUsers = await Promise.all(profsRes.data.map(async (u) => {
           let txCount = 0;
           try {
             const { count } = await supabase
@@ -264,20 +261,10 @@ export default function AdminDashboard() {
       } else {
         setUsers(defaultMockUsers);
       }
-    } catch (err) {
-      console.error('Error fetching users:', err);
-      setUsers(defaultMockUsers);
-    }
 
-    // 3. Fetch Payments
-    try {
-      const { data: pays } = await supabase.from('payments').select(`
-        *,
-        profiles (full_name, id)
-      `).order('created_at', { ascending: false });
-      
-      if (pays && pays.length > 0) {
-        setPayments(pays.map(p => ({
+      // 3. Payments
+      if (paysRes.data && paysRes.data.length > 0) {
+        setPayments(paysRes.data.map(p => ({
           id: p.id,
           userId: p.profiles?.id || p.user_id,
           user: p.profiles?.full_name || 'User',
@@ -291,20 +278,10 @@ export default function AdminDashboard() {
       } else {
         setPayments([]);
       }
-    } catch (err) {
-      console.error('Error fetching payments:', err);
-      setPayments([]);
-    }
 
-    // 4. Fetch AI Logs
-    try {
-      const { data: logs } = await supabase.from('ai_logs').select(`
-        *,
-        profiles (full_name)
-      `).order('created_at', { ascending: false }).limit(20);
-      
-      if (logs && logs.length > 0) {
-        setAiLogs(logs.map(l => ({
+      // 4. AI Logs
+      if (logsRes.data && logsRes.data.length > 0) {
+        setAiLogs(logsRes.data.map(l => ({
           id: l.id,
           user: l.profiles?.full_name || 'System / Webhook',
           provider: l.provider,
@@ -318,8 +295,7 @@ export default function AdminDashboard() {
         setAiLogs([]);
       }
     } catch (err) {
-      console.error('Error fetching AI logs:', err);
-      setAiLogs([]);
+      console.error('Error fetching admin data:', err);
     }
     
     setIsLoading(false);

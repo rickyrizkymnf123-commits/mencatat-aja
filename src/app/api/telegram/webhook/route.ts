@@ -159,34 +159,6 @@ export async function POST(request: Request) {
         if (userProfile && userProfile.telegram_bot_token) {
           botToken = decrypt(userProfile.telegram_bot_token);
         }
-
-        // Upsert if userProfile is missing or update telegram_chat_id if changed
-        if (!userProfile) {
-          const { data: upserted } = await supabaseAdmin
-            .from('profiles')
-            .upsert({
-              id: queryUserId,
-              telegram_chat_id: String(chatId),
-              full_name: message.from?.first_name || (queryUserId === 'usr_admin' ? 'Super Admin' : queryUserId === 'usr_budi' ? 'Budi Santoso' : 'Nasabah'),
-              plan: 'Pro'
-            }, { onConflict: 'id' })
-            .select('*')
-            .maybeSingle();
-            
-          userProfile = upserted || {
-            id: queryUserId,
-            full_name: message.from?.first_name || 'Nasabah',
-            plan: 'Pro',
-            telegram_chat_id: String(chatId),
-            monthly_transaction_limit: 1000
-          };
-        } else if (String(userProfile.telegram_chat_id) !== String(chatId)) {
-          await supabaseAdmin
-            .from('profiles')
-            .update({ telegram_chat_id: String(chatId) })
-            .eq('id', userProfile.id);
-          userProfile.telegram_chat_id = String(chatId);
-        }
       } else {
         // Shared bot config (lookup by telegram_chat_id)
         const { data } = await supabaseAdmin
@@ -258,6 +230,16 @@ export async function POST(request: Request) {
       }
     }
     
+    // 3.5 Disconnect Check: If bot is disconnected, return early without replying
+    if (!isPlaceholder) {
+      // If queryUserId is set (BYOB mode), but telegram_bot_token is missing/null, user disconnected BYOB.
+      // Or if telegram_chat_id is missing, user disconnected.
+      if (!userProfile || (queryUserId && !userProfile.telegram_bot_token) || !userProfile.telegram_chat_id) {
+        console.log(`Telegram Bot disconnected for user ${queryUserId || 'unknown'}, ignoring message.`);
+        return NextResponse.json({ ok: true });
+      }
+    }
+
     // Ensure botToken is resolved if empty
     if (!botToken) {
       try {
@@ -271,7 +253,6 @@ export async function POST(request: Request) {
       } catch (e) {}
     }
 
-    // If userProfile was not found in DB, auto-provision fallback user profile
     if (!userProfile) {
       userProfile = {
         id: queryUserId || 'usr_ricky_superadmin',

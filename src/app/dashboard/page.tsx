@@ -219,17 +219,21 @@ export default function DashboardPage() {
       const timeoutId = setTimeout(() => controller.abort(), 3500);
       const fetchOpts = { signal: controller.signal };
 
-      const wRes = await fetch(`/api/wallets?userId=${userIdStr}&custom_token=${encodeURIComponent(customToken)}`, fetchOpts);
-      const cRes = await fetch(`/api/categories?userId=${userIdStr}`, fetchOpts);
-      const tRes = await fetch(`/api/transactions?userId=${userIdStr}`, fetchOpts);
-      const bRes = await fetch(`/api/budgets?userId=${userIdStr}`, fetchOpts);
+      const [wRes, cRes, tRes, bRes] = await Promise.all([
+        fetch(`/api/wallets?userId=${userIdStr}&custom_token=${encodeURIComponent(customToken)}`, fetchOpts),
+        fetch(`/api/categories?userId=${userIdStr}`, fetchOpts),
+        fetch(`/api/transactions?userId=${userIdStr}`, fetchOpts),
+        fetch(`/api/budgets?userId=${userIdStr}`, fetchOpts)
+      ]);
 
       clearTimeout(timeoutId);
 
-      const wData = await wRes.json();
-      const cData = await cRes.json();
-      const tData = await tRes.json();
-      const bData = await bRes.json();
+      const [wData, cData, tData, bData] = await Promise.all([
+        wRes.json(),
+        cRes.json(),
+        tRes.json(),
+        bRes.json()
+      ]);
 
       if (wData.error || cData.error || tData.error || bData.error) {
         throw new Error('Database response contains error.');
