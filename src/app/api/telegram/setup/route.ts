@@ -91,38 +91,20 @@ export async function POST(request: Request) {
       // Clear webhook temporarily so getUpdates doesn't return 409 Conflict
       await fetch(`https://api.telegram.org/bot${token}/deleteWebhook`);
       
-      const getUpdatesUrl = `https://api.telegram.org/bot${token}/getUpdates?limit=100`;
+      const getUpdatesUrl = `https://api.telegram.org/bot${token}/getUpdates?limit=10&offset=-10`;
       const updatesRes = await fetch(getUpdatesUrl);
       if (updatesRes.ok) {
         const updatesData = await updatesRes.json();
         if (updatesData.ok && updatesData.result && updatesData.result.length > 0) {
-          for (let i = updatesData.result.length - 1; i >= 0; i--) {
-            const u = updatesData.result[i];
-            const chat = u.message?.chat || u.callback_query?.message?.chat || u.edited_message?.chat;
-            if (chat && chat.id) {
-              detectedChatId = chat.id;
-              detectedName = u.message?.from?.first_name || u.callback_query?.from?.first_name || '';
-              break;
-            }
+          const lastUpdate = updatesData.result[updatesData.result.length - 1];
+          if (lastUpdate.message && lastUpdate.message.chat) {
+            detectedChatId = lastUpdate.message.chat.id;
+            detectedName = lastUpdate.message.from?.first_name || '';
+          } else if (lastUpdate.callback_query && lastUpdate.callback_query.message) {
+            detectedChatId = lastUpdate.callback_query.message.chat.id;
+            detectedName = lastUpdate.callback_query.from?.first_name || '';
           }
         }
-      }
-      
-      if (detectedChatId) {
-        try {
-          const fs = require('fs');
-          const path = require('path');
-          const mockChatsFile = path.join(process.cwd(), 'src/lib/mock_chats.json');
-          let chats: Record<string, string> = {};
-          if (fs.existsSync(mockChatsFile)) {
-            chats = JSON.parse(fs.readFileSync(mockChatsFile, 'utf-8'));
-          }
-          chats[userId] = String(detectedChatId);
-          chats['usr_admin'] = String(detectedChatId);
-          chats['usr_budi'] = String(detectedChatId);
-          chats['usr_ricky_superadmin'] = String(detectedChatId);
-          fs.writeFileSync(mockChatsFile, JSON.stringify(chats, null, 2));
-        } catch (e) {}
       }
     } catch (e) {
       console.warn('Failed to fetch getUpdates for dynamic pairing:', e);
@@ -253,6 +235,7 @@ export async function POST(request: Request) {
     }
 
     // Send a message if telegram_chat_id is set/detected
+    let messageSentSuccessfully = false;
     if (updatedProfile?.telegram_chat_id) {
       try {
         const { sendMessage } = await import('@/lib/telegram');
@@ -274,6 +257,7 @@ export async function POST(request: Request) {
           `Ketik /bantuan di chat ini kapan saja untuk melihat panduan lengkap.\n` +
           `Gunakan tombol menu di bawah ini untuk pintasan cepat navigasi Anda! 👇`;
         await sendMessage(token, Number(updatedProfile.telegram_chat_id), testMsg, keyboardMarkup);
+        messageSentSuccessfully = true;
       } catch (sendErr) {
         console.error('Failed to send test message:', sendErr);
       }
@@ -309,7 +293,7 @@ export async function POST(request: Request) {
     }
 
     let finalWarning = webhookErrorMsg ? `⚠️ Bot terhubung, tetapi webhook tidak terdaftar otomatis: ${webhookErrorMsg}` : null;
-    if (!updatedProfile?.telegram_chat_id) {
+    if (!messageSentSuccessfully && !updatedProfile?.telegram_chat_id) {
       finalWarning = `⚠️ Bot terhubung, tetapi Anda belum mengirim pesan ke bot. Kirim pesan apa saja (misalnya: /start) ke bot Telegram Anda terlebih dahulu, kemudian klik "Test Koneksi" lagi agar pesan sambutan otomatis terkirim.`;
     }
 
@@ -317,7 +301,7 @@ export async function POST(request: Request) {
       success: true,
       botName: getMeData.result.first_name,
       botUsername: getMeData.result.username,
-      hasChatId: !!updatedProfile?.telegram_chat_id,
+      hasChatId: messageSentSuccessfully || !!updatedProfile?.telegram_chat_id,
       detectedChatId: updatedProfile?.telegram_chat_id || null,
       webhookRegistered,
       webhookWarning: finalWarning

@@ -721,14 +721,11 @@ export default function AdminDashboard() {
       }
       setPrevBotStatus('connected');
       localStorage.setItem('Mencatat Aja_custom_bot_token_preview', prevBotTokenInput);
-      let warningSuffix = '';
-      if (data.webhookWarning) {
-        warningSuffix = `\n\n${data.webhookWarning}`;
-      }
       if (data.hasChatId) {
-        setPrevBotStatusMsg(`🟢 Terhubung dengan bot: @${data.botUsername}! Notifikasi konfirmasi berhasil dikirim ke Telegram Anda.${warningSuffix}`);
+        setPrevBotStatusMsg(`🟢 Terhubung dengan bot: @${data.botUsername}! Notifikasi konfirmasi berhasil dikirim ke Telegram Anda.`);
       } else {
-        setPrevBotStatusMsg(`🟢 Terhubung dengan bot: @${data.botUsername}! Buka bot Anda di Telegram dan ketik "/start" untuk menyelesaikan hubungan.${warningSuffix}`);
+        const warnText = data.webhookWarning ? `\n\n${data.webhookWarning}` : '';
+        setPrevBotStatusMsg(`🟢 Terhubung dengan bot: @${data.botUsername}! Buka bot Anda di Telegram dan ketik "/start" untuk menyelesaikan hubungan.${warnText}`);
       }
       
       // Save token in mock database if needed
