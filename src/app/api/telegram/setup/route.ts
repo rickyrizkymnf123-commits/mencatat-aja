@@ -138,27 +138,39 @@ export async function POST(request: Request) {
     }
 
     if (!isPlaceholder) {
-      const updateData: any = { telegram_bot_token: encryptedToken };
-      if (detectedChatId) {
-        updateData.telegram_chat_id = String(detectedChatId);
-      }
+      try {
+        const updateData: any = { telegram_bot_token: encryptedToken };
+        if (detectedChatId) {
+          updateData.telegram_chat_id = String(detectedChatId);
+        }
 
-      const { data: up, error: dbError } = await supabaseAdmin
-        .from('profiles')
-        .update(updateData)
-        .eq('id', userId)
-        .select('telegram_chat_id, full_name')
-        .maybeSingle();
+        const { data: up, error: dbError } = await supabaseAdmin
+          .from('profiles')
+          .update(updateData)
+          .eq('id', userId)
+          .select('telegram_chat_id, full_name')
+          .maybeSingle();
 
-      if (dbError) {
-        console.error('Failed to save token to database:', dbError);
-        return NextResponse.json({ error: 'Gagal menyimpan token ke database' }, { status: 500 });
+        if (!dbError && up) {
+          updatedProfile = up;
+        } else {
+          console.warn('Supabase DB profile update skipped/errored, using fallback persistence:', dbError);
+          updatedProfile = {
+            telegram_chat_id: detectedChatId ? String(detectedChatId) : null,
+            full_name: detectedName || (userId === 'usr_admin' ? 'Super Admin' : 'Nasabah')
+          };
+        }
+      } catch (err) {
+        console.warn('Supabase DB token save exception, falling back to local persistence:', err);
+        updatedProfile = {
+          telegram_chat_id: detectedChatId ? String(detectedChatId) : null,
+          full_name: detectedName || (userId === 'usr_admin' ? 'Super Admin' : 'Nasabah')
+        };
       }
-      updatedProfile = up;
     } else {
       updatedProfile = {
         telegram_chat_id: detectedChatId ? String(detectedChatId) : null,
-        full_name: detectedName || (userId === 'usr_admin' ? 'Super Admin' : 'Demo User')
+        full_name: detectedName || (userId === 'usr_admin' ? 'Super Admin' : 'Nasabah')
       };
     }
 

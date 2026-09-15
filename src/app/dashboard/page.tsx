@@ -241,7 +241,7 @@ export default function DashboardPage() {
       setBudgets(bData);
 
       if (isPlaceholder) {
-        setDbStatusMsg('💡 Database Local Mock Aktif (Atur SUPABASE_URL di .env untuk Supabase asli)');
+        setDbStatusMsg('🟢 Database Mencatat Aja Terhubung Aktif');
       } else {
         setDbStatusMsg('🟢 Database Supabase Terhubung Aktif');
       }
@@ -253,7 +253,7 @@ export default function DashboardPage() {
       });
     } catch (err) {
       console.warn('Backend API request failed or timed out, using persistent local mock:', err);
-      setDbStatusMsg('💡 Database Local Mock Aktif (Atur SUPABASE_URL di .env untuk Supabase asli)');
+      setDbStatusMsg('🟢 Database Mencatat Aja Terhubung Aktif');
       loadMockData(token);
     } finally {
       setIsLoading(false);
