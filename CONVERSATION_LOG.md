@@ -735,3 +735,17 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 - **Kompilasi & Live Deployment:**
   * `npm run build` sukses 100% (0 error).
   * Di-commit ke Git dan dideploy ke Vercel Live Production.
+
+## Sesi 55: Eliminasi Bug Tumpang Tindih Bot (Cross-Bot Replies) & Penyempurnaan Alur Putuskan
+- **Identifikasi Masalah:**
+  * Tombol "Putuskan" di frontend sebelumnya tidak menyertakan parameter `token`, sehingga Telegram API `deleteWebhook` tidak terpanggil untuk bot yang sedang aktif.
+  * Ketika bot ditukar dari Bot A ke Bot B, webhook Bot A masih aktif mengarah ke server. Saat pengguna chat di Bot A, backend mendekripsi token Bot B yang ada di database, lalu mengirim balasan via Bot B (tumpang tindih pesan).
+- **Perbaikan yang Diterapkan:**
+  * Di `/api/telegram/setup`, fungsi disconnect kini menghapus webhook (`deleteWebhook`) untuk seluruh token bot terkait (dari request body, database Supabase, dan file fallback) sehingga Bot A terputus total dari server Telegram.
+  * Tetap mempertahankan `telegram_chat_id` saat disconnect agar saat pengguna menghubungkan bot baru, notifikasi sambutan dapat langsung terkirim tanpa perlu dipancing `/start`.
+  * Di `/api/telegram/webhook`, ditambahkan *Strict Token Verification*:
+    - Jika update berasal dari bot yang tokennya tidak cocok dengan `telegram_bot_token` aktif di profil pengguna (misal bot lama Bot A), webhook otomatis memanggil `deleteWebhook` pada bot lama tersebut dan **langsung mengabaikan pesan** tanpa mengirim balasan ke Bot B.
+    - Menghilangkan sepenuhnya bug tumpang tindih balasan antar-bot.
+- **Kompilasi & Live Deployment:**
+  * `npm run build` sukses 100%.
+  * Di-commit ke Git dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
