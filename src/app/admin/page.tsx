@@ -560,12 +560,13 @@ export default function AdminDashboard() {
   // CENTRAL AI CONFIGURATION ACTIONS
   const loadCentralAIConfig = async () => {
     try {
+      const savedLocalModel = typeof window !== 'undefined' ? localStorage.getItem('Mencatat_Aja_saved_ai_model') : null;
       const res = await fetch('/api/admin/ai-config');
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load AI config');
       const loadedBaseUrl = data.baseUrl || 'https://api.koboillm.com/v1';
       const loadedApiKey = data.apiKey || '';
-      const loadedModel = data.defaultModel || 'gemini-1.5-flash';
+      const loadedModel = savedLocalModel || data.defaultModel || 'gemini-1.5-flash';
 
       setAiBaseUrl(loadedBaseUrl);
       setAiApiKey(loadedApiKey);
@@ -580,12 +581,14 @@ export default function AdminDashboard() {
         });
         const fetchData = await fetchRes.json();
         if (fetchRes.ok && fetchData.models && Array.isArray(fetchData.models) && fetchData.models.length > 0) {
-          setModelsList(fetchData.models);
-          if (fetchData.models.includes(loadedModel)) {
-            setDefaultAiModel(loadedModel);
-          } else {
-            setDefaultAiModel(fetchData.models[0]);
+          let mergedList = [...fetchData.models];
+          if (!mergedList.includes(loadedModel)) {
+            mergedList = [loadedModel, ...mergedList];
           }
+          setModelsList(mergedList);
+          setDefaultAiModel(loadedModel);
+        } else {
+          setModelsList(prev => prev.includes(loadedModel) ? prev : [loadedModel, ...prev]);
         }
       } catch (e) {
         console.warn('Auto fetch models error:', e);
@@ -616,6 +619,9 @@ export default function AdminDashboard() {
   const handleSaveAIConfig = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingAiConfig(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('Mencatat_Aja_saved_ai_model', defaultAiModel);
+    }
     try {
       const res = await fetch('/api/admin/ai-config', {
         method: 'POST',
@@ -3060,7 +3066,13 @@ export default function AdminDashboard() {
                       cursor: 'pointer'
                     }}
                     value={defaultAiModel}
-                    onChange={(e) => setDefaultAiModel(e.target.value)}
+                    onChange={(e) => {
+                      const selected = e.target.value;
+                      setDefaultAiModel(selected);
+                      if (typeof window !== 'undefined') {
+                        localStorage.setItem('Mencatat_Aja_saved_ai_model', selected);
+                      }
+                    }}
                   >
                     {modelsList.map(model => (
                       <option key={model} value={model} style={{ backgroundColor: '#ffffff', color: 'var(--text-main)' }}>

@@ -181,6 +181,41 @@ export async function POST(request: Request) {
       };
     }
 
+    // Check fallback for telegram_chat_id if not detected from recent getUpdates
+    if (!updatedProfile?.telegram_chat_id) {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const mockChatsFile = path.join(process.cwd(), 'src/lib/mock_chats.json');
+        if (fs.existsSync(mockChatsFile)) {
+          const chats = JSON.parse(fs.readFileSync(mockChatsFile, 'utf-8'));
+          if (chats[userId]) {
+            updatedProfile = {
+              ...updatedProfile,
+              telegram_chat_id: String(chats[userId])
+            };
+          }
+        }
+      } catch (e) {}
+
+      if (!updatedProfile?.telegram_chat_id && !isPlaceholder) {
+        try {
+          const { data: existingProf } = await supabaseAdmin
+            .from('profiles')
+            .select('telegram_chat_id, full_name')
+            .eq('id', userId)
+            .maybeSingle();
+          if (existingProf?.telegram_chat_id) {
+            updatedProfile = {
+              ...updatedProfile,
+              telegram_chat_id: existingProf.telegram_chat_id,
+              full_name: existingProf.full_name || updatedProfile?.full_name
+            };
+          }
+        } catch (e) {}
+      }
+    }
+
     // Send a message if telegram_chat_id is set/detected
     if (updatedProfile?.telegram_chat_id) {
       try {
