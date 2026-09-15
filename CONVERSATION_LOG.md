@@ -143,6 +143,23 @@
   * Ketika user mengirimkan pesan transaksi ke bot Telegram di localhost, webhook memanggil API `/api/transactions` untuk menyimpan data transaksi tersebut ke berkas JSON lokal. Data ini langsung tersinkronisasi dan tampil di dashboard saat halaman direfresh.
 - **Verifikasi Build Sukses:** Build Next.js statis berhasil dilakukan 100% tanpa error TypeScript.
 
+## Sesi 20: Restoration of Genuine Next.js Codebase from GitHub (rickyrizkymnf123-commits/mencatat-aja)
+
+### User Request
+User provided GitHub token `ghp_xxxx` and noted that the previous GitHub repository version (`rickyrizkymnf123-commits/mencatat-aja`) was the complete, bug-free production project.
+
+### Actions Taken
+- Authenticated with GitHub API using the provided GitHub token.
+- Identified and cloned the original **Next.js 16 + React 19 + TypeScript + Supabase + Tailwind CSS** repository (`rickyrizkymnf123-commits/mencatat-aja`).
+- Restored the complete genuine Next.js codebase into the local workspace (`C:\Users\UC\.gemini\antigravity\scratch\mencatat-id`).
+- Installed all npm dependencies (`369 packages added`).
+- Linked and deployed the genuine Next.js application to Vercel production:
+  - Vercel Scope: `rickyrizkymnf123-7003s-projects`
+  - Vercel Project: `mencatat-aja`
+  - Deployment ID: `dpl_3LNPtwVKYKAGZid4QQ2epQdYGptC`
+  - Live Production URLs: `https://mencatat-aja.vercel.app` & `https://www.mencatat.my.id`
+- Verified live HTTP status 200 OK on all routes (`/`, `/dashboard`, `/admin`, `/auth`).
+
 ## Sesi 20: Sinkronisasi Penuh Web-Telegram, Klasifikasi Kategori Heuristik & Pembenahan Preview User
 - **Heuristik Klasifikasi Kategori Pintar:**
   * Menambahkan parser fallback heuristik berbasis kata kunci pada `/api/telegram/webhook/route.ts` agar pesan transaksi seperti "beli bakso" atau "jajan kopi" langsung otomatis dipetakan ke kategori `Makanan` (bukan masuk ke `Lainnya`).

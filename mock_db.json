@@ -1,0 +1,352 @@
+{
+  "categories": [
+    {
+      "id": 1,
+      "nama": "Gaji",
+      "tipe": "income",
+      "is_default": true
+    },
+    {
+      "id": 2,
+      "nama": "Bonus/THR",
+      "tipe": "income",
+      "is_default": true
+    },
+    {
+      "id": 3,
+      "nama": "Freelance/Side Income",
+      "tipe": "income",
+      "is_default": true
+    },
+    {
+      "id": 4,
+      "nama": "Hasil Jualan",
+      "tipe": "income",
+      "is_default": true
+    },
+    {
+      "id": 5,
+      "nama": "Pemasukan Lainnya",
+      "tipe": "income",
+      "is_default": true
+    },
+    {
+      "id": 6,
+      "nama": "Makanan & Minuman",
+      "tipe": "expense",
+      "is_default": true
+    },
+    {
+      "id": 7,
+      "nama": "Transportasi",
+      "tipe": "expense",
+      "is_default": true
+    },
+    {
+      "id": 8,
+      "nama": "Tagihan (Listrik/Air/Internet)",
+      "tipe": "expense",
+      "is_default": true
+    },
+    {
+      "id": 9,
+      "nama": "Cicilan/Utang",
+      "tipe": "expense",
+      "is_default": true
+    },
+    {
+      "id": 10,
+      "nama": "Belanja Rumah Tangga",
+      "tipe": "expense",
+      "is_default": true
+    },
+    {
+      "id": 11,
+      "nama": "Kesehatan",
+      "tipe": "expense",
+      "is_default": true
+    },
+    {
+      "id": 12,
+      "nama": "Hiburan",
+      "tipe": "expense",
+      "is_default": true
+    },
+    {
+      "id": 13,
+      "nama": "Rokok",
+      "tipe": "expense",
+      "is_default": true
+    },
+    {
+      "id": 14,
+      "nama": "Pendidikan",
+      "tipe": "expense",
+      "is_default": true
+    },
+    {
+      "id": 15,
+      "nama": "Pengeluaran Lainnya",
+      "tipe": "expense",
+      "is_default": true
+    }
+  ],
+  "users": [
+    {
+      "id": "u1-starter",
+      "email": "budi@gmail.com",
+      "phone_number": "08123456789",
+      "telegram_chat_id": "chat-111",
+      "nama": "Budi Santoso",
+      "role": "user",
+      "subscription_plan": "starter",
+      "subscription_status": "active",
+      "created_at": "2026-08-16T13:27:46.292Z"
+    },
+    {
+      "id": "u2-pro",
+      "email": "lisa@gmail.com",
+      "phone_number": "08987654321",
+      "telegram_chat_id": "chat-222",
+      "nama": "Lisa Permata",
+      "role": "user",
+      "subscription_plan": "pro",
+      "subscription_status": "active",
+      "google_sheets_token": {
+        "access_token": "mock-token",
+        "spreadsheet_url": "https://docs.google.com/spreadsheets/d/mock-lisa-sheets/edit"
+      },
+      "created_at": "2026-08-31T13:27:46.293Z"
+    },
+    {
+      "id": "u3-admin",
+      "email": "admin@mencatat.id",
+      "phone_number": "08111222333",
+      "telegram_chat_id": "chat-333",
+      "nama": "Admin mencatat.id",
+      "role": "admin",
+      "subscription_plan": "pro",
+      "subscription_status": "active",
+      "created_at": "2026-09-15T13:27:46.293Z"
+    },
+    {
+      "id": "u4-super",
+      "email": "superadmin@mencatat.id",
+      "phone_number": "08555666777",
+      "telegram_chat_id": "chat-444",
+      "nama": "Super Admin Utama",
+      "role": "superadmin",
+      "subscription_plan": "pro",
+      "subscription_status": "active",
+      "created_at": "2026-09-15T13:27:46.293Z"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "t1",
+      "user_id": "u1-starter",
+      "category_id": 1,
+      "tipe": "income",
+      "jumlah": 5000000,
+      "deskripsi": "Gaji Bulanan",
+      "sumber_input": "teks",
+      "waktu_transaksi": "2026-09-10T13:27:46.293Z",
+      "created_at": "2026-09-10T13:27:46.293Z"
+    },
+    {
+      "id": "t2",
+      "user_id": "u1-starter",
+      "category_id": 6,
+      "tipe": "expense",
+      "jumlah": 45000,
+      "deskripsi": "Nasi Padang Siang",
+      "sumber_input": "teks",
+      "waktu_transaksi": "2026-09-11T13:27:46.293Z",
+      "created_at": "2026-09-11T13:27:46.293Z"
+    },
+    {
+      "id": "t3",
+      "user_id": "u1-starter",
+      "category_id": 7,
+      "tipe": "expense",
+      "jumlah": 20000,
+      "deskripsi": "Beli Bensin Motor",
+      "sumber_input": "teks",
+      "waktu_transaksi": "2026-09-12T13:27:46.293Z",
+      "created_at": "2026-09-12T13:27:46.293Z"
+    },
+    {
+      "id": "t4",
+      "user_id": "u2-pro",
+      "category_id": 1,
+      "tipe": "income",
+      "jumlah": 8500000,
+      "deskripsi": "Transfer Gaji",
+      "sumber_input": "teks",
+      "waktu_transaksi": "2026-09-05T13:27:46.293Z",
+      "created_at": "2026-09-05T13:27:46.293Z"
+    },
+    {
+      "id": "t5",
+      "user_id": "u2-pro",
+      "category_id": 10,
+      "tipe": "expense",
+      "jumlah": 155000,
+      "deskripsi": "Belanja Bulanan Supermarket",
+      "sumber_input": "struk",
+      "receipt_group_id": "group-receipt-99",
+      "waktu_transaksi": "2026-09-07T13:27:46.293Z",
+      "created_at": "2026-09-07T13:27:46.293Z"
+    }
+  ],
+  "transaction_items": [
+    {
+      "id": "ti1",
+      "transaction_id": "t5",
+      "nama_item": "Minyak Goreng 2L",
+      "jumlah": 35000,
+      "category_id": 10
+    },
+    {
+      "id": "ti2",
+      "transaction_id": "t5",
+      "nama_item": "Beras Sentra Ramos 5kg",
+      "jumlah": 75000,
+      "category_id": 10
+    },
+    {
+      "id": "ti3",
+      "transaction_id": "t5",
+      "nama_item": "Kopi Instan 10 Sachet",
+      "jumlah": 45000,
+      "category_id": 6
+    }
+  ],
+  "reminder_settings": [
+    {
+      "id": 1,
+      "user_id": "u1-starter",
+      "jam_reminder": [
+        "08:00",
+        "20:00"
+      ],
+      "aktif": true
+    },
+    {
+      "id": 2,
+      "user_id": "u2-pro",
+      "jam_reminder": [
+        "09:00",
+        "18:00"
+      ],
+      "aktif": true
+    }
+  ],
+  "summary_settings": [
+    {
+      "id": 1,
+      "user_id": "u1-starter",
+      "periode": "mingguan",
+      "aktif": true
+    },
+    {
+      "id": 2,
+      "user_id": "u2-pro",
+      "periode": "harian",
+      "aktif": true
+    }
+  ],
+  "ai_providers": [
+    {
+      "id": 1,
+      "nama": "GPT-4o",
+      "mode": "active",
+      "urutan_prioritas": 1
+    },
+    {
+      "id": 2,
+      "nama": "Gemini 1.5 Pro",
+      "mode": "failover",
+      "urutan_prioritas": 2
+    },
+    {
+      "id": 3,
+      "nama": "DeepSeek-V3",
+      "mode": "testing",
+      "urutan_prioritas": 3
+    }
+  ],
+  "ai_usage_logs": [
+    {
+      "id": "log-1",
+      "provider_id": 1,
+      "user_id": "u2-pro",
+      "jenis_request": "ocr_struk",
+      "token_used": 1200,
+      "biaya_estimasi": 0.012,
+      "status": "success",
+      "created_at": "2026-09-07T13:27:46.293Z"
+    }
+  ],
+  "subscriptions_payments": [
+    {
+      "id": "p1",
+      "user_id": "u2-pro",
+      "plan": "pro",
+      "jumlah": 99000,
+      "status": "success",
+      "midtrans_order_id": "order-101",
+      "created_at": "2026-08-31T13:27:46.293Z"
+    }
+  ],
+  "admin_logs": [
+    {
+      "id": "al-1",
+      "admin_id": "u3-admin",
+      "aksi": "Melihat dashboard user budi@gmail.com",
+      "target_id": "u1-starter",
+      "created_at": "2026-09-15T13:27:46.293Z"
+    }
+  ],
+  "wallets": [
+    {
+      "id": "w-starter",
+      "user_id": "u1-starter",
+      "nama": "Dompet Utama",
+      "saldo": 250000,
+      "is_default": true,
+      "created_at": "2026-09-15T13:27:46.293Z"
+    },
+    {
+      "id": "w-pro",
+      "user_id": "u2-pro",
+      "nama": "Tabungan BCA",
+      "saldo": 8345000,
+      "is_default": true,
+      "created_at": "2026-09-15T13:27:46.293Z"
+    }
+  ],
+  "budgets": [
+    {
+      "id": "b-starter",
+      "user_id": "u1-starter",
+      "category_id": 6,
+      "limit_bulanan": 1000000,
+      "terpakai": 45000,
+      "created_at": "2026-09-15T13:27:46.293Z"
+    },
+    {
+      "id": "b-pro",
+      "user_id": "u2-pro",
+      "category_id": 10,
+      "limit_bulanan": 2500000,
+      "terpakai": 155000,
+      "created_at": "2026-09-15T13:27:46.293Z"
+    }
+  ],
+  "telegram_processed_updates": [],
+  "link_codes": {},
+  "settings_global": {
+    "telegram_bot_token": ""
+  }
+}
