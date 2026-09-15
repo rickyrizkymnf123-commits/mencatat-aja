@@ -720,3 +720,18 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 - **Kompilasi & Deployment:**
   * `npm run build` sukses 100% tanpa error TypeScript.
   * Di-commit dan dideploy ulang ke Vercel Live Production.
+
+## Sesi 54: Perbaikan Akar Masalah UUID Mismatch Supabase & Notifikasi Instan Bot Baru
+- **Identifikasi Akar Masalah Utama (Root Cause):**
+  * Di database Supabase PostgreSQL, kolom `profiles.id` bertipe `UUID`.
+  * Saat user login atau berada dalam mode simulasi, sistem mengirimkan `userId` berupa string non-UUID (seperti `usr_budi` atau `usr_ricky_superadmin`).
+  * Ketika `setup/route.ts` dan `webhook/route.ts` mengeksekusi `.eq('id', userId)`, PostgreSQL melempar exception: `invalid input syntax for type uuid: "usr_budi"` (HTTP 400).
+  * Hal ini menyebabkan token bot baru gagal tersimpan di Supabase `profiles`, dan saat Telegram mengirim pesan ke webhook, query profil mengembalikan `null` sehingga webhook mengabaikan pesan dan bot tidak membalas.
+- **Perbaikan yang Diterapkan:**
+  * Menambahkan fungsi validator `isUUID()` dan memetakan `userId` non-UUID secara aman ke ID Superadmin Supabase (`58c09700-965d-4104-a344-6e599c46deff`).
+  * Memperbarui endpoint session auth (`/api/auth/session`) agar mengembalikan UUID Supabase asli Superadmin.
+  * Di `/api/telegram/setup`, ketika user menguji bot baru dan sudah memiliki riwayat obrolan, pesan sambutan langsung terkirim secara instan ke Telegram saat tombol "Test Koneksi" diklik.
+  * Di `/api/telegram/webhook`, saat pesan pertama dari bot baru diterima, chat ID langsung disimpan ke profil Supabase dan bot seketika membalas dengan pesan sambutan serta tombol navigasi lengkap.
+- **Kompilasi & Live Deployment:**
+  * `npm run build` sukses 100% (0 error).
+  * Di-commit ke Git dan dideploy ke Vercel Live Production.
