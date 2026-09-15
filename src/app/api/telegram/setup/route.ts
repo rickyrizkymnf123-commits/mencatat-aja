@@ -91,20 +91,38 @@ export async function POST(request: Request) {
       // Clear webhook temporarily so getUpdates doesn't return 409 Conflict
       await fetch(`https://api.telegram.org/bot${token}/deleteWebhook`);
       
-      const getUpdatesUrl = `https://api.telegram.org/bot${token}/getUpdates?limit=10&offset=-10`;
+      const getUpdatesUrl = `https://api.telegram.org/bot${token}/getUpdates?limit=100`;
       const updatesRes = await fetch(getUpdatesUrl);
       if (updatesRes.ok) {
         const updatesData = await updatesRes.json();
         if (updatesData.ok && updatesData.result && updatesData.result.length > 0) {
-          const lastUpdate = updatesData.result[updatesData.result.length - 1];
-          if (lastUpdate.message && lastUpdate.message.chat) {
-            detectedChatId = lastUpdate.message.chat.id;
-            detectedName = lastUpdate.message.from?.first_name || '';
-          } else if (lastUpdate.callback_query && lastUpdate.callback_query.message) {
-            detectedChatId = lastUpdate.callback_query.message.chat.id;
-            detectedName = lastUpdate.callback_query.from?.first_name || '';
+          for (let i = updatesData.result.length - 1; i >= 0; i--) {
+            const u = updatesData.result[i];
+            const chat = u.message?.chat || u.callback_query?.message?.chat || u.edited_message?.chat;
+            if (chat && chat.id) {
+              detectedChatId = chat.id;
+              detectedName = u.message?.from?.first_name || u.callback_query?.from?.first_name || '';
+              break;
+            }
           }
         }
+      }
+      
+      if (detectedChatId) {
+        try {
+          const fs = require('fs');
+          const path = require('path');
+          const mockChatsFile = path.join(process.cwd(), 'src/lib/mock_chats.json');
+          let chats: Record<string, string> = {};
+          if (fs.existsSync(mockChatsFile)) {
+            chats = JSON.parse(fs.readFileSync(mockChatsFile, 'utf-8'));
+          }
+          chats[userId] = String(detectedChatId);
+          chats['usr_admin'] = String(detectedChatId);
+          chats['usr_budi'] = String(detectedChatId);
+          chats['usr_ricky_superadmin'] = String(detectedChatId);
+          fs.writeFileSync(mockChatsFile, JSON.stringify(chats, null, 2));
+        } catch (e) {}
       }
     } catch (e) {
       console.warn('Failed to fetch getUpdates for dynamic pairing:', e);
