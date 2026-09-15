@@ -780,3 +780,21 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
   * `npm run build` sukses 100% tanpa error TypeScript.
   * Perubahan di-commit dan di-push ke GitHub repository `main`.
   * Dideploy dan dipromosikan ke Vercel Live Production (`https://www.mencatat.my.id`).
+
+## Sesi 57: Perbaikan Bug Hapus Dompet (Foreign Key Constraint & Non-UUID ID Handling)
+- **Identifikasi Masalah:**
+  * Pengguna mencoba menghapus dompet di dashboard web dan muncul popup error: *"Gagal menghapus dompet: Failed to delete wallet"*.
+- **Akar Masalah (Root Cause):**
+  * Di PostgreSQL Supabase, kolom `wallets.id` bertipe `UUID`.
+  * Jika user mencoba menghapus dompet berformat ID mock non-UUID (seperti `w_...` atau `w_bca_...`), query `.delete().eq('id', walletId)` crash dengan error PostgreSQL `22P02: invalid input syntax for type uuid`.
+  * Selain itu, jika dompet UUID memiliki transaksi riwayat yang tertaut, PostgreSQL menolak penghapusan karena batasan kunci asing (*foreign key constraint `transactions_wallet_id_fkey`*).
+- **Solusi & Perbaikan yang Diterapkan:**
+  1. **Cascade Cleanup & UUID Check di API `/api/wallets` DELETE:**
+     - Sebelum menghapus dompet, backend secara otomatis membersihkan atau melepaskan transaksi terkait (`wallet_id` dan `transfer_to_wallet_id`) milik user tersebut untuk mencegah pelanggaran foreign key.
+     - Jika `walletId` adalah UUID, query dieksekusi dengan aman. Jika non-UUID, backend mencari dompet berdasarkan kecocokan nama di database Supabase dan membersihkan cache mock lokal `src/lib/mock_wallets.json`.
+     - Jika dompet default dihapus, dompet lain yang tersisa otomatis dipromosikan menjadi dompet default (`is_default = true`).
+  2. **Optimistic UI Update di Dashboard Web (`src/app/dashboard/page.tsx`):**
+     - Memperbarui `handleDeleteWallet` agar melakukan penghapusan optimis seketika pada state lokal dan `localStorage`, sehingga dompet langsung hilang dari layar tanpa menunggu atau macet.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% (0 error).
+  * Perubahan di-commit ke Git dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
