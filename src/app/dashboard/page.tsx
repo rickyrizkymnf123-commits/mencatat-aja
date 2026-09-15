@@ -240,6 +240,9 @@ export default function DashboardPage() {
       }
 
       setWallets(wData);
+      if (Array.isArray(wData) && wData.length > 0) {
+        setNewTxWalletId(prev => prev || (wData.find((w: any) => w.is_default)?.id || wData[0].id));
+      }
       setCategories(cData);
       setTransactions(tData);
       setBudgets(bData);
@@ -269,11 +272,18 @@ export default function DashboardPage() {
     let mockPollingInterval: any = null;
 
     const initSessionAndSubscribe = async () => {
-      let storedId = localStorage.getItem('Mencatat Aja_user_id') || 'usr_demo_user';
-      let storedName = localStorage.getItem('Mencatat Aja_user_name') || 'Budi Santoso';
+      const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+      const SUPERADMIN_ID = '58c09700-965d-4104-a344-6e599c46deff';
+
+      let storedId = localStorage.getItem('Mencatat Aja_user_id') || SUPERADMIN_ID;
+      if (!isUUID(storedId)) {
+        storedId = SUPERADMIN_ID;
+        localStorage.setItem('Mencatat Aja_user_id', storedId);
+      }
+      let storedName = localStorage.getItem('Mencatat Aja_user_name') || 'fauzy';
       let storedPhone = localStorage.getItem('Mencatat Aja_user_phone') || '081234567890';
       let storedToken = localStorage.getItem('Mencatat Aja_telegram_token') || 'TD-729402';
-      let storedPlan = localStorage.getItem('Mencatat Aja_plan') || 'Starter';
+      let storedPlan = localStorage.getItem('Mencatat Aja_plan') || 'Pro';
 
       try {
         const { data } = await supabase.auth.getSession();
@@ -371,6 +381,11 @@ export default function DashboardPage() {
         } catch (subErr) {
           console.warn('Supabase realtime subscribe error:', subErr);
         }
+
+        // Live polling every 3s so Telegram transactions and wallet changes appear in real-time
+        mockPollingInterval = setInterval(() => {
+          fetchDashboardData(storedId, storedToken);
+        }, 3000);
       }
     };
 

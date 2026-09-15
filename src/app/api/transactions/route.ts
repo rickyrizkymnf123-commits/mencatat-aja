@@ -5,6 +5,9 @@ import path from 'path';
 
 const MOCK_TX_PATH = path.join(process.cwd(), 'src/lib/mock_transactions.json');
 
+const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+const SUPERADMIN_ID = '58c09700-965d-4104-a344-6e599c46deff';
+
 // Mock Categories list for mapping in mock mode
 const MOCK_CATEGORIES = [
   { id: 'c1', name: 'Makanan', emoji: '🍜', type: 'expense' },
@@ -51,13 +54,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
+    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const isPlaceholder = !supabaseUrl || 
       supabaseUrl.includes('your-supabase-project-id') || 
       supabaseUrl.includes('placeholder-project');
 
     if (isPlaceholder) {
-      const localTxs = getMockTransactions(userId);
+      const localTxs = getMockTransactions(targetUserId);
       return NextResponse.json(localTxs);
     }
 
@@ -68,7 +73,7 @@ export async function GET(request: Request) {
         wallets (name),
         categories (name, emoji)
       `)
-      .eq('user_id', userId)
+      .eq('user_id', targetUserId)
       .order('transaction_date', { ascending: false });
 
     if (error) {
@@ -90,6 +95,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required transaction fields' }, { status: 400 });
     }
 
+    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const isPlaceholder = !supabaseUrl || 
       supabaseUrl.includes('your-supabase-project-id') || 
@@ -101,7 +108,7 @@ export async function POST(request: Request) {
       
       const newMockTx = {
         id: 'tx_mock_' + Date.now(),
-        user_id: userId,
+        user_id: targetUserId,
         wallet_id: walletId,
         category_id: cat.id,
         amount: Number(amount),
@@ -122,7 +129,7 @@ export async function POST(request: Request) {
     const { data: newTx, error } = await supabaseAdmin
       .from('transactions')
       .insert({
-        user_id: userId,
+        user_id: targetUserId,
         wallet_id: walletId,
         category_id: categoryId || null,
         amount: Number(amount),

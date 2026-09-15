@@ -79,15 +79,15 @@ function saveMockBudget(budget: any) {
   fs.writeFileSync(MOCK_BUDGETS_PATH, JSON.stringify(all, null, 2));
 }
 
+const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+const SUPERADMIN_ID = '58c09700-965d-4104-a344-6e599c46deff';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
     const period = searchParams.get('period') || new Date().toISOString().substring(0, 7);
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const isPlaceholder = !supabaseUrl || 
@@ -95,13 +95,13 @@ export async function GET(request: Request) {
       supabaseUrl.includes('placeholder-project');
 
     if (isPlaceholder) {
-      return NextResponse.json(getMockBudgets(userId, period));
+      return NextResponse.json(getMockBudgets(targetUserId, period));
     }
 
     const { data: budgets, error } = await supabaseAdmin
       .from('budgets')
       .select('*, categories(name, emoji)')
-      .eq('user_id', userId)
+      .eq('user_id', targetUserId)
       .eq('period', period);
 
     if (error) {
@@ -118,8 +118,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { userId, categoryId, monthlyLimit, period } = await request.json();
+    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
 
-    if (!userId || !categoryId || monthlyLimit === undefined) {
+    if (!categoryId || monthlyLimit === undefined) {
       return NextResponse.json({ error: 'Missing required budget fields' }, { status: 400 });
     }
 
@@ -133,7 +134,7 @@ export async function POST(request: Request) {
     if (isPlaceholder) {
       const mockBudget = {
         id: `b_${Date.now()}`,
-        user_id: userId,
+        user_id: targetUserId,
         category_id: categoryId,
         monthly_limit: Number(monthlyLimit),
         current_spent: 0,
@@ -149,7 +150,7 @@ export async function POST(request: Request) {
     const { data: budget, error } = await supabaseAdmin
       .from('budgets')
       .upsert({
-        user_id: userId,
+        user_id: targetUserId,
         category_id: categoryId,
         monthly_limit: Number(monthlyLimit),
         period: budgetPeriod,

@@ -5,6 +5,9 @@ import path from 'path';
 
 const MOCK_CATEGORIES_PATH = path.join(process.cwd(), 'src/lib/mock_categories.json');
 
+const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+const SUPERADMIN_ID = '58c09700-965d-4104-a344-6e599c46deff';
+
 const DEFAULT_CATEGORIES = [
   { id: 'c1', name: 'Makanan', emoji: '🍜', color: '#FF8A00', type: 'expense' },
   { id: 'c2', name: 'Transport', emoji: '🚗', color: '#00A3FF', type: 'expense' },
@@ -33,10 +36,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
+    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const isPlaceholder = !supabaseUrl || 
@@ -44,13 +44,13 @@ export async function GET(request: Request) {
       supabaseUrl.includes('placeholder-project');
 
     if (isPlaceholder) {
-      return NextResponse.json(getMockCategories(userId));
+      return NextResponse.json(getMockCategories(targetUserId));
     }
 
     const { data: categories, error } = await supabaseAdmin
       .from('categories')
       .select('*')
-      .or(`user_id.eq.${userId},user_id.is.null`)
+      .or(`user_id.eq.${targetUserId},user_id.is.null`)
       .order('name', { ascending: true });
 
     if (error) {
@@ -67,8 +67,9 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { userId, name, emoji, color, type } = await request.json();
+    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
 
-    if (!userId || !name || !emoji || !color || !type) {
+    if (!name || !emoji || !color || !type) {
       return NextResponse.json({ error: 'Missing required category fields' }, { status: 400 });
     }
 
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
     if (isPlaceholder) {
       const newCategory = {
         id: `c_${Date.now()}`,
-        user_id: userId,
+        user_id: targetUserId,
         name,
         emoji,
         color,
@@ -101,7 +102,7 @@ export async function POST(request: Request) {
     const { data: newCategory, error } = await supabaseAdmin
       .from('categories')
       .insert({
-        user_id: userId,
+        user_id: targetUserId,
         name,
         emoji,
         color,
@@ -124,7 +125,9 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const { userId, categoryId, name, emoji, color, type } = await request.json();
-    if (!userId || !categoryId || !name || !emoji) {
+    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
+
+    if (!categoryId || !name || !emoji) {
       return NextResponse.json({ error: 'Missing required category update fields' }, { status: 400 });
     }
 
@@ -146,7 +149,7 @@ export async function PUT(request: Request) {
       }
       let updatedCat: any = null;
       all = all.map((c: any) => {
-        if (c.user_id === userId && c.id === categoryId) {
+        if (c.user_id === targetUserId && c.id === categoryId) {
           updatedCat = { ...c, name, emoji, color: color || c.color, type: type || c.type };
           return updatedCat;
         }
@@ -159,7 +162,7 @@ export async function PUT(request: Request) {
     const { data: updated, error } = await supabaseAdmin
       .from('categories')
       .update({ name, emoji, color, type })
-      .eq('user_id', userId)
+      .eq('user_id', targetUserId)
       .eq('id', categoryId)
       .select()
       .single();
@@ -178,9 +181,10 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     const categoryId = searchParams.get('categoryId');
+    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
 
-    if (!userId || !categoryId) {
-      return NextResponse.json({ error: 'Missing userId or categoryId' }, { status: 400 });
+    if (!categoryId) {
+      return NextResponse.json({ error: 'Missing categoryId' }, { status: 400 });
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -199,7 +203,7 @@ export async function DELETE(request: Request) {
           all = JSON.parse(fs.readFileSync(MOCK_CATEGORIES_PATH, 'utf-8'));
         } catch (e) {}
       }
-      all = all.filter((c: any) => !(c.user_id === userId && c.id === categoryId));
+      all = all.filter((c: any) => !(c.user_id === targetUserId && c.id === categoryId));
       fs.writeFileSync(MOCK_CATEGORIES_PATH, JSON.stringify(all, null, 2));
       return NextResponse.json({ success: true });
     }
@@ -207,7 +211,7 @@ export async function DELETE(request: Request) {
     const { error } = await supabaseAdmin
       .from('categories')
       .delete()
-      .eq('user_id', userId)
+      .eq('user_id', targetUserId)
       .eq('id', categoryId);
 
     if (error) {

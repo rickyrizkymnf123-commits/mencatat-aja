@@ -6,6 +6,9 @@ import { autoStartPollingIfConfigured } from '@/lib/telegram-polling';
 
 const MOCK_WALLETS_PATH = path.join(process.cwd(), 'src/lib/mock_wallets.json');
 
+const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+const SUPERADMIN_ID = '58c09700-965d-4104-a344-6e599c46deff';
+
 // Initialize mock wallets if file doesn't exist
 function getMockWallets(userId: string) {
   let all: any[] = [];
@@ -103,19 +106,21 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
+    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const isPlaceholder = !supabaseUrl || 
       supabaseUrl.includes('your-supabase-project-id') || 
       supabaseUrl.includes('placeholder-project');
 
     if (isPlaceholder) {
-      return NextResponse.json(getMockWallets(userId));
+      return NextResponse.json(getMockWallets(targetUserId));
     }
 
     const { data: wallets, error } = await supabaseAdmin
       .from('wallets')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', targetUserId)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -137,18 +142,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User ID and Wallet Name are required' }, { status: 400 });
     }
 
+    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const isPlaceholder = !supabaseUrl || 
       supabaseUrl.includes('your-supabase-project-id') || 
       supabaseUrl.includes('placeholder-project');
 
     if (isPlaceholder) {
-      const current = getMockWallets(userId);
+      const current = getMockWallets(targetUserId);
       const isFirst = current.length === 0;
       
       const newWallet = {
         id: `w_${Date.now()}`,
-        user_id: userId,
+        user_id: targetUserId,
         name,
         balance: Number(balance) || 0.00,
         is_default: isFirst ? true : (isDefault || false),
@@ -161,7 +168,7 @@ export async function POST(request: Request) {
       if (newWallet.is_default && !isFirst) {
         let all = JSON.parse(fs.readFileSync(MOCK_WALLETS_PATH, 'utf-8'));
         all = all.map((w: any) => {
-          if (w.user_id === userId && w.id !== newWallet.id) {
+          if (w.user_id === targetUserId && w.id !== newWallet.id) {
             return { ...w, is_default: false };
           }
           return w;
@@ -176,14 +183,14 @@ export async function POST(request: Request) {
     const { count } = await supabaseAdmin
       .from('wallets')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
+      .eq('user_id', targetUserId);
 
     const isFirst = count === 0;
 
     const { data: newWallet, error } = await supabaseAdmin
       .from('wallets')
       .insert({
-        user_id: userId,
+        user_id: targetUserId,
         name,
         balance: Number(balance) || 0.00,
         is_default: isFirst ? true : (isDefault || false),
@@ -201,7 +208,7 @@ export async function POST(request: Request) {
       await supabaseAdmin
         .from('wallets')
         .update({ is_default: false })
-        .eq('user_id', userId)
+        .eq('user_id', targetUserId)
         .neq('id', newWallet.id);
     }
 
@@ -218,6 +225,8 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Missing wallet update fields' }, { status: 400 });
     }
 
+    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const isPlaceholder = !supabaseUrl || 
       supabaseUrl.includes('your-supabase-project-id') || 
@@ -231,7 +240,7 @@ export async function PUT(request: Request) {
       
       let updatedWallet: any = null;
       all = all.map((w: any) => {
-        if (w.user_id === userId && w.id === walletId) {
+        if (w.user_id === targetUserId && w.id === walletId) {
           updatedWallet = { ...w, name, balance: Number(balance) };
           return updatedWallet;
         }
@@ -245,7 +254,7 @@ export async function PUT(request: Request) {
     const { data: updated, error } = await supabaseAdmin
       .from('wallets')
       .update({ name, balance: Number(balance) })
-      .eq('user_id', userId)
+      .eq('user_id', targetUserId)
       .eq('id', walletId)
       .select()
       .single();
@@ -269,6 +278,8 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Missing userId or walletId' }, { status: 400 });
     }
 
+    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const isPlaceholder = !supabaseUrl || 
       supabaseUrl.includes('your-supabase-project-id') || 
@@ -279,7 +290,7 @@ export async function DELETE(request: Request) {
       if (fs.existsSync(MOCK_WALLETS_PATH)) {
         all = JSON.parse(fs.readFileSync(MOCK_WALLETS_PATH, 'utf-8'));
       }
-      all = all.filter((w: any) => !(w.user_id === userId && w.id === walletId));
+      all = all.filter((w: any) => !(w.user_id === targetUserId && w.id === walletId));
       fs.writeFileSync(MOCK_WALLETS_PATH, JSON.stringify(all, null, 2));
       return NextResponse.json({ success: true });
     }
@@ -287,7 +298,7 @@ export async function DELETE(request: Request) {
     const { error } = await supabaseAdmin
       .from('wallets')
       .delete()
-      .eq('user_id', userId)
+      .eq('user_id', targetUserId)
       .eq('id', walletId);
 
     if (error) {

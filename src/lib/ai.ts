@@ -223,67 +223,63 @@ export async function parseTransactionText(
     }
   }
 
-  // Fallback to fast local parser on localhost in mock mode if no providers or if they all failed
-  if (isPlaceholder) {
-    console.log('Mock Mode Local Text Parser Fallback (Instant):', text);
-    const lower = text.toLowerCase();
-    
-    let type: 'expense' | 'income' | 'transfer' = 'expense';
-    let amount = 15000;
-    let category: string | null = 'Makanan';
-    let description = text;
-    let transfer_to_wallet: string | null = null;
-    
-    const amountMatch = lower.match(/(\d+(?:[\.,]\d+)?)\s*(jt|juta|rb|ribu|k|ratus ribu)?/);
-    if (amountMatch) {
-      let val = parseFloat(amountMatch[1].replace(',', '.'));
-      const unit = amountMatch[2];
-      if (unit === 'jt' || unit === 'juta') {
-        val *= 1000000;
-      } else if (unit === 'rb' || unit === 'ribu' || unit === 'k') {
-        val *= 1000;
-      } else if (unit === 'ratus ribu') {
-        val *= 100000;
-      }
-      amount = Math.round(val);
+  // Fallback to fast local rule-based parser if no providers or if they all failed
+  console.log('Local Text Parser Fallback:', text);
+  const lower = text.toLowerCase();
+  
+  let type: 'expense' | 'income' | 'transfer' = 'expense';
+  let amount = 15000;
+  let category: string | null = 'Makanan';
+  let description = text;
+  let transfer_to_wallet: string | null = null;
+  
+  const amountMatch = lower.match(/(\d+(?:[\.,]\d+)?)\s*(jt|juta|rb|ribu|k|ratus ribu)?/);
+  if (amountMatch) {
+    let val = parseFloat(amountMatch[1].replace(',', '.'));
+    const unit = amountMatch[2];
+    if (unit === 'jt' || unit === 'juta') {
+      val *= 1000000;
+    } else if (unit === 'rb' || unit === 'ribu' || unit === 'k') {
+      val *= 1000;
+    } else if (unit === 'ratus ribu') {
+      val *= 100000;
     }
-    
-    if (lower.includes('gaji') || lower.includes('pemasukan') || lower.includes('income') || lower.includes('transfer masuk') || lower.includes('dapat uang') || lower.includes('freelance') || lower.includes('bonus')) {
-      type = 'income';
-      category = 'Gaji';
-      description = text;
-    } else if (lower.includes('transfer') || lower.includes('kirim')) {
-      type = 'transfer';
-      category = null;
-      description = text;
-      const target = walletsList.find(w => lower.includes(w.toLowerCase()) && lower.indexOf(w.toLowerCase()) > lower.indexOf('ke'));
-      transfer_to_wallet = target || walletsList[1] || 'Cash';
-    } else {
-      type = 'expense';
-      if (lower.includes('bakso') || lower.includes('makan') || lower.includes('kopi') || lower.includes('susu') || lower.includes('teh') || lower.includes('warung') || lower.includes('nasgor')) {
-        category = 'Makanan';
-      } else if (lower.includes('bensin') || lower.includes('transport') || lower.includes('ojek') || lower.includes('gojek') || lower.includes('grab')) {
-        category = 'Transport';
-      } else if (lower.includes('anggaran') || lower.includes('nonton') || lower.includes('game') || lower.includes('hiburan')) {
-        category = 'Hiburan';
-      } else if (lower.includes('belanja') || lower.includes('baju') || lower.includes('sepatu')) {
-        category = 'Belanja';
-      } else {
-        category = 'Lainnya';
-      }
-      description = text;
-    }
-    
-    return {
-      type,
-      amount,
-      category,
-      description,
-      transfer_to_wallet
-    };
+    amount = Math.round(val);
   }
-
-  throw new Error('All AI providers failed to parse the transaction.');
+  
+  if (lower.includes('gaji') || lower.includes('pemasukan') || lower.includes('income') || lower.includes('transfer masuk') || lower.includes('dapat uang') || lower.includes('freelance') || lower.includes('bonus')) {
+    type = 'income';
+    category = 'Gaji';
+    description = text;
+  } else if (lower.includes('transfer') || lower.includes('kirim')) {
+    type = 'transfer';
+    category = null;
+    description = text;
+    const target = walletsList.find(w => lower.includes(w.toLowerCase()) && lower.indexOf(w.toLowerCase()) > lower.indexOf('ke'));
+    transfer_to_wallet = target || walletsList[1] || 'Cash';
+  } else {
+    type = 'expense';
+    if (lower.includes('bakso') || lower.includes('makan') || lower.includes('kopi') || lower.includes('susu') || lower.includes('teh') || lower.includes('warung') || lower.includes('nasgor')) {
+      category = 'Makanan';
+    } else if (lower.includes('bensin') || lower.includes('transport') || lower.includes('ojek') || lower.includes('gojek') || lower.includes('grab')) {
+      category = 'Transport';
+    } else if (lower.includes('anggaran') || lower.includes('nonton') || lower.includes('game') || lower.includes('hiburan')) {
+      category = 'Hiburan';
+    } else if (lower.includes('belanja') || lower.includes('baju') || lower.includes('sepatu')) {
+      category = 'Belanja';
+    } else {
+      category = 'Lainnya';
+    }
+    description = text;
+  }
+  
+  return {
+    type,
+    amount,
+    category,
+    description,
+    transfer_to_wallet
+  };
 }
 
 // 2. AUDIO TRANSCRIBE PIPELINE
