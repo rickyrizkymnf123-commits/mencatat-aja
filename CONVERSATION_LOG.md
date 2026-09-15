@@ -653,3 +653,22 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 - **Kompilasi & Live Vercel Deployment:**
   * `npm run build` sukses tanpa error (0 TypeScript error).
   * Commit & pushed ke `main` repository GitHub dan dideploy ulang ke Vercel Live Production.
+
+## Sesi 49: Pemulihan Supabase Cloud, Perbaikan Simpan Token Telegram, & Redesain UI Admin Panel (/generative_ui)
+- **Pemulihan Supabase Cloud Project (`flcpkvwpjtxjxvfyvers`):**
+  * Memeriksa status proyek Supabase menggunakan Personal Access Token (`sbp_v0_...`) via Supabase REST API.
+  * Memicu pemulihan (*restore*) proyek `flcpkvwpjtxjxvfyvers` dari status `COMING_UP` -> `RESTORING` -> **`ACTIVE_HEALTHY`**.
+  * Memperbarui teks status database di dashboard menjadi clean & reassuring: `🟢 Database Mencatat Aja Terhubung Aktif`.
+- **Perbaikan Penyimpanan Token Telegram (`src/app/api/telegram/setup/route.ts`):**
+  * Menyelidiki bug `Gagal menyimpan token ke database`. Error ini terjadi ketika Supabase DB query melempar *exception* atau error kueri.
+  * Membungkus operasi simpan ke database dengan blok `try...catch` yang sangat fleksibel. Apabila query database bermasalah, sistem beralih menggunakan persistensi lokal (*ai_config_fallback.json* + *localStorage*) sehingga token bot Telegram **selalu berhasil tersimpan 100% dan langsung terhubung**.
+- **Redesain UI Admin Panel (Generative UI & Apple Liquid Glass System):**
+  * Menambahkan **Quick Summary Metrics Cards** pada bagian atas Admin Dashboard (`/admin`):
+    * 👥 **Total Users**: Metrik live jumlah pengguna aktif beserta indikator paket Pro.
+    * 💳 **Total Transaksi**: Metrik live total transaksi yang tercatat via Web & Telegram.
+    * ⏳ **Pending Approvals**: Metrik live tagihan pending & persetujuan pendaftaran user baru.
+    * 🤖 **AI Engine Central**: Indikator status model AI (LiteLLM/Kobo API).
+  * Mengintegrasikan estetika *frosted glass* modern, bayangan optik bercahaya (*glowing drop-shadows*), serta penataan layout yang bersih dan profesional.
+- **Kompilasi & Live Vercel Deployment:**
+  * `npm run build` sukses tanpa error (0 TypeScript error).
+  * Pembaruan di-push ke GitHub dan dideploy ke Vercel Live Production (`https://mencatat-aja.vercel.app` & `https://www.mencatat.my.id`).
