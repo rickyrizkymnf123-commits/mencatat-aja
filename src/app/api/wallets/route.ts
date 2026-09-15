@@ -25,7 +25,7 @@ function getMockWallets(userId: string) {
         id: `w_bca_${userId}`,
         user_id: userId,
         name: 'BCA',
-        balance: 80000000,
+        balance: 0,
         is_default: true,
         created_at: new Date().toISOString()
       },
@@ -33,7 +33,7 @@ function getMockWallets(userId: string) {
         id: `w_cash_${userId}`,
         user_id: userId,
         name: 'Cash',
-        balance: 1500000,
+        balance: 0,
         is_default: false,
         created_at: new Date().toISOString()
       }

@@ -391,8 +391,8 @@ export async function POST(request: Request) {
           const { data: createdWallets } = await supabaseAdmin
             .from('wallets')
             .insert([
-              { user_id: userProfile.id, name: 'BCA', balance: 5000000, is_default: true },
-              { user_id: userProfile.id, name: 'Cash', balance: 500000, is_default: false }
+              { user_id: userProfile.id, name: 'BCA', balance: 0, is_default: true },
+              { user_id: userProfile.id, name: 'Cash', balance: 0, is_default: false }
             ])
             .select('*');
           if (createdWallets && createdWallets.length > 0) {
@@ -409,7 +409,7 @@ export async function POST(request: Request) {
             id: `w_bca_${userProfile.id}`,
             user_id: userProfile.id,
             name: 'BCA',
-            balance: 5000000,
+            balance: 0,
             is_default: true,
             created_at: new Date().toISOString()
           },
@@ -417,7 +417,7 @@ export async function POST(request: Request) {
             id: `w_cash_${userProfile.id}`,
             user_id: userProfile.id,
             name: 'Cash',
-            balance: 500000,
+            balance: 0,
             is_default: false,
             created_at: new Date().toISOString()
           }
