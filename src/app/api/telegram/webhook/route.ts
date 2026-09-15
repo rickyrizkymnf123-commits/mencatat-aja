@@ -383,17 +383,73 @@ export async function POST(request: Request) {
         .or(`user_id.eq.${userProfile.id},user_id.is.null`);
       categories = cData || [];
     }
+
+    // Auto-provision default wallets if user has no wallets
+    if (!wallets || wallets.length === 0) {
+      if (!isPlaceholder) {
+        try {
+          const { data: createdWallets } = await supabaseAdmin
+            .from('wallets')
+            .insert([
+              { user_id: userProfile.id, name: 'BCA', balance: 5000000, is_default: true },
+              { user_id: userProfile.id, name: 'Cash', balance: 500000, is_default: false }
+            ])
+            .select('*');
+          if (createdWallets && createdWallets.length > 0) {
+            wallets = createdWallets;
+          }
+        } catch (e) {
+          console.warn('Failed to auto-provision wallets in Supabase:', e);
+        }
+      }
       
-    const defaultWallet = wallets.find(w => w.is_default) || wallets[0];
-    
-    if (!defaultWallet) {
-      await telegram.sendMessage(
-        botToken,
-        chatId,
-        '⚠️ <b>Dompet belum siap!</b>\nSilakan buat dompet utama terlebih dahulu melalui dashboard web Mencatat Aja sebelum mencatat transaksi.'
-      );
-      return NextResponse.json({ ok: true });
+      if (!wallets || wallets.length === 0) {
+        wallets = [
+          {
+            id: `w_bca_${userProfile.id}`,
+            user_id: userProfile.id,
+            name: 'BCA',
+            balance: 5000000,
+            is_default: true,
+            created_at: new Date().toISOString()
+          },
+          {
+            id: `w_cash_${userProfile.id}`,
+            user_id: userProfile.id,
+            name: 'Cash',
+            balance: 500000,
+            is_default: false,
+            created_at: new Date().toISOString()
+          }
+        ];
+        try {
+          const mockWalletsFile = path.join(process.cwd(), 'src/lib/mock_wallets.json');
+          let all: any[] = [];
+          if (fs.existsSync(mockWalletsFile)) {
+            all = JSON.parse(fs.readFileSync(mockWalletsFile, 'utf-8'));
+          }
+          all = [...all, ...wallets];
+          fs.writeFileSync(mockWalletsFile, JSON.stringify(all, null, 2));
+        } catch (e) {}
+      }
     }
+
+    if (!categories || categories.length === 0) {
+      categories = [
+        { id: 'c1', name: 'Makanan', emoji: '🍜', type: 'expense' },
+        { id: 'c2', name: 'Transport', emoji: '🚗', type: 'expense' },
+        { id: 'c3', name: 'Hiburan', emoji: '🎮', type: 'expense' },
+        { id: 'c4', name: 'Tagihan', emoji: '🏠', type: 'expense' },
+        { id: 'c5', name: 'Belanja', emoji: '👕', type: 'expense' },
+        { id: 'c6', name: 'Gaji', emoji: '💼', type: 'income' },
+        { id: 'c7', name: 'Bonus', emoji: '🎁', type: 'income' },
+        { id: 'c8', name: 'Freelance', emoji: '💻', type: 'income' },
+        { id: 'c9', name: 'Investasi', emoji: '📈', type: 'income' },
+        { id: 'c10', name: 'Lainnya', emoji: '📦', type: 'expense' }
+      ];
+    }
+
+    const defaultWallet = wallets.find(w => w.is_default) || wallets[0];
       
     // 6. HANDLE COMMANDS
     if (textContent.startsWith('/')) {

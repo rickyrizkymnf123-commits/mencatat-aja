@@ -84,7 +84,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Telegram API mengembalikan status error' }, { status: 400 });
     }
 
-    // 3. Set Webhook: POST setWebhook with user_id and bot_token query params
+    // 3. Detect chat ID of the user who interacted with the bot (Clear webhook temporarily for getUpdates if needed)
+    let detectedChatId: number | null = null;
+    let detectedName: string | null = null;
+    try {
+      // Clear webhook temporarily so getUpdates doesn't return 409 Conflict
+      await fetch(`https://api.telegram.org/bot${token}/deleteWebhook`);
+      
+      const getUpdatesUrl = `https://api.telegram.org/bot${token}/getUpdates?limit=10&offset=-10`;
+      const updatesRes = await fetch(getUpdatesUrl);
+      if (updatesRes.ok) {
+        const updatesData = await updatesRes.json();
+        if (updatesData.ok && updatesData.result && updatesData.result.length > 0) {
+          const lastUpdate = updatesData.result[updatesData.result.length - 1];
+          if (lastUpdate.message && lastUpdate.message.chat) {
+            detectedChatId = lastUpdate.message.chat.id;
+            detectedName = lastUpdate.message.from?.first_name || '';
+          } else if (lastUpdate.callback_query && lastUpdate.callback_query.message) {
+            detectedChatId = lastUpdate.callback_query.message.chat.id;
+            detectedName = lastUpdate.callback_query.from?.first_name || '';
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch getUpdates for dynamic pairing:', e);
+    }
+
+    // 4. Set Webhook: POST setWebhook with user_id and bot_token query params
     const host = request.headers.get('host') || '';
     const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
     const autoBaseUrl = `${proto}://${host}`;
@@ -117,32 +143,9 @@ export async function POST(request: Request) {
       webhookErrorMsg = 'Telegram memerlukan URL webhook HTTPS. Di localhost gunakan ngrok atau Vercel live URL.';
     }
 
-    // 4. Save encrypted token and connection status
+    // 5. Save encrypted token and connection status
     const encryptedToken = encrypt(token);
     let updatedProfile: any = null;
-
-    // Detect chat ID of the user who last interacted with the bot
-    let detectedChatId: number | null = null;
-    let detectedName: string | null = null;
-    try {
-      const getUpdatesUrl = `https://api.telegram.org/bot${token}/getUpdates?limit=10&offset=-10`;
-      const updatesRes = await fetch(getUpdatesUrl);
-      if (updatesRes.ok) {
-        const updatesData = await updatesRes.json();
-        if (updatesData.ok && updatesData.result && updatesData.result.length > 0) {
-          const lastUpdate = updatesData.result[updatesData.result.length - 1];
-          if (lastUpdate.message && lastUpdate.message.chat) {
-            detectedChatId = lastUpdate.message.chat.id;
-            detectedName = lastUpdate.message.from?.first_name || '';
-          } else if (lastUpdate.callback_query && lastUpdate.callback_query.message) {
-            detectedChatId = lastUpdate.callback_query.message.chat.id;
-            detectedName = lastUpdate.callback_query.from?.first_name || '';
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to fetch getUpdates for dynamic pairing:', e);
-    }
 
     if (!isPlaceholder) {
       try {
