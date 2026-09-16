@@ -1118,3 +1118,20 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 3. **Build & Deployment**:
    - Verifikasi `npm run build` (100% lolos, 0 error).
    - Melakukan git commit dan push ke `origin/main` untuk trigger auto-deploy Vercel Pro.
+
+## Sesi 76 - High-Contrast Typography & Pure Obsidian Dark Admin Portal (2026-09-16)
+
+### Permintaan Pengguna
+- Memperbaiki bug tampilan Admin Portal di mana font email tidak terbaca (hitam di atas background gelap), kartu statistik atas masih berwarna putih terang, dan sidebar/table masih menyisakan style terang.
+
+### Tindakan & Perubahan Teknis
+1. **Perbaikan Warna Font Email & Tabel**:
+   - Mengganti styling email yang sebelumnya memakai `color: #1e293b` (gelap tidak terbaca) menjadi badge monospace **Cyan Terang** (`color: #38bdf8`, `background: rgba(56, 189, 248, 0.12)`, `border: 1px solid rgba(56, 189, 248, 0.25)`) yang sangat tajam dan kontras tinggi.
+   - Memperbaiki seluruh teks tabel menjadi warna terang kontras (`#f1f5f9` untuk nama user, `#e2e8f0` untuk sel, `#94a3b8` untuk subtitle).
+2. **Transformasi 4 Kartu Statistik Atas ke Dark Glass**:
+   - Mengubah kartu Total Users, Total Transaksi, Pending Approvals, dan AI Engine Central dari `rgba(255, 255, 255, 0.85)` (putih) menjadi **Dark Obsidian Glass** (`rgba(13, 20, 38, 0.75)`) dengan border halus `rgba(255, 255, 255, 0.08)` dan backdrop blur 24px.
+3. **Perbaikan Modal & Form Input**:
+   - Modal Edit Langganan dan Bukti Transfer diubah menjadi Dark Glass (`rgba(13, 20, 38, 0.96)`) dengan input gelap dan font putih bersih.
+4. **Verifikasi & Deployment**:
+   - Build Next.js lolos 100% (`npm run build` - 0 error).
+   - Git commit dan push ke `main` untuk auto-deploy Vercel Pro.
