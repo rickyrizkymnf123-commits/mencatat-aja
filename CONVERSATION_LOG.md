@@ -1178,3 +1178,18 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 3. **Verifikasi & Deployment**:
    - Build Next.js lolos 100% (`npm run build` - 0 error).
    - Git commit dan push ke `main` (`187ac74`) untuk langsung auto-deploy Vercel Pro.
+
+## Sesi 80 - Perbaikan Posisi Sidebar Navigasi & Offset Banner Mode Intip (2026-09-16)
+
+### Permintaan Pengguna
+- Memperbaiki posisi menu navigasi sidebar yang turun ke tengah layar agar kembali rapat di bagian atas di bawah logo seperti tampilan awal, serta mencegah banner hijau Mode Intip menutupi logo.
+
+### Tindakan & Perubahan Teknis
+1. **Penyatuan Container Atas Sidebar**:
+   - Mengelompokkan logo dan list menu navigasi (`.sidebar-menu`) ke dalam satu `<div>` container atas pada `src/app/dashboard/page.tsx`.
+   - Hal ini menghilangkan jarak kosong besar (*flex-space*) di tengah, sehingga menu (Beranda, Transaksi, Laporan, Budget, Wallet, Settings, Langganan, Profil) kembali menempel rapi di bagian atas tepat di bawah logo seperti awal.
+2. **Kompensasi Offset Banner Mode Intip**:
+   - Menambahkan `top: isAdminMode ? '44px' : '0'` pada elemen `<aside className="sidebar">` saat mode intip aktif, sehingga banner hijau tidak lagi menabrak atau menutupi logo "Mencatat Aja / AI WEALTH OS".
+3. **Verifikasi & Deployment**:
+   - Build Next.js lolos 100% (`npm run build` - 0 error).
+   - Git commit dan push ke `main` (`2ee096c`) untuk langsung auto-deploy Vercel Pro.
