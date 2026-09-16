@@ -428,4 +428,23 @@ button {
   }
 }
 
+/* Auth Page Branding Panel Styles */
+.branding-panel,
+.branding-panel * {
+  color: #ffffff !important;
+}
 
+.branding-logo {
+  color: #ffffff !important;
+  text-decoration: none !important;
+  font-size: 1.6rem !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  letter-spacing: -0.02em !important;
+}
+
+.branding-logo span {
+  color: #ffffff !important;
+}
