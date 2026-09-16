@@ -1163,3 +1163,18 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 3. **Verifikasi & Deployment**:
    - Build Next.js lolos 100% (`npm run build` - 0 error).
    - Git commit dan push ke branch `main` di GitHub (`9ecdb99`) untuk trigger auto-deploy Vercel Pro.
+
+## Sesi 79 - Perbaikan Grid 4-Kolom Ringkasan Keuangan & Layout Beranda (2026-09-16)
+
+### Permintaan Pengguna
+- Memperbaiki tampilan beranda user yang tidak sesuai (kartu statistik vertikal memanjang full-width dan layout onboarding di bagian bawah terpotong).
+
+### Tindakan & Perubahan Teknis
+1. **Restorasi Grid 4-Kolom Statistik (.stats-summary)**:
+   - Mengembalikan layout CSS `display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 18px !important;` pada `src/app/globals.css` dan `src/app/dashboard/page.tsx`.
+   - Menjadikan kartu Saldo Total, Pemasukan, Pengeluaran, dan Sisa Budget berjajar rapi 4 kolom sejajar di layar desktop dan responsif 2 kolom / 1 kolom di tablet & mobile.
+2. **Perbaikan Layout & Bottom Padding**:
+   - Menambahkan bottom padding `padding: 36px 40px 100px 40px;` pada `.dashboard-main` agar konten Onboarding Checklist dan card grafik di bawahnya tidak terpotong.
+3. **Verifikasi & Deployment**:
+   - Build Next.js lolos 100% (`npm run build` - 0 error).
+   - Git commit dan push ke `main` (`187ac74`) untuk langsung auto-deploy Vercel Pro.
