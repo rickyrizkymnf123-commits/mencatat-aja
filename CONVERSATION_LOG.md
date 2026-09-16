@@ -798,3 +798,20 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 - **Verifikasi & Deployment:**
   * `npm run build` sukses 100% (0 error).
   * Perubahan di-commit ke Git dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
+
+## Sesi 58: Eliminasi Total Error Boundary ("This page couldn't load") & Peningkatan Ketahanan Render Dashboard
+- **Identifikasi Masalah:**
+  * Layar browser menampilkan halaman hitam error Next.js: *"This page couldn't load. Reload to try again, or go back."*.
+- **Akar Masalah (Root Cause):**
+  * Terjadi uncaught runtime exception saat render komponen dashboard ketika data transaksi atau dompet bernilai `null` atau `undefined` (misalnya saat `t.description` bernilai null lalu memanggil `.toLowerCase()`, atau `wallets`/`budgets` tidak bertipe array lalu memanggil `.reduce()`, atau `JSON.parse` memproses string yang tidak valid).
+- **Solusi & Perbaikan yang Diterapkan (`src/app/dashboard/page.tsx`):**
+  1. **Safe JSON Parser:**
+     - Menambahkan fungsi pembantu `safeJsonParse()` dengan blok *try-catch* untuk seluruh pembacaan `localStorage` sehingga tidak akan pernah melempar `SyntaxError`.
+  2. **Pelindung Tipe Data Array Defensif:**
+     - Memastikan seluruh state (`wallets`, `transactions`, `categories`, `budgets`) selalu diperlakukan sebagai array yang valid (`safeWallets`, `safeTransactions`, `safeCategories`, `safeBudgets`).
+     - Seluruh kalkulasi agregat (`totalBalance`, `totalIncome`, `totalExpense`, `totalBudgetLimit`, `totalBudgetSpent`, tren grafik, dan diagram pie) menggunakan safe fallback (`Number(x || 0)` dan pengecekan objek `t` sebelum akses properti).
+  3. **Keandalan Pengambilan Data Backend (`fetchDashboardData`):**
+     - Membungkus setiap pemanggilan `res.json()` dengan `.catch(() => null)` dan menghapus pelemparan error yang tidak perlu, sehingga jika salah satu endpoint lambat/kosong, dashboard tetap me-render antarmuka dengan anggun tanpa crash.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% dengan 0 error.
+  * Di-commit ke GitHub dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
