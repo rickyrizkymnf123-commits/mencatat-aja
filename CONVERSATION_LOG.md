@@ -960,6 +960,23 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
   * `npm run build` sukses 100% (0 error).
   * Di-commit ke Git repository `main` dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
 
+## Sesi 67: Pengalihan Langsung Akun Admin, Pembersihan Menu Sidebar Admin, dan Kolom Email Pengguna
+- **Permintaan Pengguna:**
+  1. Jika login dengan akun Admin, hanya menu Admin yang tersedia (tidak boleh ada menu/tampilan user).
+  2. Menampilkan email pengguna di tabel Kelola Pengguna Admin.
+  3. Memastikan isolasi mutlak antara halaman pengguna biasa (`/dashboard`) dan admin (`/admin`).
+- **Solusi & Perbaikan yang Diterapkan:**
+  1. **Pengalihan Langsung Berdasarkan Peran di `/auth` (`src/app/auth/page.tsx`):**
+     - Memperbarui fungsi submit login dan onboarding sehingga jika `role === 'superadmin'` atau email `rickyrizkymnf123@gmail.com`, pengguna langsung dialihkan ke `/admin`. Pengguna biasa tetap dialihkan ke `/dashboard`.
+  2. **Pembersihan Menu Admin Sidebar (`src/app/admin/page.tsx`):**
+     - Menghapus tautan `Dashboard User` dari sidebar admin sehingga panel admin menjadi murni berfokus pada manajemen sistem (*Kelola Pengguna, Approval Pembayaran, AI Configuration, Log & Biaya AI, Log Audit Keamanan*).
+  3. **Penambahan Kolom Email di Tabel Pengguna Admin (`src/app/admin/page.tsx`):**
+     - Menambahkan header `EMAIL` pada tabel Kelola Pengguna serta menampilkan alamat email pengguna riil (`u.email`) dengan styling badge monospace yang rapi dan mudah dibaca.
+     - Menambahkan input `Email User` pada modal Tambah User Baru manual oleh Admin.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% (0 error).
+  * Di-commit ke Git repository `main` (`feat(admin): pure admin menus, direct superadmin redirect, and user email column in table`) dan otomatis di-deploy ke Vercel Live Production.
+
 
 
 
