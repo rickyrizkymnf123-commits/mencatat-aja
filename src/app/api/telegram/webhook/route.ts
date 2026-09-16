@@ -234,7 +234,6 @@ export async function POST(request: Request) {
       }
     }
     
-    // 3.5 Disconnect & Token Mismatch Check
     if (!isPlaceholder) {
       const targetUserId = (queryUserId && isUUID(queryUserId)) ? queryUserId : SUPERADMIN_ID;
       if (queryUserId) {
@@ -243,24 +242,24 @@ export async function POST(request: Request) {
           activeBotToken = decrypt(userProfile.telegram_bot_token);
         }
 
-        // Case A: User has disconnected their bot
-        if (!activeBotToken) {
-          console.log(`Telegram Bot disconnected for user ${queryUserId}, deleting webhook and ignoring.`);
-          if (queryBotToken) {
-            fetch(`https://api.telegram.org/bot${queryBotToken}/deleteWebhook`).catch(() => {});
-          }
+        const resolvedToken = queryBotToken || activeBotToken;
+        if (!resolvedToken) {
+          console.log(`No valid bot token for user ${queryUserId}, ignoring.`);
           return NextResponse.json({ ok: true });
         }
 
-        // Case B: Update came from an old/replaced bot (e.g. Bot A when active is Bot B)
-        if (queryBotToken && activeBotToken && queryBotToken !== activeBotToken) {
-          console.log(`Update from replaced bot token (${queryBotToken.substring(0, 8)}), active is (${activeBotToken.substring(0, 8)}). Deleting old webhook and ignoring.`);
-          fetch(`https://api.telegram.org/bot${queryBotToken}/deleteWebhook`).catch(() => {});
-          return NextResponse.json({ ok: true });
-        }
+        botToken = resolvedToken;
 
-        // Active bot token is verified
-        botToken = activeBotToken;
+        // Auto-sync profile bot token if queryBotToken is provided
+        if (queryBotToken && (!activeBotToken || activeBotToken !== queryBotToken)) {
+          try {
+            const { encrypt } = await import('@/lib/crypto');
+            await supabaseAdmin
+              .from('profiles')
+              .update({ telegram_bot_token: encrypt(queryBotToken) })
+              .eq('id', targetUserId);
+          } catch (e) {}
+        }
         
         // If telegram_chat_id is missing or updated, pair it automatically now
         if (!userProfile?.telegram_chat_id || String(userProfile.telegram_chat_id) !== String(chatId)) {

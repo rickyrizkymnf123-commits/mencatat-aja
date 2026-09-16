@@ -853,4 +853,21 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
   * `npm run build` sukses 100% (0 error).
   * Di-commit ke Git repository `main` dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
 
+## Sesi 61: Resolusi Token Multi-Bot & Penghapusan Kondisi Auto-Delete Webhook
+- **Identifikasi Masalah:**
+  * Pengguna mengirim pesan `pemasukan gajih 100rb` di bot Telegram (`@egadss_bot`), tetapi bot tidak memberikan balasan dan tidak muncul indikator mencatat.
+- **Akar Masalah (Root Cause):**
+  * Sebelumnya terdapat logika "Token Mismatch Check" di `src/app/api/telegram/webhook/route.ts` yang membandingkan `queryBotToken` dengan token bot yang tercatat di database profile.
+  * Ketika pengguna pernah menguji bot lain (`@kingfauzy_bot`), token di profil berubah menjadi milik bot baru. Saat pengguna kembali menggunakan `@egadss_bot`, webhook mendeteksi ketidakcocokan dan secara otomatis memanggil `deleteWebhook` ke Telegram API, sehingga webhook bot lama terhapus (`url: ""`) dan berhenti menerima pesan.
+- **Solusi & Perbaikan yang Diterapkan:**
+  1. **Dynamic Multi-Bot Token Resolution:**
+     - Menghapus pemanggilan `deleteWebhook` sepihak pada webhook update.
+     - Webhook kini memproses pesan secara sah menggunakan `queryBotToken` yang menyertai URL webhook terdaftar dan secara otomatis menyinkronkan token aktif pengguna tanpa merusak bot yang sedang dipakai.
+  2. **Pendaftaran Ulang Webhook Semua Bot Aktif:**
+     - Mendaftarkan kembali webhook untuk bot `@egadss_bot` (`8600144571:...`) dan `@kingfauzy_bot` (`8648595043:...`) dengan URL HTTPS live resmi `https://www.mencatat.my.id/api/telegram/webhook?user_id=...&bot_token=...`.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% (0 error).
+  * Di-commit ke Git repository `main` dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
+
+
 
