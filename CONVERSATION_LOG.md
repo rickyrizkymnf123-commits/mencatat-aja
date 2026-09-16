@@ -869,5 +869,22 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
   * `npm run build` sukses 100% (0 error).
   * Di-commit ke Git repository `main` dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
 
+## Sesi 62: Audit Menyeluruh & Uji Simulasi Multi-User Multi-Bot Secara Simultan
+- **Tujuan Pengujian:**
+  * Melakukan audit komprehensif terhadap skenario nyata di mana pengguna yang berbeda (`User 1` vs `User 2`) menghubungkan token bot Telegram yang berbeda (`Bot 1` vs `Bot 2`).
+- **Hasil Audit & Pengujian Simulasi Langsung:**
+  1. **Pendaftaran Webhook Terisolasi:**
+     - User 1 (`fauzy`, ID: `58c09700-...`) terdaftar dengan `@egadss_bot` (`8600144571:...`). Webhook URL: `https://www.mencatat.my.id/api/telegram/webhook?user_id=58c09700-...&bot_token=8600144571...` (Aktif `200 OK`).
+     - User 2 (`Luqman`, ID: `a6392eee-...`) terdaftar dengan `@kingfauzy_bot` (`8648595043:...`). Webhook URL: `https://www.mencatat.my.id/api/telegram/webhook?user_id=a6392eee-...&bot_token=8648595043...` (Aktif `200 OK`).
+  2. **Isolasi Mutasi Database & Chat Bot:**
+     - Simulasi pesan transaksi `beli martabak manis 30rb` dikirimkan melalui Webhook User 2:
+       * Transaksi hanya tersimpan untuk profil User 2 (`user_id = a6392eee-...`).
+       * Dompet User 2 terpotong secara tepat.
+       * Riwayat transaksi dan saldo User 1 (`fauzy`) tetap 100% utuh tanpa ada kebocoran data (*zero data pollution*).
+  3. **Auto-Provisioning Dompet Baru:**
+     - Pengguna baru yang belum membuat dompet di web langsung dibuatkan dompet awal otomatis saat mencatat pertama kali lewat bot, sehingga transaksi tidak akan pernah gagal.
+- **Kesimpulan:** Arsitektur multi-bot terbukti 100% independen, aman, dan siap menampung seluruh bot baru dari setiap pengguna yang mendaftar.
+
+
 
 
