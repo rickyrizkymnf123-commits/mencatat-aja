@@ -70,7 +70,7 @@ export async function GET(request: Request) {
       .from('transactions')
       .select(`
         *,
-        wallets (name),
+        wallets:wallets!transactions_wallet_id_fkey (name),
         categories (name, emoji)
       `)
       .eq('user_id', targetUserId)
@@ -140,7 +140,7 @@ export async function POST(request: Request) {
       })
       .select(`
         *,
-        wallets (name),
+        wallets:wallets!transactions_wallet_id_fkey (name),
         categories (name, emoji)
       `)
       .single();

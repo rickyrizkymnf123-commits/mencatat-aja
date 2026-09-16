@@ -39,7 +39,7 @@ export async function POST(request: Request) {
         description,
         transaction_date,
         source,
-        wallets (name),
+        wallets:wallets!transactions_wallet_id_fkey (name),
         categories (name, emoji)
       `)
       .eq('user_id', userId)

@@ -834,3 +834,23 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
   * `npm run build` berhasil 100% dengan 0 error.
   * Perubahan di-commit ke Git dan dideploy ke Vercel Production (`https://www.mencatat.my.id`).
 
+## Sesi 60: Perbaikan PostgREST Ambiguous Foreign Key PGRST201 pada Endpoint Transaksi dan Sinkronisasi Live Dashboard
+- **Identifikasi Masalah:**
+  * Pengguna mencatat transaksi via Telegram (`jajan 25 rb beli seblak`), saldo dompet berhasil terpotong menjadi Rp 975.000 dan budget mencatat pengeluaran Rp 25.000, namun daftar transaksi terakhir, ringkasan pengeluaran harian, diagram kategori, dan laporan transaksi di dashboard web masih kosong / Rp 0.
+- **Akar Masalah (Root Cause):**
+  * Pada tabel Supabase PostgreSQL `transactions`, terdapat 2 relasi foreign key ke tabel `wallets`:
+    1. `transactions_wallet_id_fkey` (`wallet_id`)
+    2. `transactions_transfer_to_wallet_id_fkey` (`transfer_to_wallet_id`)
+  * Ketika endpoint `/api/transactions` dan `/api/exports` menjalankan query `.select('*, wallets (name), categories (name, emoji)')`, Supabase PostgREST melemparkan error `PGRST201: Could not embed because more than one relationship was found for 'transactions' and 'wallets'`.
+  * Akibat error 500 ini, dashboard web gagal mengambil daftar transaksi dari backend Supabase meskipun datanya tersimpan nyata di database.
+- **Solusi & Perbaikan yang Diterapkan:**
+  1. **Explicit Foreign Key Relationship Embedding:**
+     - Memperbarui query di `src/app/api/transactions/route.ts` (GET dan POST) serta `src/app/api/exports/route.ts` dengan menyertakan nama FK eksplisit:
+       `wallets:wallets!transactions_wallet_id_fkey (name)`
+  2. **Verifikasi Database & Query Langsung:**
+     - Menguji query dengan Node.js script langsung ke Supabase Cloud: Data transaksi `jajan 25 rb beli seblak` (Rp 25.000, dompet: Dana, kategori: Lainnya) berhasil diambil 100% lengkap tanpa error.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% (0 error).
+  * Di-commit ke Git repository `main` dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
+
+
