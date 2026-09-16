@@ -82,7 +82,11 @@ export default function AuthPage() {
         localStorage.setItem('Mencatat Aja_plan', user.user_metadata?.plan || 'Starter');
         const role = user.user_metadata?.role || (user.email?.toLowerCase() === 'rickyrizkymnf123@gmail.com' ? 'superadmin' : 'user');
         localStorage.setItem('Mencatat Aja_role', role);
-        router.push('/dashboard');
+        if (role === 'superadmin') {
+          router.push('/admin');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (err: any) {
       setIsLoading(false);
@@ -127,7 +131,11 @@ export default function AuthPage() {
       const role = email.toLowerCase() === 'rickyrizkymnf123@gmail.com' ? 'superadmin' : 'user';
       localStorage.setItem('Mencatat Aja_role', role);
       
-      router.push('/dashboard');
+      if (role === 'superadmin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       setIsLoading(false);
       setErrorMessage(err.message || 'Internal server error');

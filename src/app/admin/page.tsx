@@ -37,6 +37,7 @@ export default function AdminDashboard() {
   // User Management Admin Actions
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUserNameInput, setNewUserNameInput] = useState('');
+  const [newUserEmailInput, setNewUserEmailInput] = useState('');
   const [newUserPhoneInput, setNewUserPhoneInput] = useState('');
   const [newUserPlanInput, setNewUserPlanInput] = useState('Starter');
   const [newUserApproveInput, setNewUserApproveInput] = useState(true);
@@ -201,6 +202,7 @@ export default function AdminDashboard() {
     const newUser = {
       id: `usr_${Math.random().toString(36).substring(2, 9)}`,
       name: newUserNameInput,
+      email: newUserEmailInput || '-',
       phone: newUserPhoneInput || '-',
       plan: newUserPlanInput,
       telegram: 'Belum Terhubung',
@@ -215,6 +217,7 @@ export default function AdminDashboard() {
     }
     alert(`🟢 User "${newUserNameInput}" berhasil ditambahkan!`);
     setNewUserNameInput('');
+    setNewUserEmailInput('');
     setNewUserPhoneInput('');
     setNewUserPlanInput('Starter');
     setNewUserApproveInput(true);
@@ -1392,9 +1395,6 @@ export default function AdminDashboard() {
           </div>
 
           <ul className="sidebar-menu" style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: 0, margin: 0, listStyle: 'none' }}>
-            <Link href="/dashboard" className="menu-item" style={{ padding: '10px 14px', fontSize: '0.85rem', color: '#059669', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.25)', textDecoration: 'none', borderRadius: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap' }}>
-              <span>🏠</span> <span>Dashboard User</span>
-            </Link>
             <li onClick={() => { setActiveTab('users'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'users' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span>👥</span> <span>Kelola Pengguna</span>
             </li>
@@ -1540,6 +1540,16 @@ export default function AdminDashboard() {
                     />
                   </div>
                   <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: '600' }}>Email User</label>
+                    <input 
+                      type="email" 
+                      placeholder="Contoh: user@gmail.com"
+                      value={newUserEmailInput}
+                      onChange={e => setNewUserEmailInput(e.target.value)}
+                      style={{ width: '100%', padding: '10px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                  <div>
                     <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: '600' }}>No. Handphone</label>
                     <input 
                       type="text" 
@@ -1609,6 +1619,7 @@ export default function AdminDashboard() {
                       />
                     </th>
                     <th>Nama User</th>
+                    <th>Email</th>
                     <th>No. HP</th>
                     <th>Plan</th>
                     <th>Status ACC</th>
@@ -1634,6 +1645,11 @@ export default function AdminDashboard() {
                         />
                       </td>
                       <td style={{ fontWeight: '700' }}>{u.name}</td>
+                      <td>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: '#1e293b', fontWeight: '600', background: 'rgba(0,0,0,0.05)', padding: '3px 8px', borderRadius: '6px', display: 'inline-block' }}>
+                          {u.email || '-'}
+                        </span>
+                      </td>
                       <td>{u.phone}</td>
                       <td>
                         <span className={`plan-badge ${u.plan.toLowerCase()}`}>
