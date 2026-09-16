@@ -11,7 +11,7 @@ import { supabase, supabaseUrl } from '@/lib/supabase';
 export default function AdminDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    'users' | 'ai_logs' | 'payments' | 'audit_logs' | 'user_preview' | 'ai_config' |
+    'users' | 'subscriptions' | 'ai_logs' | 'payments' | 'audit_logs' | 'user_preview' | 'ai_config' |
     'admin_beranda' | 'admin_transaksi' | 'admin_laporan' | 'admin_budget' | 'admin_wallet' | 'admin_settings'
   >('users');
   const [isLoading, setIsLoading] = useState(true);
@@ -28,6 +28,106 @@ export default function AdminDashboard() {
   const [isSavingAiConfig, setIsSavingAiConfig] = useState(false);
 
   // ADMIN STATES (Connected to Supabase)
+  
+  // SUBSCRIPTION MANAGEMENT STATES (Ala ProfitLab)
+  const [subscriptionsList, setSubscriptionsList] = useState<any[]>([]);
+  const [subSearchQuery, setSubSearchQuery] = useState('');
+  const [subStatusFilter, setSubStatusFilter] = useState('all');
+  const [selectedSubUser, setSelectedSubUser] = useState<any | null>(null);
+  const [showEditSubModal, setShowEditSubModal] = useState(false);
+  const [subModalDays, setSubModalDays] = useState(30);
+  const [subModalFreeAccess, setSubModalFreeAccess] = useState(false);
+  const [subModalIsActive, setSubModalIsActive] = useState(true);
+  const [subModalNotes, setSubModalNotes] = useState('');
+  const [subModalPlan, setSubModalPlan] = useState('Pro');
+  const [isSavingSub, setIsSavingSub] = useState(false);
+
+  const fetchSubscriptions = async () => {
+    try {
+      const res = await fetch('/api/admin/subscriptions');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.subscriptions) {
+          setSubscriptionsList(data.subscriptions);
+        }
+      }
+    } catch (e) {
+      console.error('Fetch subscriptions error:', e);
+    }
+  };
+
+  const handleOpenEditSub = (user: any) => {
+    setSelectedSubUser(user);
+    setSubModalDays(30);
+    setSubModalFreeAccess(!!user.is_free_access);
+    setSubModalIsActive(user.is_active !== false);
+    setSubModalNotes(user.notes || '');
+    setSubModalPlan(user.plan || 'Pro');
+    setShowEditSubModal(true);
+  };
+
+  const handleSaveSubscription = async () => {
+    if (!selectedSubUser) return;
+    setIsSavingSub(true);
+    try {
+      const res = await fetch('/api/admin/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: selectedSubUser.id || selectedSubUser.user_id,
+          daysToAdd: subModalDays,
+          isFreeAccess: subModalFreeAccess,
+          isActive: subModalIsActive,
+          notes: subModalNotes,
+          plan: subModalFreeAccess ? 'Pro' : subModalPlan
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal menyimpan langganan');
+      alert(`🟢 Berhasil memperbarui langganan untuk ${selectedSubUser.name || 'Pengguna'}!`);
+      setShowEditSubModal(false);
+      await fetchSubscriptions();
+      await fetchAdminData();
+    } catch (err: any) {
+      alert(`❌ Gagal: ${err.message}`);
+    } finally {
+      setIsSavingSub(false);
+    }
+  };
+
+  const handleBulkExtendSubscription = async () => {
+    if (selectedUserIds.length === 0) {
+      alert('Pilih setidaknya 1 pengguna di tabel untuk perpanjangan massal!');
+      return;
+    }
+    const daysStr = prompt(`Perpanjang langganan untuk ${selectedUserIds.length} pengguna terpilih.\nMasukkan jumlah hari:`, '30');
+    if (!daysStr) return;
+    const days = parseInt(daysStr);
+    if (isNaN(days) || days <= 0) {
+      alert('Jumlah hari harus berupa angka valid');
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userIds: selectedUserIds,
+          daysToAdd: days,
+          isActive: true,
+          plan: 'Pro'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal');
+      alert(`🎉 Sukses menambahkan +${days} hari untuk ${selectedUserIds.length} pengguna!`);
+      await fetchSubscriptions();
+      await fetchAdminData();
+    } catch (err: any) {
+      alert(`❌ Gagal: ${err.message}`);
+    }
+  };
+
   const [providers, setProviders] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [aiLogs, setAiLogs] = useState<any[]>([]);
@@ -1461,18 +1561,31 @@ export default function AdminDashboard() {
       {/* ADMIN SIDEBAR */}
       <aside className={`sidebar admin-nav animate-fade-in ${sidebarOpen ? 'active' : ''}`} style={{ width: '270px', padding: '24px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>
-          <div className="sidebar-logo" style={{ marginBottom: '24px', fontSize: '1.15rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)' }}>
-            <span style={{ fontSize: '1.4rem' }}>👑</span>
-            <span>Mencatat Aja Admin</span>
+          
+          <div className="sidebar-logo" style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ position: 'relative', width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #052e16 0%, #022c22 100%)', border: '1px solid rgba(16, 185, 129, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px rgba(16, 185, 129, 0.3)' }}>
+              <span style={{ fontSize: '1.2rem' }}>💎</span>
+            </div>
+            <div>
+              <div style={{ fontSize: '1.05rem', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.3px' }}>
+                Mencatat<span style={{ color: '#10b981' }}>Aja</span>
+              </div>
+              <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Admin Portal</span>
+            </div>
           </div>
+
 
           <div style={{ padding: '0 8px', marginBottom: '10px', fontSize: '0.68rem', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>
             Tata Kelola Sistem
           </div>
 
           <ul className="sidebar-menu" style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: 0, margin: 0, listStyle: 'none' }}>
+            
             <li onClick={() => { setActiveTab('users'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'users' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span>👥</span> <span>Kelola Pengguna</span>
+            </li>
+            <li onClick={() => { setActiveTab('subscriptions'); setSidebarOpen(false); fetchSubscriptions(); }} className={`menu-item ${activeTab === 'subscriptions' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>💳</span> <span>Kelola Langganan</span>
             </li>
             <li onClick={() => { setActiveTab('payments'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'payments' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span>💰</span> <span>Approval Pembayaran</span>
@@ -1774,6 +1887,253 @@ export default function AdminDashboard() {
               </table>
             </div>
           </>
+        )}
+
+        
+        {/* 2.5 KELOLA LANGGANAN (SUBSCRIPTION MANAGEMENT ALA PROFITLAB) */}
+        {activeTab === 'subscriptions' && (
+          <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.45rem', fontWeight: '800', letterSpacing: '-0.5px', color: 'var(--text-main)', margin: 0 }}>
+                  💳 Kelola Langganan (Subscription Management)
+                </h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: '4px' }}>
+                  Atur masa aktif paket Pro, berikan akses gratis (Free Access VIP), dan perpanjang langganan massal pengguna.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={handleBulkExtendSubscription}
+                  className="btn"
+                  style={{ backgroundColor: '#059669', color: '#ffffff', padding: '9px 18px', fontWeight: '700', borderRadius: '10px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <span>⚡</span> Perpanjang Massal
+                </button>
+              </div>
+            </div>
+
+            {/* Metrics Quick Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+              <div style={{ background: 'rgba(255,255,255,0.85)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.25)', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.08)' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Pelanggan Pro Aktif</div>
+                <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#059669', marginTop: '4px' }}>
+                  {users.filter(u => u.plan === 'Pro' || u.plan === 'pro').length} <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)' }}>User</span>
+                </div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.85)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(245, 158, 11, 0.25)', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.08)' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Free Access (VIP)</div>
+                <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#d97706', marginTop: '4px' }}>
+                  {users.filter(u => u.is_free_access).length || (users.filter(u => u.id === 'usr_catur').length ? 1 : 0)} <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)' }}>VIP</span>
+                </div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.85)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.25)', boxShadow: '0 4px 14px rgba(239, 68, 68, 0.08)' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Hampir Habis (&lt; 7 Hari)</div>
+                <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#ef4444', marginTop: '4px' }}>
+                  {users.filter(u => u.daysRemaining > 0 && u.daysRemaining <= 7).length || 0} <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)' }}>User</span>
+                </div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.85)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(100, 116, 139, 0.25)', boxShadow: '0 4px 14px rgba(100, 116, 139, 0.08)' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Starter (Free Tier)</div>
+                <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#475569', marginTop: '4px' }}>
+                  {users.filter(u => u.plan === 'Starter' || !u.plan).length} <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)' }}>User</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <input
+                type="text"
+                value={subSearchQuery}
+                onChange={e => setSubSearchQuery(e.target.value)}
+                placeholder="Cari pengguna berdasarkan nama atau email..."
+                style={{ flex: '1', minWidth: '240px', padding: '10px 16px', borderRadius: '12px', border: '1px solid var(--border)', background: '#ffffff', fontSize: '0.85rem' }}
+              />
+              <select
+                value={subStatusFilter}
+                onChange={e => setSubStatusFilter(e.target.value)}
+                style={{ padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border)', background: '#ffffff', fontSize: '0.85rem', fontWeight: '600' }}
+              >
+                <option value="all">Semua Status</option>
+                <option value="pro">Pro Aktif</option>
+                <option value="free">Free Access VIP</option>
+                <option value="starter">Starter</option>
+              </select>
+            </div>
+
+            {/* Table */}
+            <div className="shadcn-table-wrapper">
+              <table className="shadcn-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: '40px', textAlign: 'center' }}>
+                      <input 
+                        type="checkbox"
+                        checked={selectedUserIds.length > 0 && selectedUserIds.length === users.length}
+                        onChange={e => {
+                          if (e.target.checked) setSelectedUserIds(users.map(u => u.id));
+                          else setSelectedUserIds([]);
+                        }}
+                      />
+                    </th>
+                    <th>Pengguna</th>
+                    <th>Paket Saat Ini</th>
+                    <th>Status Masa Aktif</th>
+                    <th>Masa Berlaku</th>
+                    <th>Catatan Langganan</th>
+                    <th style={{ textAlign: 'right' }}>Aksi Kelola</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users
+                    .filter(u => {
+                      const matchQuery = (u.name || '').toLowerCase().includes(subSearchQuery.toLowerCase()) || 
+                                         (u.email || '').toLowerCase().includes(subSearchQuery.toLowerCase());
+                      let matchStatus = true;
+                      if (subStatusFilter === 'pro') matchStatus = u.plan === 'Pro' && !u.is_free_access;
+                      if (subStatusFilter === 'free') matchStatus = !!u.is_free_access;
+                      if (subStatusFilter === 'starter') matchStatus = u.plan === 'Starter' || !u.plan;
+                      return matchQuery && matchStatus;
+                    })
+                    .map(u => {
+                      const isFree = !!u.is_free_access;
+                      const isPro = u.plan === 'Pro';
+                      return (
+                        <tr key={u.id}>
+                          <td style={{ textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={selectedUserIds.includes(u.id)}
+                              onChange={e => {
+                                if (e.target.checked) setSelectedUserIds(prev => [...prev, u.id]);
+                                else setSelectedUserIds(prev => prev.filter(id => id !== u.id));
+                              }}
+                            />
+                          </td>
+                          <td>
+                            <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{u.name}</div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{u.email || '-'}</div>
+                          </td>
+                          <td>
+                            <span className={`plan-badge ${isPro ? 'pro' : 'starter'}`}>
+                              {isFree ? 'Pro (VIP)' : (isPro ? 'Pro Member' : 'Starter')}
+                            </span>
+                          </td>
+                          <td>
+                            {isFree ? (
+                              <span className="shadcn-badge" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                                ✨ Free Access VIP
+                              </span>
+                            ) : isPro ? (
+                              <span className="shadcn-badge shadcn-badge-approved">
+                                🟢 Pro Aktif
+                              </span>
+                            ) : (
+                              <span className="shadcn-badge" style={{ background: 'rgba(100, 116, 139, 0.1)', color: '#64748b', border: '1px solid rgba(100, 116, 139, 0.2)' }}>
+                                Free Tier
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ fontFamily: 'monospace', fontSize: '0.82rem', fontWeight: '600' }}>
+                            {isFree ? 'Selamanya (VIP)' : (isPro ? '30 Hari Tersisa' : 'Tanpa Kuota Pro')}
+                          </td>
+                          <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)', maxWidth: '200px' }}>
+                            {u.notes || '-'}
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button
+                              onClick={() => handleOpenEditSub(u)}
+                              className="btn btn-outline"
+                              style={{ padding: '6px 14px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: '700', borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                            >
+                              ✏️ Kelola
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* EDIT SUBSCRIPTION MODAL */}
+            {showEditSubModal && selectedSubUser && (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '20px' }}>
+                <div style={{ background: '#ffffff', borderRadius: '24px', maxWidth: '480px', width: '100%', padding: '28px', boxShadow: '0 25px 60px rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', pb: '12px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>👑</span> Edit Langganan Pengguna
+                    </h3>
+                    <button onClick={() => setShowEditSubModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
+                  </div>
+
+                  <div style={{ background: 'rgba(0,0,0,0.03)', padding: '12px 16px', borderRadius: '12px', fontSize: '0.85rem' }}>
+                    <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{selectedSubUser.name}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{selectedSubUser.email || '-'}</div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-main)' }}>Tambah Masa Aktif (Hari):</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                      <button type="button" onClick={() => setSubModalDays(30)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 30 ? 'var(--primary)' : '#ffffff', color: subModalDays === 30 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+30 Hari</button>
+                      <button type="button" onClick={() => setSubModalDays(90)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 90 ? 'var(--primary)' : '#ffffff', color: subModalDays === 90 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+90 Hari</button>
+                      <button type="button" onClick={() => setSubModalDays(180)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 180 ? 'var(--primary)' : '#ffffff', color: subModalDays === 180 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+180 Hari</button>
+                      <button type="button" onClick={() => setSubModalDays(365)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 365 ? 'var(--primary)' : '#ffffff', color: subModalDays === 365 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+1 Tahun</button>
+                    </div>
+                    <input
+                      type="number"
+                      value={subModalDays}
+                      onChange={e => setSubModalDays(Number(e.target.value))}
+                      style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border)', marginTop: '4px', fontSize: '0.85rem' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(245, 158, 11, 0.08)', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                    <div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#b45309' }}>Akses Gratis (Free Access VIP)</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Berikan paket Pro aktif selamanya</div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={subModalFreeAccess}
+                      onChange={e => setSubModalFreeAccess(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-main)' }}>Catatan Admin:</label>
+                    <textarea
+                      rows={2}
+                      value={subModalNotes}
+                      onChange={e => setSubModalNotes(e.target.value)}
+                      placeholder="Misal: Perpanjangan transfer manual BCA #INV-882"
+                      style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                    <button
+                      onClick={() => setShowEditSubModal(false)}
+                      className="btn btn-outline"
+                      style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '700' }}
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={handleSaveSubscription}
+                      disabled={isSavingSub}
+                      className="btn"
+                      style={{ backgroundColor: 'var(--primary)', color: '#ffffff', padding: '10px 20px', borderRadius: '10px', fontWeight: '700', border: 'none', cursor: 'pointer' }}
+                    >
+                      {isSavingSub ? 'Menyimpan...' : 'Simpan Perubahan'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* 3. APPROVAL PEMBAYARAN MANUAL */}

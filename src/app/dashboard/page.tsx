@@ -17,7 +17,7 @@ function generateProgressBar(percentage: number) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'beranda' | 'transaksi' | 'laporan' | 'budget' | 'wallet' | 'settings' | 'profile'>('beranda');
+  const [activeTab, setActiveTab] = useState<'beranda' | 'transaksi' | 'laporan' | 'budget' | 'wallet' | 'settings' | 'profile' | 'langganan'>('beranda');
   const [isLoading, setIsLoading] = useState(true);
   
   // User info
@@ -1778,9 +1778,19 @@ export default function DashboardPage() {
 
       {/* SIDEBAR NAVIGATION */}
       <aside className={`sidebar animate-fade-in ${sidebarOpen ? 'active' : ''}`}>
-        <div className="sidebar-logo">
-          <span>🏦</span> Mencatat Aja
+        
+        <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px' }}>
+          <div style={{ position: 'relative', width: '38px', height: '38px', borderRadius: '12px', background: 'linear-gradient(135deg, #052e16 0%, #022c22 100%)', border: '1px solid rgba(16, 185, 129, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(16, 185, 129, 0.35)' }}>
+            <span style={{ fontSize: '1.25rem' }}>💎</span>
+          </div>
+          <div>
+            <div style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.3px' }}>
+              Mencatat<span style={{ color: '#10b981' }}>Aja</span>
+            </div>
+            <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.6px' }}>AI Financial OS</span>
+          </div>
         </div>
+
         <ul className="sidebar-menu" style={{ flex: 'none' }}>
           <li onClick={() => { setActiveTab('beranda'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'beranda' ? 'active' : ''}`}>
             🏠 Beranda
@@ -1797,8 +1807,12 @@ export default function DashboardPage() {
           <li onClick={() => { setActiveTab('wallet'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'wallet' ? 'active' : ''}`}>
             👛 Wallet
           </li>
+          
           <li onClick={() => { setActiveTab('settings'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'settings' ? 'active' : ''}`}>
             ⚙️ Settings
+          </li>
+          <li onClick={() => { setActiveTab('langganan'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'langganan' ? 'active' : ''}`}>
+            💎 Kelola Langganan
           </li>
           <li onClick={() => { setActiveTab('profile'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'profile' ? 'active' : ''}`}>
             👤 Profil & Kredit
