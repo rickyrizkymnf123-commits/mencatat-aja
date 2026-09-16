@@ -29,6 +29,16 @@ export default function AuthPage() {
   // Mock User ID for local session simulations
   const [tempUserId, setTempUserId] = useState('');
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('Mencatat Aja_admin_mode');
+      localStorage.removeItem('tatadana_admin_mode');
+      localStorage.removeItem('Mencatat Aja_custom_bot_token');
+      localStorage.removeItem('tatadana_custom_bot_token');
+      localStorage.removeItem('tatadana_bot_token_usr_budi');
+    }
+  }, []);
+
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');

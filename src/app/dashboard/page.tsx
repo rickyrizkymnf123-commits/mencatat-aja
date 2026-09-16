@@ -295,7 +295,15 @@ export default function DashboardPage() {
       setUserPhone(storedPhone);
       setTelegramToken(storedToken);
       setUserPlan(storedPlan);
-      setIsAdminMode(localStorage.getItem('Mencatat Aja_admin_mode') === 'true');
+      
+      const isSuperadminUser = storedRole === 'superadmin' || storedEmail.toLowerCase() === 'rickyrizkymnf123@gmail.com';
+      if (!isSuperadminUser) {
+        localStorage.removeItem('Mencatat Aja_admin_mode');
+        localStorage.removeItem('tatadana_admin_mode');
+        setIsAdminMode(false);
+      } else {
+        setIsAdminMode(localStorage.getItem('Mencatat Aja_admin_mode') === 'true');
+      }
 
       // Initial load - guaranteed to be called
       await fetchDashboardData(storedId, storedToken);
@@ -952,9 +960,22 @@ export default function DashboardPage() {
     }, 1500);
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {}
+    localStorage.removeItem('Mencatat Aja_user_id');
+    localStorage.removeItem('Mencatat Aja_user_email');
+    localStorage.removeItem('Mencatat Aja_user_name');
+    localStorage.removeItem('Mencatat Aja_user_phone');
+    localStorage.removeItem('Mencatat Aja_role');
+    localStorage.removeItem('Mencatat Aja_plan');
+    localStorage.removeItem('Mencatat Aja_telegram_token');
+    localStorage.removeItem('Mencatat Aja_custom_bot_token');
+    localStorage.removeItem('tatadana_custom_bot_token');
+    localStorage.removeItem('Mencatat Aja_admin_mode');
+    localStorage.removeItem('tatadana_admin_mode');
+    router.push('/auth');
   };
 
   // Test Telegram Bot Connection
