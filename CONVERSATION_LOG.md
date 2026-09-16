@@ -1055,3 +1055,18 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
   * `npm run build` sukses 100% (23 routes, 0 error).
   * Di-commit dan di-push ke branch `main` (`commit cf533b7`) dan otomatis live di Vercel Production (`https://www.mencatat.my.id`).
 
+## Sesi 72: Perbaikan Styling Pure-CSS Landing Page & Jembatan Langsung ke Dashboard (Frictionless Bridge)
+- **Identifikasi Bug:**
+  * Landing page di live production (`mencatat.my.id`) tampil tanpa CSS/styling karena kelas utilitas Tailwind tidak terkompilasi (tidak ada config PostCSS/Tailwind).
+  * Pengunjung di Landing Page yang mengklik "Buka Dashboard" tertahan dan dialihkan ke `/auth` karena ketiadaan session awal.
+- **Solusi & Perbaikan yang Diterapkan:**
+  1. **Self-Contained Pure-CSS Landing Page (`src/app/page.tsx`):**
+     - Mengganti semua ketergantungan utility class dengan scoped CSS murni (`<style jsx global>`).
+     - Layout glassmorphism, background ambient glowing spheres, tombol bergradien emerald-cyan, simulator chat Telegram, widget live sync dashboard, bento grid, pricing switcher, dan floating pill tampil 100% sempurna tanpa bergantung pada Tailwind.
+  2. **Jembatan Tembus ke Dashboard (Frictionless Visitor Access):**
+     - Menambahkan handler `handleGoToDashboard` pada Landing Page yang menginisialisasi sesi demo saat diklik.
+     - Memperbarui pengecekan auth pada `src/app/dashboard/page.tsx` agar pengunjung dari Landing Page dapat langsung mendarat dan menggunakan Dashboard secara mulus tanpa dipaksa login terlebih dahulu.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% (23 routes, 0 error).
+  * Di-commit dan di-push ke branch `main` (`commit aa39ff7`) dan otomatis dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
+
