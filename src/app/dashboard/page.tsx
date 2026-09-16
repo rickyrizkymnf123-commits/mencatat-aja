@@ -21,6 +21,8 @@ export default function DashboardPage() {
   // User info
   const [userId, setUserId] = useState('');
   const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [userRole, setUserRole] = useState('user');
   const [userPhone, setUserPhone] = useState('');
   const [telegramToken, setTelegramToken] = useState('');
   const [userPlan, setUserPlan] = useState('Starter');
@@ -209,17 +211,14 @@ export default function DashboardPage() {
 
     const initSessionAndSubscribe = async () => {
       const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-      const SUPERADMIN_ID = '58c09700-965d-4104-a344-6e599c46deff';
 
-      let storedId = localStorage.getItem('Mencatat Aja_user_id') || SUPERADMIN_ID;
-      if (!isUUID(storedId)) {
-        storedId = SUPERADMIN_ID;
-        localStorage.setItem('Mencatat Aja_user_id', storedId);
-      }
-      let storedName = localStorage.getItem('Mencatat Aja_user_name') || 'fauzy';
-      let storedPhone = localStorage.getItem('Mencatat Aja_user_phone') || '081234567890';
-      let storedToken = localStorage.getItem('Mencatat Aja_telegram_token') || 'TD-729402';
-      let storedPlan = localStorage.getItem('Mencatat Aja_plan') || 'Pro';
+      let storedId = localStorage.getItem('Mencatat Aja_user_id') || '';
+      let storedEmail = localStorage.getItem('Mencatat Aja_user_email') || '';
+      let storedRole = localStorage.getItem('Mencatat Aja_role') || 'user';
+      let storedName = localStorage.getItem('Mencatat Aja_user_name') || 'Nasabah';
+      let storedPhone = localStorage.getItem('Mencatat Aja_user_phone') || '';
+      let storedToken = localStorage.getItem('Mencatat Aja_telegram_token') || '';
+      let storedPlan = localStorage.getItem('Mencatat Aja_plan') || 'Starter';
 
       try {
         const { data } = await supabase.auth.getSession();
@@ -228,12 +227,16 @@ export default function DashboardPage() {
         if (session?.user) {
           const user = session.user;
           storedId = user.id;
-          storedName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Nasabah';
-          storedPhone = user.phone || user.user_metadata?.phone_number || '';
+          storedEmail = user.email || storedEmail;
+          storedName = user.user_metadata?.full_name || user.email?.split('@')[0] || storedName;
+          storedPhone = user.phone || user.user_metadata?.phone_number || storedPhone;
+          storedRole = user.user_metadata?.role || (user.email?.toLowerCase() === 'rickyrizkymnf123@gmail.com' ? 'superadmin' : storedRole);
           
           localStorage.setItem('Mencatat Aja_user_id', storedId);
+          localStorage.setItem('Mencatat Aja_user_email', storedEmail);
           localStorage.setItem('Mencatat Aja_user_name', storedName);
           localStorage.setItem('Mencatat Aja_user_phone', storedPhone);
+          localStorage.setItem('Mencatat Aja_role', storedRole);
 
           try {
             // Fetch latest profile status
@@ -246,16 +249,28 @@ export default function DashboardPage() {
             if (profile) {
               storedPlan = profile.plan || 'Starter';
               storedToken = profile.telegram_link_token || '';
+              if (profile.full_name) storedName = profile.full_name;
               localStorage.setItem('Mencatat Aja_plan', storedPlan);
               localStorage.setItem('Mencatat Aja_telegram_token', storedToken);
+              localStorage.setItem('Mencatat Aja_user_name', storedName);
             }
           } catch (profileErr) {
             console.warn('Profiles fetch error:', profileErr);
           }
+        } else if (!storedId || !isUUID(storedId)) {
+          router.push('/auth');
+          return;
         }
       } catch (authErr) {
         console.warn('Supabase auth session fetch error, continuing with stored session:', authErr);
+        if (!storedId || !isUUID(storedId)) {
+          router.push('/auth');
+          return;
+        }
       }
+
+      setUserEmail(storedEmail);
+      setUserRole(storedRole);
 
       // Check if user is approved from the mock users list
       let isUserApproved = true;
@@ -1761,9 +1776,11 @@ export default function DashboardPage() {
           <li onClick={() => { setActiveTab('profile'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'profile' ? 'active' : ''}`}>
             👤 Profil & Kredit
           </li>
-          <Link href="/admin" className="menu-item" style={{ color: '#059669', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.25)', fontWeight: '700', textDecoration: 'none', marginTop: '12px' }}>
-            👑 Panel Admin (/admin)
-          </Link>
+          {(userRole === 'superadmin' || userEmail.toLowerCase() === 'rickyrizkymnf123@gmail.com' || isAdminMode) && (
+            <Link href="/admin" className="menu-item" style={{ color: '#059669', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.25)', fontWeight: '700', textDecoration: 'none', marginTop: '12px' }}>
+              👑 Panel Admin (/admin)
+            </Link>
+          )}
         </ul>
         <div className="sidebar-profile" style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'stretch' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1776,7 +1793,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-          {(userId === 'usr_admin' || isAdminMode) && (
+          {(userRole === 'superadmin' || userEmail.toLowerCase() === 'rickyrizkymnf123@gmail.com' || isAdminMode) && (
             <button 
               onClick={() => {
                 localStorage.setItem('Mencatat Aja_admin_mode', 'true');

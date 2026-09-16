@@ -64,9 +64,12 @@ export default function AuthPage() {
         localStorage.removeItem('tatadana_custom_bot_token');
         localStorage.removeItem('tatadana_bot_token_usr_budi');
         localStorage.setItem('Mencatat Aja_user_id', user.id);
+        localStorage.setItem('Mencatat Aja_user_email', user.email || email);
         localStorage.setItem('Mencatat Aja_user_name', user.user_metadata?.full_name || user.email?.split('@')[0] || 'Nasabah Mencatat Aja');
         localStorage.setItem('Mencatat Aja_user_phone', user.phone || '');
-        localStorage.setItem('Mencatat Aja_plan', 'Starter');
+        localStorage.setItem('Mencatat Aja_plan', user.user_metadata?.plan || 'Starter');
+        const role = user.user_metadata?.role || (user.email?.toLowerCase() === 'rickyrizkymnf123@gmail.com' ? 'superadmin' : 'user');
+        localStorage.setItem('Mencatat Aja_role', role);
         router.push('/dashboard');
       }
     } catch (err: any) {
@@ -105,9 +108,12 @@ export default function AuthPage() {
       localStorage.removeItem('tatadana_custom_bot_token');
       localStorage.removeItem('tatadana_bot_token_usr_budi');
       localStorage.setItem('Mencatat Aja_user_id', tempUserId);
-      localStorage.setItem('Mencatat Aja_user_name', fullName || 'Nasabah Mencatat Aja');
+      localStorage.setItem('Mencatat Aja_user_email', email);
+      localStorage.setItem('Mencatat Aja_user_name', fullName || email.split('@')[0] || 'Nasabah Mencatat Aja');
       localStorage.setItem('Mencatat Aja_telegram_token', resData.telegramLinkToken);
       localStorage.setItem('Mencatat Aja_plan', 'Starter');
+      const role = email.toLowerCase() === 'rickyrizkymnf123@gmail.com' ? 'superadmin' : 'user';
+      localStorage.setItem('Mencatat Aja_role', role);
       
       router.push('/dashboard');
     } catch (err: any) {
@@ -139,7 +145,7 @@ export default function AuthPage() {
         .branding-panel {
           width: 40%;
           background: var(--primary-bg-gradient);
-          color: #ffffff;
+          color: #ffffff !important;
           padding: 60px 48px;
           display: flex;
           flex-direction: column;
@@ -152,21 +158,30 @@ export default function AuthPage() {
           font-weight: 800;
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
+          color: #ffffff !important;
+          text-decoration: none !important;
+          letter-spacing: -0.02em;
+        }
+        .branding-logo span {
+          color: #ffffff !important;
         }
         .branding-mid h2 {
           font-size: 3rem;
           line-height: 1.15;
           margin-bottom: 20px;
+          color: #ffffff !important;
         }
         .branding-mid p {
           font-size: 1.15rem;
-          opacity: 0.9;
+          opacity: 0.95;
           line-height: 1.5;
+          color: #ffffff !important;
         }
         .branding-bottom {
           font-size: 0.9rem;
-          opacity: 0.7;
+          opacity: 0.8;
+          color: #ffffff !important;
         }
         
         /* Decorative background shapes for left panel */
@@ -333,13 +348,17 @@ export default function AuthPage() {
             width: 100%;
             padding: 40px 24px;
           }
+          .mobile-brand-header {
+            display: block !important;
+          }
         }
       `}</style>
 
       {/* LEFT BRANDING PANEL */}
       <div className="branding-panel">
-        <Link href="/" className="branding-logo">
-          🏦 Mencatat Aja
+        <Link href="/" className="branding-logo" style={{ color: '#ffffff', textDecoration: 'none' }}>
+          <span style={{ fontSize: '1.8rem' }}>🏦</span>
+          <span style={{ color: '#ffffff', fontWeight: 800 }}>Mencatat Aja</span>
         </Link>
         <div className="branding-mid">
           <h2>Keuanganmu.<br />Terkontrol.</h2>
@@ -353,6 +372,12 @@ export default function AuthPage() {
       {/* RIGHT FORM PANEL */}
       <div className="form-panel animate-fade-in">
         <div className="form-box">
+          {/* Mobile brand header */}
+          <div style={{ display: 'none', marginBottom: '8px' }} className="mobile-brand-header">
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'var(--primary)', fontWeight: 800, fontSize: '1.4rem' }}>
+              <span>🏦</span> Mencatat Aja
+            </Link>
+          </div>
           {/* ONBOARDING FLOW */}
           {showOnboarding ? (
             <form onSubmit={handleCompleteOnboarding} className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>

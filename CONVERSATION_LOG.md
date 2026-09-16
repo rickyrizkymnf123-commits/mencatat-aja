@@ -919,6 +919,30 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
   * `npm run build` sukses 100% (0 error).
   * Di-commit ke Git repository `main` dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
 
+## Sesi 65: Perbaikan Kontras Logo Auth, Isolasi Total Akun Regular vs Superadmin, dan Endpoint Data Admin Riil
+- **Identifikasi Masalah:**
+  1. Teks logo "Mencatat Aja" di banner hijau halaman `/auth` tidak terbaca (warna abu-abu/gelap di atas background hijau tua).
+  2. Panel Admin (`/admin`) menampilkan data dummy statis (Budi, Ani, Catur) dan tidak menampilkan akun pengguna nyata yang baru mendaftar/login.
+  3. Pengguna baru/regular diarahkan ke akun superadmin atau melihat menu "Panel Admin (/admin)" di sidebar mereka.
+- **Akar Masalah (Root Cause):**
+  1. Tag `<Link>` logo auth mewarisi warna gelap `var(--text-main)` dari styling global tag `<a>`.
+  2. Halaman `/admin` melakukan query langsung menggunakan Supabase client anon (`NEXT_PUBLIC_SUPABASE_ANON_KEY`) di mana Row Level Security (RLS) pada tabel `profiles` mengembalikan array kosong (`[]`) untuk client publik, sehingga frontend jatuh ke fallback dummy mock users.
+  3. Inisialisasi sesi di `src/app/dashboard/page.tsx` memiliki fallback default ke `SUPERADMIN_ID` (`58c09700-...`), dan sidebar dashboard menampilkan `<Link href="/admin">` secara bebas tanpa memvalidasi role `superadmin`.
+- **Solusi & Perbaikan yang Diterapkan:**
+  1. **Tampilan & Kontras Logo Auth (`src/app/auth/page.tsx`):**
+     - Memperbaiki class `.branding-logo` dengan warna putih murni `color: #ffffff !important;`, tipografi tebal `font-weight: 800`, dan teks link inline jelas.
+     - Menambahkan header logo responsif untuk tampilan mobile/tablet.
+  2. **Endpoint Agregasi Data Admin Riil (`/api/admin/data/route.ts`):**
+     - Membuat endpoint backend baru yang memanfaatkan `supabaseAdmin` (Service Role Key) untuk mengambil seluruh user nyata dari Supabase Auth dan PostgreSQL (`profiles`, `transactions`, `wallets`, `payments`, `ai_logs`).
+     - Menyinkronkan daftar pengguna riil (seperti Luqman, M Syaiful, Ricky Rizky, dll.) secara akurat beserta jumlah transaksi aktual, total saldo dompet, dan status bot.
+  3. **Isolasi Mutlak Superadmin & Penghapusan Fallback Superadmin ID:**
+     - Menghapus fallback `SUPERADMIN_ID` di `src/app/dashboard/page.tsx`. Jika tidak ada sesi autentikasi yang sah, pengguna diarahkan kembali ke `/auth`.
+     - Menyembunyikan seluruh tombol dan link `Panel Admin (/admin)` di sidebar dashboard kecuali pengguna memiliki `userRole === 'superadmin'` atau email `rickyrizkymnf123@gmail.com`.
+     - Menambahkan route guard di `src/app/admin/page.tsx` yang secara ketat menolak akses pengguna biasa dan mengembalikannya ke `/dashboard`.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% (0 error).
+  * Di-commit ke Git repository `main` dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
+
 
 
 

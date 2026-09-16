@@ -114,199 +114,52 @@ export default function AdminDashboard() {
 
   const fetchAdminData = async () => {
     setIsLoading(true);
-    
-    const isPlaceholder = !supabaseUrl || 
-      supabaseUrl.includes('your-supabase-project-id') || 
-      supabaseUrl.includes('placeholder-project');
-
-    if (isPlaceholder) {
-      // 1. Mock AI Providers
-      setProviders([
-        { id: '1', name: 'gemini', is_active: true, mode: 'single', token: '••••••••••••••••' },
-        { id: '2', name: 'openai', is_active: false, mode: 'single', token: '' },
-        { id: '3', name: 'deepseek', is_active: false, mode: 'single', token: '' }
-      ]);
-
-      // 2. Mock Users
-      const defaultMockUsers = [
-        { id: 'usr_budi', name: 'Budi Santoso (Demo)', phone: '081234567890', plan: 'Pro', telegram: 'Terhubung (@budi_Mencatat Aja)', txCount: 12, is_approved: true },
-        { id: 'usr_ani', name: 'Ani Wijaya (Demo)', phone: '089876543210', plan: 'Starter', telegram: 'Terhubung (@ani_wijaya)', txCount: 3, is_approved: true },
-        { id: 'usr_catur', name: 'Catur Nugroho (Demo)', phone: '085522334455', plan: 'Pro', telegram: 'Belum Terhubung', txCount: 0, is_approved: false }
-      ];
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('Mencatat_Aja_mock_users');
-        if (stored) {
-          try {
-            setUsers(JSON.parse(stored));
-          } catch (e) {
-            setUsers(defaultMockUsers);
-          }
-        } else {
-          setUsers(defaultMockUsers);
-          localStorage.setItem('Mencatat_Aja_mock_users', JSON.stringify(defaultMockUsers));
-        }
-      } else {
-        setUsers(defaultMockUsers);
-      }
-
-      // 3. Mock Payments
-      const defaultMockPayments = [
-        {
-          id: 'pay_1',
-          userId: 'usr_budi',
-          user: 'Budi Santoso (Demo)',
-          amount: 'Rp 50.000',
-          plan: 'Pro',
-          method: 'QRIS',
-          proof: 'https://placehold.co/300x400/10b981/ffffff?text=Bukti+Transfer+Budi',
-          status: 'approved',
-          time: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
-        },
-        {
-          id: 'pay_2',
-          userId: 'usr_ani',
-          user: 'Ani Wijaya (Demo)',
-          amount: 'Rp 0',
-          plan: 'Starter',
-          method: 'Manual Transfer',
-          proof: 'https://placehold.co/300x400/10b981/ffffff?text=Bukti+Transfer+Ani',
-          status: 'pending',
-          time: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
-        }
-      ];
-
-      if (typeof window !== 'undefined') {
-        const storedPays = localStorage.getItem('Mencatat_Aja_mock_payments');
-        if (storedPays) {
-          try {
-            setPayments(JSON.parse(storedPays));
-          } catch (e) {
-            setPayments(defaultMockPayments);
-          }
-        } else {
-          setPayments(defaultMockPayments);
-          localStorage.setItem('Mencatat_Aja_mock_payments', JSON.stringify(defaultMockPayments));
-        }
-      } else {
-        setPayments(defaultMockPayments);
-      }
-
-      // 4. Mock AI Logs
-      setAiLogs([
-        { id: '1', user: 'Budi Santoso', provider: 'litellm (Kobo)', action: 'parsing_text', tokens: '120 / 45', cost: '$0.000125', status: 'success', time: 'Hari ini, 18:00 WIB' },
-        { id: '2', user: 'Ani Wijaya', provider: 'litellm (Kobo)', action: 'transcribe_audio', tokens: '0 / 0', cost: '$0.015000', status: 'success', time: 'Hari ini, 17:45 WIB' }
-      ]);
-
-      setIsLoading(false);
-      return;
-    }
-
-    // 1. Fetch AI Providers
-    const defaultMockUsers = [
-      { id: 'usr_budi', name: 'Budi Santoso (Demo)', phone: '081234567890', plan: 'Pro', telegram: 'Terhubung (@budi_Mencatat Aja)', txCount: 0, is_approved: true },
-      { id: 'usr_ani', name: 'Ani Wijaya (Demo)', phone: '089876543210', plan: 'Starter', telegram: 'Terhubung (@ani_wijaya)', txCount: 0, is_approved: true },
-      { id: 'usr_catur', name: 'Catur Nugroho (Demo)', phone: '085522334455', plan: 'Pro', telegram: 'Belum Terhubung', txCount: 0, is_approved: false }
-    ];
-
     try {
-      const [provsRes, profsRes, paysRes, logsRes] = await Promise.all([
-        supabase.from('ai_providers').select('*'),
-        supabase.from('profiles').select('*'),
-        supabase.from('payments').select('*, profiles (full_name, id)').order('created_at', { ascending: false }),
-        supabase.from('ai_logs').select('*, profiles (full_name)').order('created_at', { ascending: false }).limit(20)
-      ]);
-
-      // 1. Providers
-      if (provsRes.data && provsRes.data.length > 0) {
-        setProviders(provsRes.data.map(p => ({
-          id: p.id,
-          name: p.name,
-          is_active: p.is_active,
-          mode: p.mode,
-          token: p.api_key ? '••••••••••••••••' : ''
-        })));
-      } else {
-        setProviders([
-          { id: '1', name: 'gemini', is_active: true, mode: 'single', token: '••••••••••••••••' },
-          { id: '2', name: 'openai', is_active: false, mode: 'single', token: '' },
-          { id: '3', name: 'deepseek', is_active: false, mode: 'single', token: '' }
-        ]);
-      }
-
-      // 2. Users
-      if (profsRes.data && profsRes.data.length > 0) {
-        const resolvedUsers = await Promise.all(profsRes.data.map(async (u) => {
-          let txCount = 0;
-          try {
-            const { count } = await supabase
-              .from('transactions')
-              .select('*', { count: 'exact', head: true })
-              .eq('user_id', u.id);
-            if (count !== null) txCount = count;
-          } catch (e) {
-            console.error('Error fetching tx count:', e);
-          }
-          
-          return {
-            id: u.id,
-            name: u.full_name || 'Nasabah Baru',
-            phone: u.phone_number || '-',
-            plan: u.plan || 'Starter',
-            telegram: u.telegram_chat_id ? `Terhubung (${u.telegram_chat_id})` : 'Belum Terhubung',
-            txCount,
-            is_approved: u.is_approved !== false
-          };
-        }));
-        setUsers(resolvedUsers);
-      } else {
-        setUsers(defaultMockUsers);
-      }
-
-      // 3. Payments
-      if (paysRes.data && paysRes.data.length > 0) {
-        setPayments(paysRes.data.map(p => ({
-          id: p.id,
-          userId: p.profiles?.id || p.user_id,
-          user: p.profiles?.full_name || 'User',
-          amount: `Rp ${Number(p.amount).toLocaleString('id-ID')}`,
-          plan: 'Pro',
-          method: p.method === 'midtrans' ? 'Midtrans' : 'Manual Transfer',
-          proof: p.payment_proof_url || '-',
-          status: p.status,
-          time: new Date(p.created_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
-        })));
-      } else {
-        setPayments([]);
-      }
-
-      // 4. AI Logs
-      if (logsRes.data && logsRes.data.length > 0) {
-        setAiLogs(logsRes.data.map(l => ({
-          id: l.id,
-          user: l.profiles?.full_name || 'System / Webhook',
-          provider: l.provider,
-          action: l.action,
-          tokens: `${l.prompt_tokens || 0} / ${l.completion_tokens || 0}`,
-          cost: `$${Number(l.cost || 0).toFixed(6)}`,
-          status: l.status || 'success',
-          time: new Date(l.created_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
-        })));
-      } else {
-        setAiLogs([]);
+      const res = await fetch('/api/admin/data');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.users && data.users.length > 0) {
+          setUsers(data.users);
+        }
+        if (data.payments) {
+          setPayments(data.payments);
+        }
+        if (data.aiLogs) {
+          setAiLogs(data.aiLogs);
+        }
+        if (data.providers) {
+          setProviders(data.providers);
+        }
       }
     } catch (err) {
-      console.error('Error fetching admin data:', err);
+      console.error('Error fetching admin data from /api/admin/data:', err);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   useEffect(() => {
     const initAdmin = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setAdminUserId(session.user.id);
+      if (typeof window !== 'undefined') {
+        const storedRole = localStorage.getItem('Mencatat Aja_role');
+        const storedEmail = localStorage.getItem('Mencatat Aja_user_email');
+        const storedId = localStorage.getItem('Mencatat Aja_user_id');
+
+        const isSuperadmin = storedRole === 'superadmin' || 
+                             storedEmail === 'rickyrizkymnf123@gmail.com' ||
+                             storedId === '58c09700-965d-4104-a344-6e599c46deff';
+
+        if (!isSuperadmin) {
+          alert('⛔ Akses Ditolak: Panel Admin hanya dapat diakses oleh Superadmin.');
+          router.push('/dashboard');
+          return;
+        }
+
+        if (storedId) {
+          setAdminUserId(storedId);
+        }
       }
+
       await fetchAdminData();
     };
     initAdmin();
@@ -727,26 +580,23 @@ export default function AdminDashboard() {
       setPreviewUserPhone(usr.phone);
       setPrevTelegramToken(usr.telegram_link_token || 'TD-729402');
       
-      if (usrId.startsWith('usr_')) {
-        const storedBotToken = localStorage.getItem(`Mencatat Aja_bot_token_${usrId}`) || '';
-        setPrevBotTokenInput(storedBotToken);
-        if (storedBotToken) {
-          setPrevBotStatus('connected');
-          setPrevBotStatusMsg('🟢 Terhubung dengan bot kustom (Mock Mode)');
-        } else {
+      // Dynamic verification of bot connection for this specific user
+      fetch(`/api/telegram/setup?userId=${usrId}`)
+        .then(res => res.json())
+        .then(botData => {
+          if (botData.connected) {
+            setPrevBotStatus('connected');
+            setPrevBotStatusMsg(botData.botUsername ? `🟢 Terhubung dengan bot: @${botData.botUsername}` : '🟢 Terhubung dengan Bot Telegram');
+          } else {
+            setPrevBotStatus('disconnected');
+            setPrevBotStatusMsg('Belum Terhubung dengan Telegram');
+          }
+        })
+        .catch(() => {
           setPrevBotStatus('disconnected');
           setPrevBotStatusMsg('Belum Terhubung dengan Telegram');
-        }
-      } else {
-        if (usr.telegram_chat_id) {
-          setPrevBotStatus('connected');
-          setPrevBotStatusMsg(`🟢 Terhubung dengan Telegram Chat ID: ${usr.telegram_chat_id}`);
-        } else {
-          setPrevBotStatus('disconnected');
-          setPrevBotStatusMsg('Belum Terhubung dengan Telegram');
-        }
-        setPrevBotTokenInput('');
-      }
+        });
+      setPrevBotTokenInput('');
     }
     
     try {
