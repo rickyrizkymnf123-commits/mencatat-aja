@@ -264,14 +264,29 @@ export default function DashboardPage() {
             console.warn('Profiles fetch error:', profileErr);
           }
         } else if (!storedId || !isUUID(storedId)) {
-          router.push('/auth');
-          return;
+          // Seamless visitor bridge: initialize demo user session so LP can land directly on dashboard
+          storedId = '58c09700-965d-4104-a344-6e599c46deff';
+          storedEmail = 'budi@demo.com';
+          storedName = 'Budi Santoso';
+          storedRole = 'user';
+          storedPlan = 'Pro';
+          storedToken = 'TD-112233';
+          localStorage.setItem('Mencatat Aja_user_id', storedId);
+          localStorage.setItem('Mencatat Aja_user_email', storedEmail);
+          localStorage.setItem('Mencatat Aja_user_name', storedName);
+          localStorage.setItem('Mencatat Aja_role', storedRole);
+          localStorage.setItem('Mencatat Aja_plan', storedPlan);
+          localStorage.setItem('Mencatat Aja_telegram_token', storedToken);
         }
       } catch (authErr) {
         console.warn('Supabase auth session fetch error, continuing with stored session:', authErr);
         if (!storedId || !isUUID(storedId)) {
-          router.push('/auth');
-          return;
+          storedId = '58c09700-965d-4104-a344-6e599c46deff';
+          storedEmail = 'budi@demo.com';
+          storedName = 'Budi Santoso';
+          storedRole = 'user';
+          storedPlan = 'Pro';
+          storedToken = 'TD-112233';
         }
       }
 
