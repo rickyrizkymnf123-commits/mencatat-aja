@@ -1301,65 +1301,67 @@ export default function AdminDashboard() {
       {/* Scoped CSS styling */}
       {/* Scoped Apple Liquid Glass & shadcn UI System Styling */}
       <style jsx global>{`
-        /* Glass Containers */
+        /* Dark Obsidian Glass Containers */
         .glass-panel {
-          background: rgba(255, 255, 255, 0.7) !important;
+          background: rgba(13, 20, 38, 0.75) !important;
           backdrop-filter: blur(24px) saturate(200%) !important;
           -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
-          border: 1px solid rgba(255, 255, 255, 0.5) !important;
-          border-radius: 24px !important;
-          box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .dark .glass-panel {
-          background: rgba(18, 24, 27, 0.75) !important;
           border: 1px solid rgba(255, 255, 255, 0.08) !important;
-          box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+          border-radius: 24px !important;
+          box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
 
-        .admin-nav {
-          background: rgba(255, 255, 255, 0.75) !important;
-          backdrop-filter: blur(24px) saturate(200%) !important;
-          -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
-          border-right: 1px solid rgba(0, 0, 0, 0.06) !important;
+        .glass-panel:hover {
+          background: rgba(18, 28, 52, 0.85) !important;
+          border-color: rgba(16, 185, 129, 0.3) !important;
+          box-shadow: 0 25px 60px -12px rgba(16, 185, 129, 0.15) !important;
+          transform: translateY(-2px) scale(1.003) !important;
+        }
+
+        .admin-sidebar,
+        .sidebar.admin-nav {
+          background: rgba(10, 15, 30, 0.94) !important;
+          backdrop-filter: blur(28px) saturate(200%) !important;
+          -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+          border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+          box-shadow: 6px 0 35px rgba(0, 0, 0, 0.5) !important;
         }
 
         .admin-nav .menu-item {
-          color: var(--text-muted) !important;
+          color: #94a3b8 !important;
           border-radius: 14px !important;
-          font-weight: 600 !important;
-          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
           margin-bottom: 4px !important;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
 
         .admin-nav .menu-item:hover {
-          background: rgba(16, 185, 129, 0.08) !important;
-          color: #10b981 !important;
+          background: rgba(16, 185, 129, 0.12) !important;
+          color: #34d399 !important;
         }
 
         .admin-nav .menu-item.active {
-          background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0.06) 100%) !important;
-          color: #059669 !important;
-          border: 1px solid rgba(16, 185, 129, 0.25) !important;
-          box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.15) !important;
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0.08) 100%) !important;
+          color: #10b981 !important;
+          border: 1px solid rgba(16, 185, 129, 0.35) !important;
+          box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.25) !important;
         }
 
         .admin-header {
-          border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
           padding-bottom: 16px !important;
           margin-bottom: 28px !important;
         }
 
-        /* shadcn Table Design */
+        /* Dark shadcn Table Design */
         .shadcn-table-wrapper {
           border-radius: 20px !important;
           overflow: hidden !important;
-          background: rgba(255, 255, 255, 0.75) !important;
+          background: rgba(13, 20, 38, 0.75) !important;
           backdrop-filter: blur(20px) saturate(180%) !important;
           -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-          border: 1px solid rgba(0, 0, 0, 0.07) !important;
-          box-shadow: 0 16px 40px -15px rgba(0, 0, 0, 0.04) !important;
+          border: 1px solid rgba(255, 255, 255, 0.08) !important;
+          box-shadow: 0 16px 40px -15px rgba(0, 0, 0, 0.6) !important;
         }
 
         .shadcn-table {
@@ -1369,24 +1371,24 @@ export default function AdminDashboard() {
         }
 
         .shadcn-table th {
-          background: rgba(248, 250, 252, 0.75) !important;
+          background: rgba(10, 15, 30, 0.9) !important;
           backdrop-filter: blur(10px) !important;
-          font-size: 0.7rem !important;
+          font-size: 0.72rem !important;
           font-weight: 700 !important;
           text-transform: uppercase !important;
           letter-spacing: 0.8px !important;
-          color: #64748b !important;
+          color: #94a3b8 !important;
           padding: 14px 18px !important;
-          border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
           text-align: left !important;
         }
 
         .shadcn-table td {
           padding: 16px 18px !important;
-          border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
           vertical-align: middle !important;
           font-size: 0.88rem !important;
-          color: #334155 !important;
+          color: #e2e8f0 !important;
           transition: background-color 0.2s ease !important;
         }
 
@@ -1395,7 +1397,7 @@ export default function AdminDashboard() {
         }
 
         .shadcn-table tr:hover td {
-          background: rgba(16, 185, 129, 0.035) !important;
+          background: rgba(16, 185, 129, 0.05) !important;
         }
 
         /* Proof Thumbnail Apple Glass */
@@ -1404,14 +1406,16 @@ export default function AdminDashboard() {
           display: inline-block !important;
           border-radius: 14px !important;
           padding: 2px !important;
-          background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.3)) !important;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.04)) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
           cursor: pointer !important;
         }
 
         .payment-proof-thumbnail-wrapper:hover {
           transform: translateY(-2px) scale(1.05) !important;
+          border-color: rgba(16, 185, 129, 0.4) !important;
           box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3) !important;
         }
 
@@ -1423,7 +1427,7 @@ export default function AdminDashboard() {
           display: block !important;
         }
 
-        /* Status Pills (shadcn style) */
+        /* Status Pills */
         .shadcn-badge {
           display: inline-flex !important;
           align-items: center !important;
@@ -1436,15 +1440,15 @@ export default function AdminDashboard() {
         }
 
         .shadcn-badge-approved {
-          background: rgba(16, 185, 129, 0.1) !important;
-          color: #059669 !important;
-          border: 1px solid rgba(16, 185, 129, 0.25) !important;
+          background: rgba(16, 185, 129, 0.18) !important;
+          color: #34d399 !important;
+          border: 1px solid rgba(16, 185, 129, 0.35) !important;
         }
 
         .shadcn-badge-pending {
-          background: rgba(245, 158, 11, 0.1) !important;
-          color: #d97706 !important;
-          border: 1px solid rgba(245, 158, 11, 0.25) !important;
+          background: rgba(245, 158, 11, 0.18) !important;
+          color: #fbbf24 !important;
+          border: 1px solid rgba(245, 158, 11, 0.35) !important;
         }
 
         .pulse-dot {
@@ -1464,7 +1468,7 @@ export default function AdminDashboard() {
           box-shadow: 0 0 8px #f59e0b !important;
         }
 
-        /* Apple Liquid Buttons */
+        /* Buttons */
         .btn-liquid-emerald {
           background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
           color: #ffffff !important;
@@ -1487,10 +1491,10 @@ export default function AdminDashboard() {
         }
 
         .btn-liquid-rose {
-          background: rgba(239, 68, 68, 0.06) !important;
-          color: #ef4444 !important;
+          background: rgba(239, 68, 68, 0.12) !important;
+          color: #f87171 !important;
           font-weight: 600 !important;
-          border: 1px solid rgba(239, 68, 68, 0.25) !important;
+          border: 1px solid rgba(239, 68, 68, 0.3) !important;
           border-radius: 12px !important;
           padding: 8px 16px !important;
           font-size: 0.82rem !important;
@@ -1502,8 +1506,8 @@ export default function AdminDashboard() {
         }
 
         .btn-liquid-rose:hover {
-          background: rgba(239, 68, 68, 0.15) !important;
-          border-color: rgba(239, 68, 68, 0.4) !important;
+          background: rgba(239, 68, 68, 0.22) !important;
+          border-color: rgba(239, 68, 68, 0.5) !important;
           transform: translateY(-2px) !important;
         }
 
@@ -1514,9 +1518,9 @@ export default function AdminDashboard() {
           left: 0 !important;
           right: 0 !important;
           bottom: 0 !important;
-          background: rgba(0, 0, 0, 0.45) !important;
-          backdrop-filter: blur(14px) saturate(180%) !important;
-          -webkit-backdrop-filter: blur(14px) saturate(180%) !important;
+          background: rgba(0, 0, 0, 0.75) !important;
+          backdrop-filter: blur(16px) saturate(180%) !important;
+          -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
           z-index: 9999 !important;
           display: flex !important;
           align-items: center !important;
@@ -1525,16 +1529,17 @@ export default function AdminDashboard() {
         }
 
         .glass-modal-content {
-          background: rgba(255, 255, 255, 0.92) !important;
+          background: rgba(13, 20, 38, 0.95) !important;
           backdrop-filter: blur(28px) saturate(200%) !important;
           -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
-          border: 1px solid rgba(255, 255, 255, 0.7) !important;
-          box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.35) !important;
+          border: 1px solid rgba(255, 255, 255, 0.12) !important;
+          box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.7) !important;
           border-radius: 28px !important;
           max-width: 500px !important;
           width: 100% !important;
           padding: 28px !important;
           position: relative !important;
+          color: #f8fafc !important;
           animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
 

@@ -1290,8 +1290,7 @@ export default function DashboardPage() {
           width: '90%',
           padding: '40px',
           textAlign: 'center',
-          border: '1px solid rgba(255, 255, 255, 0.6)',
-          background: 'rgba(255, 255, 255, 0.75)',
+          border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(13, 20, 38, 0.75)',
           backdropFilter: 'blur(24px) saturate(180%)',
           borderRadius: '24px',
           boxShadow: '0 20px 50px rgba(0,0,0,0.08)'
