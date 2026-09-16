@@ -1419,349 +1419,213 @@ export default function DashboardPage() {
           100% { opacity: 0.6; }
         }
 
-        /* Apple Liquid Glass & shadcn UI System (User Dashboard) */
-        .sidebar {
-          width: 280px !important;
-          background: rgba(255, 255, 255, 0.72) !important;
-          backdrop-filter: blur(28px) saturate(200%) !important;
-          -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
-          border-right: 1px solid rgba(255, 255, 255, 0.5) !important;
-          box-shadow: 6px 0 35px rgba(0, 0, 0, 0.03) !important;
+        
+        /* DARK OBSIDIAN THEME (SYNCHRONIZED WITH LANDING PAGE) */
+        :root {
+          --background: #04060d;
+          --card-bg: rgba(13, 20, 38, 0.75);
+          --sidebar-bg: rgba(13, 20, 38, 0.85);
+          --text-main: #f1f5f9;
+          --text-muted: #94a3b8;
+          --border: rgba(255, 255, 255, 0.08);
+          --primary: #10b981;
+          --primary-light: rgba(16, 185, 129, 0.15);
         }
 
-        .sidebar-logo {
-          font-size: 1.4rem;
-          font-weight: 800;
-          color: var(--primary);
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-bottom: 32px;
+        body {
+          background-color: #04060d !important;
+          color: #f1f5f9 !important;
         }
-        .sidebar-menu {
-          list-style: none;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          flex: 1;
+
+        .dashboard-container {
+          background: radial-gradient(circle at 50% 0%, #0c1827 0%, #04060d 75%) !important;
+          min-height: 100vh;
+          color: #f1f5f9;
         }
+
+        .mobile-top-bar {
+          background: rgba(4, 6, 13, 0.95) !important;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+          color: #ffffff !important;
+        }
+
+        /* Sidebar Dark Glass */
+        .sidebar {
+          width: 280px !important;
+          background: rgba(10, 15, 30, 0.88) !important;
+          backdrop-filter: blur(28px) !important;
+          -webkit-backdrop-filter: blur(28px) !important;
+          border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+          box-shadow: 6px 0 35px rgba(0, 0, 0, 0.5) !important;
+        }
+
         .menu-item {
           display: flex;
           align-items: center;
           gap: 12px;
           padding: 12px 16px;
           border-radius: 14px !important;
-          color: #64748b !important;
+          color: #94a3b8 !important;
           font-weight: 600 !important;
           cursor: pointer;
           transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
         }
+
         .menu-item:hover {
-          background: rgba(16, 185, 129, 0.08) !important;
-          color: #10b981 !important;
+          background: rgba(16, 185, 129, 0.12) !important;
+          color: #34d399 !important;
           transform: translateX(3px) !important;
         }
+
         .menu-item.active {
-          background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(16, 185, 129, 0.06) 100%) !important;
-          color: #059669 !important;
-          border: 1px solid rgba(16, 185, 129, 0.25) !important;
-          box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.15) !important;
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(6, 182, 212, 0.15) 100%) !important;
+          color: #34d399 !important;
+          border: 1px solid rgba(16, 185, 129, 0.35) !important;
+          box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.25) !important;
         }
 
         .sidebar-profile {
           margin-top: auto;
-          border-top: 1px solid rgba(0, 0, 0, 0.06);
+          border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
           padding-top: 20px;
           display: flex;
           align-items: center;
           gap: 12px;
         }
-        .profile-avatar {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-          color: #ffffff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-        .profile-details {
-          flex: 1;
-          min-width: 0;
-        }
-        .profile-details h5 {
-          font-size: 0.9rem;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .plan-badge {
-          display: inline-block !important;
-          font-size: 0.72rem !important;
-          font-weight: 700 !important;
-          padding: 3px 10px !important;
-          border-radius: 9999px !important;
-          letter-spacing: 0.3px !important;
-        }
-        .plan-badge.starter {
-          background: rgba(100, 116, 139, 0.1) !important;
-          color: #64748b !important;
-          border: 1px solid rgba(100, 116, 139, 0.2) !important;
-        }
-        .plan-badge.pro {
-          background: rgba(16, 185, 129, 0.1) !important;
-          color: #059669 !important;
-          border: 1px solid rgba(16, 185, 129, 0.25) !important;
-        }
-        .logout-btn {
-          background: transparent;
-          color: var(--error);
-          font-size: 1.1rem;
-          padding: 8px;
-          cursor: pointer;
-          border: none;
-        }
 
-        /* Overview Stat Card (Apple Glass) */
-        .stats-summary {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 24px;
-        }
+        /* Stat Cards Dark Glass */
         .stat-card {
-          background: rgba(255, 255, 255, 0.72) !important;
-          backdrop-filter: blur(24px) saturate(200%) !important;
-          -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
-          border: 1px solid rgba(255, 255, 255, 0.6) !important;
+          background: rgba(13, 20, 38, 0.75) !important;
+          backdrop-filter: blur(24px) !important;
+          -webkit-backdrop-filter: blur(24px) !important;
+          border: 1px solid rgba(255, 255, 255, 0.08) !important;
           border-radius: 24px !important;
           padding: 24px !important;
-          box-shadow: 
-            0 20px 50px -15px rgba(0, 0, 0, 0.04),
-            0 0 0 1px rgba(255, 255, 255, 0.7) inset,
-            0 1px 2px rgba(255, 255, 255, 0.9) inset !important;
+          box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-        }
-        .stat-card:hover {
-          background: rgba(255, 255, 255, 0.88) !important;
-          border-color: rgba(255, 255, 255, 0.95) !important;
-          box-shadow: 
-            0 25px 60px -12px rgba(16, 185, 129, 0.14),
-            0 0 0 1px rgba(255, 255, 255, 0.9) inset !important;
-          transform: translateY(-3px) scale(1.003) !important;
-        }
-        .stat-card.primary {
-          background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;
           color: #ffffff !important;
-          border: 1px solid rgba(255, 255, 255, 0.35) !important;
-          box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
         }
+
+        .stat-card:hover {
+          background: rgba(18, 27, 50, 0.85) !important;
+          border-color: rgba(16, 185, 129, 0.35) !important;
+          box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.2) !important;
+          transform: translateY(-3px) !important;
+        }
+
+        .stat-card.primary {
+          background: linear-gradient(135deg, #059669 0%, #0f766e 100%) !important;
+          color: #ffffff !important;
+          border: 1px solid rgba(255, 255, 255, 0.2) !important;
+          box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.4) !important;
+        }
+
         .stat-label {
           font-size: 0.8rem;
           font-weight: 700;
-          color: #64748b;
+          color: #94a3b8 !important;
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
-        .stat-card.primary .stat-label {
-          color: rgba(255,255,255,0.85);
-        }
+
         .stat-value {
           font-size: 1.75rem;
           font-weight: 800;
           margin-top: 8px;
           letter-spacing: -0.5px;
-        }
-        .stat-sub {
-          font-size: 0.78rem;
-          color: #94a3b8;
-          margin-top: 6px;
-        }
-        .stat-card.primary .stat-sub {
-          color: #ffffff;
-          font-weight: 600;
+          color: #ffffff !important;
         }
 
-        /* Empty State */
-        .empty-state {
-          text-align: center;
-          padding: 48px 24px;
-          border: 2px dashed rgba(0, 0, 0, 0.08);
-          border-radius: 24px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 16px;
-        }
-        .empty-icon {
-          font-size: 3rem;
+        /* Generic Dark Cards & Containers */
+        .card, .form-container, .filters-bar, .checklist-card, .transaction-card {
+          background: rgba(13, 20, 38, 0.75) !important;
+          backdrop-filter: blur(20px) !important;
+          -webkit-backdrop-filter: blur(20px) !important;
+          border: 1px solid rgba(255, 255, 255, 0.08) !important;
+          border-radius: 20px !important;
+          color: #f1f5f9 !important;
+          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
         }
 
-        /* Checklist style */
-        .checklist-card {
-          background: rgba(255, 255, 255, 0.72) !important;
-          backdrop-filter: blur(24px) saturate(200%) !important;
-          border: 1px solid rgba(255, 255, 255, 0.6) !important;
-          border-radius: 24px !important;
-          padding: 28px !important;
-          box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.04) !important;
+        /* Dark Inputs & Selects */
+        input[type="text"], input[type="number"], input[type="email"], input[type="password"], input[type="date"], select, textarea {
+          background: #02040a !important;
+          color: #ffffff !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          border-radius: 12px !important;
+          outline: none !important;
         }
-        .checklist-item {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          padding: 14px 0;
-          border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-        .checklist-item:last-child {
-          border-bottom: none;
-        }
-        .chk-indicator {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          border: 2px solid #cbd5e1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          font-size: 0.8rem;
-          color: #ffffff;
-        }
-        .chk-indicator.checked {
-          background-color: #10b981;
-          border-color: #10b981;
-          box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        input:focus, select:focus, textarea:focus {
+          border-color: #10b981 !important;
+          box-shadow: 0 0 12px rgba(16, 185, 129, 0.3) !important;
         }
 
-        /* Transaction List Table (shadcn style) */
-        .tx-table-container {
+        /* Dark Tables */
+        .table-wrapper, .shadcn-table-wrapper {
+          background: rgba(13, 20, 38, 0.85) !important;
+          border: 1px solid rgba(255, 255, 255, 0.08) !important;
           border-radius: 20px !important;
           overflow: hidden !important;
-          background: rgba(255, 255, 255, 0.72) !important;
-          backdrop-filter: blur(20px) saturate(180%) !important;
-          -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-          border: 1px solid rgba(0, 0, 0, 0.07) !important;
-          box-shadow: 0 16px 40px -15px rgba(0, 0, 0, 0.04) !important;
         }
-        .tx-table {
+
+        table {
           width: 100%;
           border-collapse: collapse;
-          text-align: left;
         }
-        .tx-table th {
-          background: rgba(248, 250, 252, 0.75) !important;
-          backdrop-filter: blur(10px) !important;
-          padding: 14px 18px !important;
-          font-size: 0.7rem !important;
+
+        th {
+          background: rgba(6, 10, 22, 0.95) !important;
+          color: #94a3b8 !important;
           font-weight: 700 !important;
+          font-size: 0.75rem !important;
           text-transform: uppercase !important;
-          letter-spacing: 0.8px !important;
-          color: #64748b !important;
-          border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
-        }
-        .tx-table td {
-        }
-        
-        .tx-amount {
-          font-weight: 700;
-        }
-        .tx-amount.expense {
-          color: var(--error);
-        }
-        .tx-amount.income {
-          color: var(--success);
-        }
-        
-        /* Expandable Sub-items (OCR receipt structure) */
-        .expanded-row {
-          background-color: var(--background);
-        }
-        .expanded-content {
-          padding: 20px 40px;
-          border-bottom: 1px solid var(--border);
-        }
-        .sub-item-list {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          margin-top: 12px;
-        }
-        .sub-item-row {
-          display: flex;
-          justify-content: space-between;
-          font-size: 0.85rem;
-          color: var(--text-muted);
-          padding: 6px 0;
-          border-bottom: 1px dashed var(--border);
+          letter-spacing: 0.6px !important;
+          padding: 14px 18px !important;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
         }
 
-        /* Filter Controls row */
-        .filters-bar {
-          background: #ffffff;
-          padding: 20px;
-          border-radius: var(--radius-md);
-          border: 1px solid var(--border);
-          display: flex;
-          flex-wrap: wrap;
-          gap: 16px;
-          align-items: center;
-        }
-        .filter-select {
-          min-width: 140px;
-          padding: 8px 12px;
+        td {
+          padding: 14px 18px !important;
+          color: #e2e8f0 !important;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
         }
 
-        /* Visual Charts using SVGs */
-        .chart-grid {
-          display: grid;
-          grid-template-columns: 1.2fr 0.8fr;
-          gap: 24px;
-        }
-        
-        /* Settings Tabs */
-        .settings-tabs {
-          display: flex;
-          border-bottom: 1px solid var(--border);
-          gap: 24px;
-          margin-bottom: 32px;
-        }
-        
-        .badge-pro-only {
-          background-color: var(--primary-light);
-          color: var(--primary);
-          font-size: 0.75rem;
-          font-weight: 700;
-          padding: 2px 6px;
-          border-radius: 4px;
-          margin-left: 6px;
+        tr:hover td {
+          background: rgba(16, 185, 129, 0.05) !important;
         }
 
-        /* Period selection toggle style */
+        /* Buttons */
+        .btn-primary, button.btn-primary, .btn {
+          background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
+          color: #04060d !important;
+          font-weight: 800 !important;
+          border: none !important;
+          box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
+        }
+
+        .btn-secondary {
+          background: rgba(255, 255, 255, 0.06) !important;
+          color: #e2e8f0 !important;
+          border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
+
+        .btn-outline {
+          background: transparent !important;
+          border: 1px solid rgba(16, 185, 129, 0.4) !important;
+          color: #34d399 !important;
+        }
+
+        /* Filter Toggle Buttons */
         .pricing-toggle {
-          background-color: var(--background);
-          padding: 6px;
-          border-radius: 12px;
-          display: flex;
-          gap: 6px;
-          align-items: center;
-          border: 1px solid var(--border);
-          box-shadow: var(--shadow-sm);
+          background: #02040a !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
         }
-        .toggle-btn {
-          background: transparent;
-          border: none;
-          color: var(--text-muted);
-          font-weight: 700;
-          cursor: pointer;
-          border-radius: 8px;
-          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-          outline: none;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
+        .toggle-btn.active {
+          background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
+          color: #04060d !important;
+          font-weight: 800 !important;
         }
+
         .toggle-btn:hover {
           color: var(--primary);
           background-color: var(--primary-light);
@@ -1785,7 +1649,7 @@ export default function DashboardPage() {
 
       {/* Mobile Top Bar */}
       <div className="mobile-top-bar">
-        <span style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--primary)' }}>🍊 Mencatat Aja</span>
+        <span style={{ fontSize: '1.2rem', fontWeight: '900', color: '#ffffff' }}>Mencatat<span style={{ color: '#10b981' }}>Aja</span></span>
         <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>
           ☰
         </button>
@@ -1793,55 +1657,12 @@ export default function DashboardPage() {
 
       {/* SIDEBAR NAVIGATION */}
       <aside className={`sidebar animate-fade-in ${sidebarOpen ? 'active' : ''}`}>
-        
-        
-        <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
-          <div style={{ position: 'relative', width: '42px', height: '42px', flexShrink: 0 }}>
-                <div style={{ position: 'absolute', inset: '-2px', background: 'linear-gradient(135deg, #f59e0b, #10b981, #fde047)', borderRadius: '14px', filter: 'blur(5px)', opacity: 0.8 }}></div>
-                <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '12px', background: 'linear-gradient(180deg, #1c1505 0%, #0a0802 100%)', border: '1.5px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(245, 158, 11, 0.45)', overflow: 'hidden' }}>
-                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '26px', height: '26px' }}>
-                    <polygon points="24,3 39,9 45,24 39,39 24,45 9,39 3,24 9,9" fill="url(#gold-out)" stroke="url(#gold-edge)" strokeWidth="1.2" />
-                    <polygon points="24,7 36,12 41,24 36,36 24,41 12,36 7,24 12,12" fill="url(#em-bg)" />
-                    <circle cx="24" cy="24" r="10" fill="url(#gold-center)" stroke="#FEF08A" strokeWidth="1" />
-                    <path d="M19.5 17H25C26.8 17 28.2 18.2 28.2 20C28.2 21.8 26.8 23 25 23H19.5V17Z" fill="#1A1405" />
-                    <path d="M19.5 17V31M19.5 23H24L28.5 31" stroke="#1A1405" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M19.5 17V31M19.5 23H24L28.5 31" stroke="url(#gold-sym)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="34" cy="11" r="1.2" fill="#FEF08A" />
-                    <circle cx="13" cy="34" r="1" fill="#6EE7B7" />
-                    <defs>
-                      <linearGradient id="gold-out" x1="3" y1="3" x2="45" y2="45" gradientUnits="userSpaceOnUse">
-                        <stop stopColor="#FDE047" />
-                        <stop offset="0.5" stopColor="#F59E0B" />
-                        <stop offset="1" stopColor="#78350F" />
-                      </linearGradient>
-                      <linearGradient id="gold-edge" x1="3" y1="3" x2="45" y2="45" gradientUnits="userSpaceOnUse">
-                        <stop stopColor="#FFFBEB" />
-                        <stop offset="0.5" stopColor="#FDE047" />
-                        <stop offset="1" stopColor="#D97706" />
-                      </linearGradient>
-                      <linearGradient id="em-bg" x1="7" y1="7" x2="41" y2="41" gradientUnits="userSpaceOnUse">
-                        <stop stopColor="#064E3B" />
-                        <stop offset="0.6" stopColor="#022C22" />
-                        <stop offset="1" stopColor="#011812" />
-                      </linearGradient>
-                      <linearGradient id="gold-center" x1="14" y1="14" x2="34" y2="34" gradientUnits="userSpaceOnUse">
-                        <stop stopColor="#FEF08A" />
-                        <stop offset="0.5" stopColor="#F59E0B" />
-                        <stop offset="1" stopColor="#B45309" />
-                      </linearGradient>
-                      <linearGradient id="gold-sym" x1="19.5" y1="17" x2="28.5" y2="31" gradientUnits="userSpaceOnUse">
-                        <stop stopColor="#FEF08A" />
-                        <stop offset="1" stopColor="#F59E0B" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                </div>
-              </div>
+        <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', marginBottom: '28px' }}>
           <div>
-            <div style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.3px' }}>
-              Mencatat<span style={{ color: '#10b981' }}>Aja</span>
+            <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.3px' }}>
+              Mencatat<span style={{ background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Aja</span>
             </div>
-            <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>AI Wealth OS</span>
+            <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.8px' }}>AI Wealth OS</span>
           </div>
         </div>
 
