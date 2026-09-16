@@ -901,6 +901,24 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
   * `npm run build` sukses 100% (0 error).
   * Di-commit ke Git repository `main` dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
 
+## Sesi 64: Isolasi Token Bot Telegram untuk Akun Baru & Penghapusan Cache Global
+- **Identifikasi Masalah:**
+  * Pengguna mendaftar dengan email baru, namun form token Telegram di Settings/Dashboard langsung terisi otomatis dan berstatus terhubung ke bot milik akun sebelumnya.
+- **Akar Masalah (Root Cause):**
+  * State awal input token bot di `src/app/dashboard/page.tsx` membaca `localStorage.getItem('Mencatat Aja_custom_bot_token')` secara global. Ketika browser yang sama mendaftarkan akun baru, token dari sesi akun lama tetap tersimpan di storage lokal browser dan langsung diterapkan ke akun baru.
+- **Solusi & Perbaikan yang Diterapkan:**
+  1. **State Inisialisasi Bersih & Endpoint Status Dinamis:**
+     - Menghapus pembacaan token bot dari `localStorage` global pada state default `src/app/dashboard/page.tsx`. State awal kini murni kosong (`""`) dan status `"disconnected"`.
+     - Menambahkan endpoint `GET /api/telegram/setup?userId=...` di `src/app/api/telegram/setup/route.ts` untuk memverifikasi status koneksi bot secara nyata langsung dari tabel `profiles` pengguna di Supabase.
+     - Di `src/app/dashboard/page.tsx`, status bot dicek secara dinamis per pengguna saat inisialisasi sesi (`initSessionAndSubscribe`).
+  2. **Pembersihan Cache Token Lama pada Registrasi/Login Baru:**
+     - Pada `src/app/auth/page.tsx`, kunci `localStorage` lama (`Mencatat Aja_custom_bot_token` dan `tatadana_custom_bot_token`) otomatis dibersihkan saat login atau pendaftaran akun baru, sehingga akun baru memulai dengan kondisi bersih (clean state).
+  3. **Onboarding Checklist yang Tepat Sasaran:**
+     - Item checklist onboarding *"Hubungkan Telegram"* pada akun baru tetap berstatus belum selesai (unchecked) hingga pengguna secara mandiri memasukkan token bot milik mereka sendiri di tab Settings.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% (0 error).
+  * Di-commit ke Git repository `main` dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
+
 
 
 

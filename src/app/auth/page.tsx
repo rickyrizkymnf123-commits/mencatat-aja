@@ -60,6 +60,9 @@ export default function AuthPage() {
         setShowOnboarding(true);
       } else {
         // Successful login
+        localStorage.removeItem('Mencatat Aja_custom_bot_token');
+        localStorage.removeItem('tatadana_custom_bot_token');
+        localStorage.removeItem('tatadana_bot_token_usr_budi');
         localStorage.setItem('Mencatat Aja_user_id', user.id);
         localStorage.setItem('Mencatat Aja_user_name', user.user_metadata?.full_name || user.email?.split('@')[0] || 'Nasabah Mencatat Aja');
         localStorage.setItem('Mencatat Aja_user_phone', user.phone || '');
@@ -98,6 +101,9 @@ export default function AuthPage() {
       }
 
       // Save user session details
+      localStorage.removeItem('Mencatat Aja_custom_bot_token');
+      localStorage.removeItem('tatadana_custom_bot_token');
+      localStorage.removeItem('tatadana_bot_token_usr_budi');
       localStorage.setItem('Mencatat Aja_user_id', tempUserId);
       localStorage.setItem('Mencatat Aja_user_name', fullName || 'Nasabah Mencatat Aja');
       localStorage.setItem('Mencatat Aja_telegram_token', resData.telegramLinkToken);

@@ -24,13 +24,15 @@
 - **Autentikasi & Resiliensi:** Murni Email & Password di `/auth`. Dilengkapi pelindung *try-catch* dan *network timeout* 3.5 detik di `/dashboard` untuk mencegah masalah skeleton loading menggantung saat jaringan/server lambat.
 - **Supabase Cloud Project:** `mencatat-aja` (`flcpkvwpjtxjxvfyvers`, Region: `ap-southeast-1`)
 
-## Status Integrasi Telegram Bot (Update Sesi 61)
+## Status Integrasi Telegram Bot (Update Sesi 64)
 - **Multi-Tenant BYOB (Bring Your Own Bot):** Sistem dirancang agar **setiap user dapat mendaftarkan bot kustom yang berbeda-beda** tanpa batasan.
+- **Isolasi Akun Baru (Clean State):** Akun baru yang mendaftar dijamin mulai dalam kondisi form token kosong (`disconnected`) dan diarahkan oleh Onboarding Checklist untuk menginput bot token milik mereka sendiri. Tidak ada kebocoran token cache `localStorage` antar-akun pada browser yang sama.
 - **Arsitektur Webhook Dinamis:** Endpoint setup `/api/telegram/setup` mendaftarkan webhook Telegram resmi ke URL:
   `https://www.mencatat.my.id/api/telegram/webhook?user_id=${user.id}&bot_token=${token}`.
 - **Isolasi Penuh Antar-Pengguna & Bot:** Saat update masuk, backend mengekstrak `user_id` dan `bot_token` dari query parameter URL, memproses pesan hanya untuk user tersebut, dan membalas melalui token bot yang bersangkutan. Tidak ada bentrok atau penghapusan webhook bot antar-user.
 - **Explicit Foreign Key Relationship Embedding:** Query transaksi menggunakan `wallets:wallets!transactions_wallet_id_fkey (name)` untuk mencegah error PostgREST `PGRST201`.
 - **Live Real-Time Dashboard Sync:** Dashboard web dilengkapi background polling 3 detik dan listener Supabase Realtime sehingga dompet baru, transaksi Telegram, dan grafik visual selalu tersinkronisasi secara langsung.
+
 
 
 

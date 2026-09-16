@@ -355,3 +355,64 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
+
+    if (!userId) {
+      return NextResponse.json({ connected: false, botUsername: null });
+    }
+
+    const targetUserId = isUUID(userId) ? userId : null;
+    if (!targetUserId) {
+      return NextResponse.json({ connected: false, botUsername: null });
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const isPlaceholder = !supabaseUrl || 
+      supabaseUrl.includes('your-supabase-project-id') || 
+      supabaseUrl.includes('placeholder-project');
+
+    if (isPlaceholder) {
+      return NextResponse.json({ connected: false, botUsername: null });
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('telegram_bot_token, telegram_chat_id')
+      .eq('id', targetUserId)
+      .maybeSingle();
+
+    if (!profile || !profile.telegram_bot_token) {
+      return NextResponse.json({ connected: false, botUsername: null });
+    }
+
+    const { decrypt } = await import('@/lib/crypto');
+    const token = decrypt(profile.telegram_bot_token);
+    if (!token) {
+      return NextResponse.json({ connected: false, botUsername: null });
+    }
+
+    try {
+      const getMeRes = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      if (getMeRes.ok) {
+        const getMeData = await getMeRes.json();
+        if (getMeData.ok && getMeData.result) {
+          return NextResponse.json({
+            connected: true,
+            botUsername: getMeData.result.username,
+            botName: getMeData.result.first_name,
+            hasChatId: !!profile.telegram_chat_id
+          });
+        }
+      }
+    } catch (e) {}
+
+    return NextResponse.json({ connected: true, botUsername: 'Bot Terhubung', hasChatId: !!profile.telegram_chat_id });
+  } catch (err: any) {
+    return NextResponse.json({ connected: false, botUsername: null });
+  }
+}
+

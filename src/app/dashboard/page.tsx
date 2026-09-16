@@ -40,32 +40,9 @@ export default function DashboardPage() {
   });
 
   // Settings states
-  const [botTokenInput, setBotTokenInput] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('Mencatat Aja_custom_bot_token') || 
-             localStorage.getItem('tatadana_custom_bot_token') || 
-             localStorage.getItem(`tatadana_bot_token_usr_budi`) || '';
-    }
-    return '';
-  });
-  const [botStatus, setBotStatus] = useState<'disconnected' | 'testing' | 'connected'>(() => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('Mencatat Aja_custom_bot_token') || 
-                    localStorage.getItem('tatadana_custom_bot_token') || 
-                    localStorage.getItem(`tatadana_bot_token_usr_budi`);
-      return token ? 'connected' : 'disconnected';
-    }
-    return 'disconnected';
-  });
-  const [botStatusMsg, setBotStatusMsg] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('Mencatat Aja_custom_bot_token') || 
-                    localStorage.getItem('tatadana_custom_bot_token') || 
-                    localStorage.getItem(`tatadana_bot_token_usr_budi`);
-      if (token) return '🟢 Terhubung dengan bot kustom (Mock Mode)';
-    }
-    return '';
-  });
+  const [botTokenInput, setBotTokenInput] = useState('');
+  const [botStatus, setBotStatus] = useState<'disconnected' | 'testing' | 'connected'>('disconnected');
+  const [botStatusMsg, setBotStatusMsg] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [reminderActive, setReminderActive] = useState(false);
   const [reminderFreq, setReminderFreq] = useState('1'); // '1' or '2'
@@ -305,6 +282,24 @@ export default function DashboardPage() {
 
       // Initial load - guaranteed to be called
       await fetchDashboardData(storedId, storedToken);
+
+      // Fetch user-specific bot connection status
+      try {
+        const botStatusRes = await fetch(`/api/telegram/setup?userId=${storedId}`).catch(() => null);
+        if (botStatusRes && botStatusRes.ok) {
+          const botData = await botStatusRes.json().catch(() => null);
+          if (botData && botData.connected && botData.botUsername) {
+            setBotStatus('connected');
+            setBotStatusMsg(`🟢 Terhubung dengan bot: @${botData.botUsername}`);
+            setChecklist(prev => ({ ...prev, connectTelegram: true }));
+          } else {
+            setBotStatus('disconnected');
+            setBotStatusMsg('');
+            setBotTokenInput('');
+            setChecklist(prev => ({ ...prev, connectTelegram: false }));
+          }
+        }
+      } catch (e) {}
 
       const isPlaceholder = !supabaseUrl || 
         supabaseUrl.includes('your-supabase-project-id') || 
