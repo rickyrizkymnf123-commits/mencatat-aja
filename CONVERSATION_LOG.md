@@ -977,6 +977,22 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
   * `npm run build` sukses 100% (0 error).
   * Di-commit ke Git repository `main` (`feat(admin): pure admin menus, direct superadmin redirect, and user email column in table`) dan otomatis di-deploy ke Vercel Live Production.
 
+## Sesi 68: Integrasi Penghapusan Pengguna Permanen di Database, Supabase Auth & Webhook Telegram
+- **Permintaan Pengguna:**
+  * Ketika admin menghapus pengguna (single delete maupun batch delete), pastikan data pengguna tersebut benar-benar terhapus bersih dari tools (webhook Telegram) dan database backend.
+- **Solusi & Perbaikan yang Diterapkan:**
+  1. **Endpoint `DELETE /api/admin/data` (`src/app/api/admin/data/route.ts`):**
+     - Menghapus webhook kustom Telegram pengguna via Telegram Bot API `deleteWebhook` jika pengguna pernah mendaftarkan bot kustom.
+     - Melakukan cascade delete ke seluruh tabel relasi: `transactions`, `wallets`, `budgets`, `categories`, `payments`, `ai_logs`, dan `profiles`.
+     - Menghapus akun pengguna dari Supabase Auth (`supabaseAdmin.auth.admin.deleteUser(uid)`).
+  2. **Integrasi Admin UI (`src/app/admin/page.tsx`):**
+     - Memperbarui fungsi `handleDeleteUser` dan `handleBatchDeleteUsers` agar memanggil endpoint `DELETE /api/admin/data`.
+     - Memberikan konfirmasi dialog yang jelas, visual feedback loading, pencatatan log audit keamanan, dan pembaruan data real-time via `fetchAdminData()`.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% (0 error).
+  * Di-commit ke Git repository `main` dan otomatis dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
+
+
 
 
 
