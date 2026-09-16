@@ -885,6 +885,23 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
      - Pengguna baru yang belum membuat dompet di web langsung dibuatkan dompet awal otomatis saat mencatat pertama kali lewat bot, sehingga transaksi tidak akan pernah gagal.
 - **Kesimpulan:** Arsitektur multi-bot terbukti 100% independen, aman, dan siap menampung seluruh bot baru dari setiap pengguna yang mendaftar.
 
+## Sesi 63: Penyempurnaan Visual Diagram Anggaran (Zero-Limit Handling & Status Informatif)
+- **Identifikasi Masalah:**
+  * Pada tab Budget (Kelola Anggaran Kategori), lingkaran visual gauge menampilkan `0% Anggaran Terpakai` dengan status abu-abu meskipun total pengeluaran sudah tercatat Rp 55.000.
+- **Akar Masalah (Root Cause):**
+  * Pengguna belum mengisi / menetapkan nominal batas anggaran bulanan pada input field kategori (Total Batas Anggaran masih bernilai `Rp 0`).
+  * Formula matematika sebelumnya `totalLimit > 0 ? (totalSpent / totalLimit) * 100 : 0` menghasilkan `0%` ketika total limit bernilai 0, sehingga gauge merender lingkaran abu-abu kosong.
+- **Solusi & Perbaikan yang Diterapkan (`src/app/dashboard/page.tsx`):**
+  1. **Status Informatif Zero-Limit & Over-Limit:**
+     - Jika `Total Batas Anggaran` masih `Rp 0` namun terdapat pengeluaran nyata (`totalSpent > 0`), diagram visual kini menampilkan `100%+` dengan badge oranye/merah peringatan *"⚠️ Batas Anggaran Belum Ditetapkan"* dan subteks *"Melebihi Limit Rp 0"*.
+     - Pada setiap baris kategori pengeluaran, jika belum diset limitnya dan sudah ada pengeluaran, label status menampilkan secara transparan *"Rp X.XXX terpakai (Limit belum diset)"*.
+  2. **Dukungan Interaktif:**
+     - Begitu pengguna memasukkan nominal batas anggaran bulanan di input samping kategori (misal Rp 500.000), gauge langsung otomatis mengalkulasi persentase pemakaian aktual secara dinamis.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% (0 error).
+  * Di-commit ke Git repository `main` dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
+
+
 
 
 

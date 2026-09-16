@@ -2567,14 +2567,25 @@ export default function DashboardPage() {
                 
                 {/* Visual Budgeting Diagram & Breakdown */}
                 {(() => {
-                  const totalLimit = budgets.reduce((s, b) => s + Number(b.monthly_limit), 0);
-                  const totalSpent = budgets.reduce((s, b) => s + Number(b.current_spent), 0);
-                  const overallPct = totalLimit > 0 ? Math.min(100, Math.round((totalSpent / totalLimit) * 100)) : 0;
+                  const totalLimit = budgets.reduce((s, b) => s + Number(b.monthly_limit || 0), 0);
+                  const totalSpent = budgets.reduce((s, b) => s + Number(b.current_spent || 0), 0);
+                  const isLimitSet = totalLimit > 0;
+                  const overallPct = isLimitSet 
+                    ? Math.round((totalSpent / totalLimit) * 100) 
+                    : (totalSpent > 0 ? 100 : 0);
+                  const displayPct = isLimitSet ? Math.min(100, overallPct) : (totalSpent > 0 ? 100 : 0);
                   const totalRemaining = totalLimit - totalSpent;
 
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '32px', padding: '24px', border: '1px solid var(--border)', borderRadius: '16px', backgroundColor: 'var(--background)' }}>
-                      <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>📊 Ringkasan Visual Anggaran Bulanan</h3>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h3 style={{ fontSize: '1.1rem', margin: 0 }}>📊 Ringkasan Visual Anggaran Bulanan</h3>
+                        {!isLimitSet && totalSpent > 0 && (
+                          <span style={{ fontSize: '0.8rem', color: 'var(--error)', background: 'rgba(239, 68, 68, 0.1)', padding: '4px 10px', borderRadius: '8px', fontWeight: '700' }}>
+                            ⚠️ Batas Anggaran Belum Ditetapkan
+                          </span>
+                        )}
+                      </div>
                       <div className="grid-2" style={{ gap: '24px', alignItems: 'center' }}>
                         {/* Gauge Chart Simulation using SVG */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
@@ -2585,16 +2596,20 @@ export default function DashboardPage() {
                               cy="18" 
                               r="15.915" 
                               fill="none" 
-                              stroke={overallPct >= 100 ? 'var(--error)' : overallPct >= 80 ? '#FF8A00' : 'var(--primary)'} 
+                              stroke={!isLimitSet && totalSpent > 0 ? 'var(--error)' : overallPct >= 100 ? 'var(--error)' : overallPct >= 80 ? '#FF8A00' : 'var(--primary)'} 
                               strokeWidth="3.5" 
-                              strokeDasharray={`${overallPct} ${100 - overallPct}`} 
+                              strokeDasharray={`${displayPct} ${100 - displayPct}`} 
                               strokeDashoffset="0" 
                               style={{ transition: 'stroke-dasharray 0.3s ease' }}
                             />
                           </svg>
                           <div>
-                            <div style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--text-main)' }}>{overallPct}%</div>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>Anggaran Terpakai</div>
+                            <div style={{ fontSize: '2rem', fontWeight: '800', color: !isLimitSet && totalSpent > 0 ? 'var(--error)' : 'var(--text-main)' }}>
+                              {isLimitSet ? `${overallPct}%` : (totalSpent > 0 ? '100%+' : '0%')}
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                              {isLimitSet ? 'Anggaran Terpakai' : (totalSpent > 0 ? 'Melebihi Limit Rp 0' : 'Belum Ada Limit')}
+                            </div>
                           </div>
                         </div>
 
@@ -2611,8 +2626,8 @@ export default function DashboardPage() {
                           <div style={{ height: '1px', backgroundColor: 'var(--border)' }} />
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
                             <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Sisa Anggaran Aman:</span>
-                            <span style={{ fontWeight: '800', color: totalRemaining >= 0 ? 'var(--primary)' : 'var(--error)' }}>
-                              {totalRemaining >= 0 ? 'Rp ' : '-Rp '}{Math.abs(totalRemaining).toLocaleString('id-ID')}
+                            <span style={{ fontWeight: '800', color: totalRemaining >= 0 && isLimitSet ? 'var(--primary)' : 'var(--error)' }}>
+                              {totalRemaining >= 0 && isLimitSet ? 'Rp ' : '-Rp '}{Math.abs(totalRemaining).toLocaleString('id-ID')}
                             </span>
                           </div>
                         </div>
@@ -2624,18 +2639,19 @@ export default function DashboardPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                   {categories.filter(c => c.type === 'expense').map(c => {
                     const b = budgets.find(x => x.category_id === c.id) || { monthly_limit: 0, current_spent: 0 };
-                    const limit = Number(b.monthly_limit);
-                    const spent = Number(b.current_spent);
-                    const pct = limit > 0 ? Math.round((spent / limit) * 100) : 0;
+                    const limit = Number(b.monthly_limit || 0);
+                    const spent = Number(b.current_spent || 0);
+                    const isLimitSet = limit > 0;
+                    const pct = isLimitSet ? Math.round((spent / limit) * 100) : (spent > 0 ? 100 : 0);
                     const sisa = limit - spent;
-                    const bar = generateProgressBar(pct);
+                    const bar = generateProgressBar(isLimitSet ? pct : (spent > 0 ? 100 : 0));
 
                     return (
-                      <div key={c.id} style={{ padding: '20px', border: '1px solid var(--border)', borderRadius: '12px' }}>
+                      <div key={c.id} style={{ padding: '20px', border: '1px solid var(--border)', borderRadius: '12px', background: !isLimitSet && spent > 0 ? 'rgba(239, 68, 68, 0.02)' : 'transparent' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                           <span style={{ fontWeight: '700', fontSize: '1.05rem' }}>{c.emoji} {c.name}</span>
-                          <span style={{ color: pct >= 100 ? 'var(--error)' : 'var(--text-muted)', fontWeight: '700' }}>
-                            {pct}% terpakai
+                          <span style={{ color: !isLimitSet && spent > 0 ? 'var(--error)' : pct >= 100 ? 'var(--error)' : pct >= 80 ? '#FF8A00' : 'var(--text-muted)', fontWeight: '700' }}>
+                            {isLimitSet ? `${pct}% terpakai` : (spent > 0 ? `Rp ${spent.toLocaleString('id-ID')} terpakai (Limit belum diset)` : '0% terpakai')}
                           </span>
                         </div>
                         <div style={{ fontSize: '1.2rem', letterSpacing: '1px', marginBottom: '10px' }}>{bar}</div>
