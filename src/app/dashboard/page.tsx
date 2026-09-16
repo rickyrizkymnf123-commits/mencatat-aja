@@ -144,11 +144,13 @@ export default function DashboardPage() {
     setBudgets(currentBudgets);
     setCategories(currentCategories);
 
-    setChecklist({
-      connectTelegram: storedToken !== '' || (typeof window !== 'undefined' && !!localStorage.getItem('Mencatat Aja_custom_bot_token')),
+    const hasBotToken = typeof window !== 'undefined' && !!(localStorage.getItem('Mencatat Aja_custom_bot_token') || localStorage.getItem('tatadana_custom_bot_token'));
+    setChecklist(prev => ({
+      ...prev,
+      connectTelegram: hasBotToken,
       setWallet: currentWallets.length > 0,
       setBudget: currentBudgets.length > 0
-    });
+    }));
   };
 
   const fetchDashboardData = async (userIdStr: string, token: string) => {
@@ -193,11 +195,13 @@ export default function DashboardPage() {
         setDbStatusMsg('🟢 Database Supabase Terhubung Aktif');
       }
 
-      setChecklist({
-        connectTelegram: (token !== '' && token !== 'TD-LINKED') || (typeof window !== 'undefined' && !!localStorage.getItem('Mencatat Aja_custom_bot_token')),
+      const hasBotToken = typeof window !== 'undefined' && !!(localStorage.getItem('Mencatat Aja_custom_bot_token') || localStorage.getItem('tatadana_custom_bot_token'));
+      setChecklist(prev => ({
+        ...prev,
+        connectTelegram: prev.connectTelegram || hasBotToken,
         setWallet: Array.isArray(wData) && wData.length > 0,
         setBudget: Array.isArray(bData) && bData.length > 0
-      });
+      }));
     } catch (err) {
       console.warn('Backend API request failed or timed out, using persistent local mock:', err);
       setDbStatusMsg('🟢 Database Mencatat Aja Terhubung Aktif');
