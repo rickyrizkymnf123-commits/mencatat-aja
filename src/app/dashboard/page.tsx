@@ -124,18 +124,23 @@ export default function DashboardPage() {
   const [isToppingUp, setIsToppingUp] = useState(false);
   const [isApproved, setIsApproved] = useState(true);
 
+  const safeJsonParse = (str: string | null, fallback: any) => {
+    if (!str) return fallback;
+    try {
+      const parsed = JSON.parse(str);
+      return parsed !== null && parsed !== undefined ? parsed : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  };
+
   // Persistent Mock Data Loader (Fallback when DB is not configured)
   const loadMockData = (storedToken: string) => {
-    const storedWallets = JSON.parse(localStorage.getItem('Mencatat Aja_mock_wallets') || '[]');
-    const storedTransactions = JSON.parse(localStorage.getItem('Mencatat Aja_mock_transactions') || '[]');
-    const storedBudgets = JSON.parse(localStorage.getItem('Mencatat Aja_mock_budgets') || '[]');
-    const storedCategories = JSON.parse(localStorage.getItem('Mencatat Aja_mock_categories') || '[]');
+    const rawWallets = safeJsonParse(typeof window !== 'undefined' ? localStorage.getItem('Mencatat Aja_mock_wallets') : null, []);
+    const rawTransactions = safeJsonParse(typeof window !== 'undefined' ? localStorage.getItem('Mencatat Aja_mock_transactions') : null, []);
+    const rawBudgets = safeJsonParse(typeof window !== 'undefined' ? localStorage.getItem('Mencatat Aja_mock_budgets') : null, []);
+    const rawCategories = safeJsonParse(typeof window !== 'undefined' ? localStorage.getItem('Mencatat Aja_mock_categories') : null, []);
 
-    const defaultWallets = [
-      { id: 'w1', name: 'Cash', balance: 1500000, is_default: true },
-      { id: 'w2', name: 'BCA', balance: 8000000, is_default: false },
-      { id: 'w3', name: 'Gopay', balance: 3000000, is_default: false }
-    ];
     const defaultCategories = [
       { id: 'c1', name: 'Makanan', emoji: '🍜', color: '#FF8A00', type: 'expense' },
       { id: 'c2', name: 'Transport', emoji: '🚗', color: '#00A3FF', type: 'expense' },
@@ -147,58 +152,16 @@ export default function DashboardPage() {
       { id: 'c8', name: 'Freelance', emoji: '💻', color: '#00D1FF', type: 'income' },
       { id: 'c9', name: 'Investasi', emoji: '📈', color: '#9E00FF', type: 'income' }
     ];
-    const defaultBudgets = [
-      { id: 'b1', category_id: 'c1', monthly_limit: 1000000, current_spent: 450000 },
-      { id: 'b2', category_id: 'c2', monthly_limit: 500000, current_spent: 250000 },
-      { id: 'b3', category_id: 'c4', monthly_limit: 1500000, current_spent: 1200000 }
-    ];
-    const defaultTransactions = [
-      {
-        id: 'tx1',
-        amount: 150000,
-        type: 'expense',
-        description: 'Makan Siang Resto',
-        transaction_date: new Date().toISOString(),
-        wallet_id: 'w2',
-        category_id: 'c1',
-        source: 'web'
-      },
-      {
-        id: 'tx2',
-        amount: 200000,
-        type: 'expense',
-        description: 'Isi Bensin Pertamax',
-        transaction_date: new Date().toISOString(),
-        wallet_id: 'w3',
-        category_id: 'c2',
-        source: 'telegram'
-      },
-      {
-        id: 'tx3',
-        amount: 8000000,
-        type: 'income',
-        description: 'Gaji Bulan Ini',
-        transaction_date: new Date(Date.now() - 86400000).toISOString(),
-        wallet_id: 'w2',
-        category_id: 'c6',
-        source: 'web'
-      }
-    ];
 
-    const currentWallets = storedWallets.length > 0 ? storedWallets : [];
-    const currentTransactions = storedTransactions.length > 0 ? storedTransactions : [];
-    const currentBudgets = storedBudgets.length > 0 ? storedBudgets : [];
-    const currentCategories = storedCategories.length > 0 ? storedCategories : defaultCategories;
+    const currentWallets = Array.isArray(rawWallets) ? rawWallets : [];
+    const currentTransactions = Array.isArray(rawTransactions) ? rawTransactions : [];
+    const currentBudgets = Array.isArray(rawBudgets) ? rawBudgets : [];
+    const currentCategories = Array.isArray(rawCategories) && rawCategories.length > 0 ? rawCategories : defaultCategories;
 
     setWallets(currentWallets);
     setTransactions(currentTransactions);
     setBudgets(currentBudgets);
     setCategories(currentCategories);
-
-    if (storedWallets.length === 0) localStorage.setItem('Mencatat Aja_mock_wallets', JSON.stringify([]));
-    if (storedTransactions.length === 0) localStorage.setItem('Mencatat Aja_mock_transactions', JSON.stringify([]));
-    if (storedBudgets.length === 0) localStorage.setItem('Mencatat Aja_mock_budgets', JSON.stringify([]));
-    if (storedCategories.length === 0) localStorage.setItem('Mencatat Aja_mock_categories', JSON.stringify(defaultCategories));
 
     setChecklist({
       connectTelegram: storedToken !== '' || (typeof window !== 'undefined' && !!localStorage.getItem('Mencatat Aja_custom_bot_token')),
@@ -220,32 +183,28 @@ export default function DashboardPage() {
       const fetchOpts = { signal: controller.signal };
 
       const [wRes, cRes, tRes, bRes] = await Promise.all([
-        fetch(`/api/wallets?userId=${userIdStr}&custom_token=${encodeURIComponent(customToken)}`, fetchOpts),
-        fetch(`/api/categories?userId=${userIdStr}`, fetchOpts),
-        fetch(`/api/transactions?userId=${userIdStr}`, fetchOpts),
-        fetch(`/api/budgets?userId=${userIdStr}`, fetchOpts)
+        fetch(`/api/wallets?userId=${userIdStr}&custom_token=${encodeURIComponent(customToken)}`, fetchOpts).catch(() => null),
+        fetch(`/api/categories?userId=${userIdStr}`, fetchOpts).catch(() => null),
+        fetch(`/api/transactions?userId=${userIdStr}`, fetchOpts).catch(() => null),
+        fetch(`/api/budgets?userId=${userIdStr}`, fetchOpts).catch(() => null)
       ]);
 
       clearTimeout(timeoutId);
 
-      const [wData, cData, tData, bData] = await Promise.all([
-        wRes.json(),
-        cRes.json(),
-        tRes.json(),
-        bRes.json()
-      ]);
+      const wData = wRes && wRes.ok ? await wRes.json().catch(() => null) : null;
+      const cData = cRes && cRes.ok ? await cRes.json().catch(() => null) : null;
+      const tData = tRes && tRes.ok ? await tRes.json().catch(() => null) : null;
+      const bData = bRes && bRes.ok ? await bRes.json().catch(() => null) : null;
 
-      if (wData.error || cData.error || tData.error || bData.error) {
-        throw new Error('Database response contains error.');
+      if (Array.isArray(wData)) {
+        setWallets(wData);
+        if (wData.length > 0) {
+          setNewTxWalletId(prev => prev || (wData.find((w: any) => w?.is_default)?.id || wData[0]?.id || ''));
+        }
       }
-
-      setWallets(wData);
-      if (Array.isArray(wData) && wData.length > 0) {
-        setNewTxWalletId(prev => prev || (wData.find((w: any) => w.is_default)?.id || wData[0].id));
-      }
-      setCategories(cData);
-      setTransactions(tData);
-      setBudgets(bData);
+      if (Array.isArray(cData)) setCategories(cData);
+      if (Array.isArray(tData)) setTransactions(tData);
+      if (Array.isArray(bData)) setBudgets(bData);
 
       if (isPlaceholder) {
         setDbStatusMsg('🟢 Database Mencatat Aja Terhubung Aktif');
@@ -255,8 +214,8 @@ export default function DashboardPage() {
 
       setChecklist({
         connectTelegram: (token !== '' && token !== 'TD-LINKED') || (typeof window !== 'undefined' && !!localStorage.getItem('Mencatat Aja_custom_bot_token')),
-        setWallet: wData.length > 0,
-        setBudget: bData.length > 0
+        setWallet: Array.isArray(wData) && wData.length > 0,
+        setBudget: Array.isArray(bData) && bData.length > 0
       });
     } catch (err) {
       console.warn('Backend API request failed or timed out, using persistent local mock:', err);
@@ -1134,36 +1093,42 @@ export default function DashboardPage() {
   };
 
   // Filter transactions based on active filters & period
-  const filteredTxs = transactions.filter(t => {
+  const safeTransactions = Array.isArray(transactions) ? transactions : [];
+  const safeWallets = Array.isArray(wallets) ? wallets : [];
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const safeBudgets = Array.isArray(budgets) ? budgets : [];
+
+  const filteredTxs = safeTransactions.filter(t => {
+    if (!t) return false;
     if (filterWallet && t.wallet_id !== filterWallet) return false;
     if (filterCategory && t.category_id !== filterCategory) return false;
     if (filterType && t.type !== filterType) return false;
-    if (filterSearch && !t.description.toLowerCase().includes(filterSearch.toLowerCase())) return false;
+    const desc = t.description ? String(t.description) : '';
+    if (filterSearch && !desc.toLowerCase().includes(filterSearch.toLowerCase())) return false;
     
     // Date filter
+    const txDate = t.transaction_date ? new Date(t.transaction_date) : null;
     if (periodFilter === 'harian') {
       const today = new Date().toDateString();
-      return new Date(t.transaction_date).toDateString() === today;
+      return txDate ? txDate.toDateString() === today : false;
     }
     if (periodFilter === 'mingguan') {
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      return new Date(t.transaction_date) >= oneWeekAgo;
+      return txDate ? txDate >= oneWeekAgo : false;
     }
     if (periodFilter === 'bulanan') {
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
-      const d = new Date(t.transaction_date);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      return txDate ? (txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear) : false;
     }
     if (periodFilter === 'tahunan') {
       const currentYear = new Date().getFullYear();
-      return new Date(t.transaction_date).getFullYear() === currentYear;
+      return txDate ? txDate.getFullYear() === currentYear : false;
     }
     if (periodFilter === 'custom') {
-      const d = new Date(t.transaction_date);
-      if (customStartDate && d < new Date(customStartDate)) return false;
-      if (customEndDate && d > new Date(customEndDate)) return false;
+      if (customStartDate && txDate && txDate < new Date(customStartDate)) return false;
+      if (customEndDate && txDate && txDate > new Date(customEndDate)) return false;
     }
     
     return true;
@@ -1171,37 +1136,42 @@ export default function DashboardPage() {
 
   // Calculations for stats based on the selected period (filtered)
   const totalIncome = filteredTxs
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + Number(t.amount), 0);
+    .filter(t => t?.type === 'income')
+    .reduce((sum, t) => sum + Number(t?.amount || 0), 0);
 
   const totalExpense = filteredTxs
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + Number(t.amount), 0);
+    .filter(t => t?.type === 'expense')
+    .reduce((sum, t) => sum + Number(t?.amount || 0), 0);
 
-  const totalBalance = wallets.reduce((sum, w) => sum + Number(w.balance), 0);
+  const totalBalance = safeWallets.reduce((sum, w) => sum + Number(w?.balance || 0), 0);
 
-  const totalBudgetLimit = budgets.reduce((sum, b) => sum + Number(b.monthly_limit), 0);
-  const totalBudgetSpent = budgets.reduce((sum, b) => sum + Number(b.current_spent), 0);
+  const totalBudgetLimit = safeBudgets.reduce((sum, b) => sum + Number(b?.monthly_limit || 0), 0);
+  const totalBudgetSpent = safeBudgets.reduce((sum, b) => sum + Number(b?.current_spent || 0), 0);
   const totalBudgetRemaining = totalBudgetLimit - totalBudgetSpent;
 
   // Dynamic Trend Chart Calculations
-  const expenseTxs = filteredTxs.filter(t => t.type === 'expense');
-  const sortedExpenses = [...expenseTxs].sort((a,b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime());
+  const expenseTxs = filteredTxs.filter(t => t?.type === 'expense');
+  const sortedExpenses = [...expenseTxs].sort((a,b) => {
+    const timeA = a?.transaction_date ? new Date(a.transaction_date).getTime() : 0;
+    const timeB = b?.transaction_date ? new Date(b.transaction_date).getTime() : 0;
+    return timeA - timeB;
+  });
   
   let points = [150, 150, 150, 150]; // default y-coordinates (flat)
   let labels = ['Awal', 'Tengah', 'Akhir', 'Sekarang'];
 
   if (sortedExpenses.length > 0) {
-    const minTime = new Date(sortedExpenses[0].transaction_date).getTime();
-    const maxTime = new Date(sortedExpenses[sortedExpenses.length - 1].transaction_date).getTime();
+    const minTime = sortedExpenses[0]?.transaction_date ? new Date(sortedExpenses[0].transaction_date).getTime() : Date.now();
+    const maxTime = sortedExpenses[sortedExpenses.length - 1]?.transaction_date ? new Date(sortedExpenses[sortedExpenses.length - 1].transaction_date).getTime() : Date.now();
     const range = maxTime - minTime || 1;
 
     const bucketSum = [0, 0, 0, 0];
     sortedExpenses.forEach(e => {
-      const t = new Date(e.transaction_date).getTime();
+      if (!e) return;
+      const t = e.transaction_date ? new Date(e.transaction_date).getTime() : minTime;
       const pct = (t - minTime) / range;
       let idx = Math.min(Math.floor(pct * 4), 3);
-      bucketSum[idx] += Number(e.amount);
+      bucketSum[idx] += Number(e.amount || 0);
     });
 
     const maxVal = Math.max(...bucketSum) || 10000;
@@ -1221,14 +1191,15 @@ export default function DashboardPage() {
   // Dynamic Pie Chart Calculations
   const categoryExpenses: { [key: string]: { amount: number, emoji: string, color: string } } = {};
   expenseTxs.forEach(t => {
-    const cat = categories.find(c => c.id === t.category_id);
+    if (!t) return;
+    const cat = safeCategories.find(c => c?.id === t.category_id);
     const catName = cat?.name || 'Lainnya';
     const emoji = cat?.emoji || '💰';
     const color = cat?.color || '#999999';
     if (!categoryExpenses[catName]) {
       categoryExpenses[catName] = { amount: 0, emoji, color };
     }
-    categoryExpenses[catName].amount += Number(t.amount);
+    categoryExpenses[catName].amount += Number(t.amount || 0);
   });
 
   const totalExpenseAmount = Object.values(categoryExpenses).reduce((sum, item) => sum + item.amount, 0);
