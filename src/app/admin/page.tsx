@@ -1601,7 +1601,7 @@ export default function AdminDashboard() {
           </ul>
         </div>
 
-        <div className="sidebar-profile" style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="sidebar-profile" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div className="profile-avatar" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', width: '38px', height: '38px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.85rem' }}>SA</div>
             <div className="profile-details" style={{ flex: 1 }}>
@@ -1627,7 +1627,7 @@ export default function AdminDashboard() {
 
         {/* QUICK ADMIN METRICS STAT CARDS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-          <div style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '20px', padding: '18px 22px', boxShadow: '0 10px 30px -10px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)' }}>
+          <div style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '20px', padding: '18px 22px', boxShadow: '0 10px 30px -10px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Users</span>
               <span style={{ fontSize: '1.2rem' }}>👥</span>
@@ -1639,7 +1639,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '20px', padding: '18px 22px', boxShadow: '0 10px 30px -10px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)' }}>
+          <div style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '20px', padding: '18px 22px', boxShadow: '0 10px 30px -10px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Transaksi</span>
               <span style={{ fontSize: '1.2rem' }}>💳</span>
@@ -1653,7 +1653,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '20px', padding: '18px 22px', boxShadow: '0 10px 30px -10px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)' }}>
+          <div style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '20px', padding: '18px 22px', boxShadow: '0 10px 30px -10px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pending Approvals</span>
               <span style={{ fontSize: '1.2rem' }}>⏳</span>
@@ -1661,18 +1661,18 @@ export default function AdminDashboard() {
             <div style={{ fontSize: '1.75rem', fontWeight: '800', color: payments.filter(p => p.status === 'pending').length > 0 ? '#d97706' : 'var(--text-main)', letterSpacing: '-0.5px' }}>
               {payments.filter(p => p.status === 'pending').length} <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-muted)' }}>Menunggu</span>
             </div>
-            <div style={{ fontSize: '0.78rem', color: '#d97706', fontWeight: '700', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ fontSize: '0.78rem', color: '#fbbf24', fontWeight: '700', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }}></span>
               {users.filter(u => u.is_approved === false).length} Pendaftaran Pending ACC
             </div>
           </div>
 
-          <div style={{ background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(147, 51, 234, 0.3)', borderRadius: '20px', padding: '18px 22px', boxShadow: '0 10px 30px -10px rgba(147, 51, 234, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)' }}>
+          <div style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(147, 51, 234, 0.3)', borderRadius: '20px', padding: '18px 22px', boxShadow: '0 10px 30px -10px rgba(147, 51, 234, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>AI Engine Central</span>
               <span style={{ fontSize: '1.2rem' }}>🤖</span>
             </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#7e22ce', letterSpacing: '-0.3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#c084fc', letterSpacing: '-0.3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {defaultAiModel}
             </div>
             <div style={{ fontSize: '0.78rem', color: '#059669', fontWeight: '700', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -1834,7 +1834,7 @@ export default function AdminDashboard() {
                       </td>
                       <td style={{ fontWeight: '700' }}>{u.name}</td>
                       <td>
-                        <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: '#1e293b', fontWeight: '600', background: 'rgba(0,0,0,0.05)', padding: '3px 8px', borderRadius: '6px', display: 'inline-block' }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: '#38bdf8', fontWeight: '600', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '3px 8px', borderRadius: '6px', display: 'inline-block' }}>
                           {u.email || '-'}
                         </span>
                       </td>
@@ -1914,25 +1914,25 @@ export default function AdminDashboard() {
 
             {/* Metrics Quick Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
-              <div style={{ background: 'rgba(255,255,255,0.85)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.25)', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.08)' }}>
+              <div style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.25)', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.08)' }}>
                 <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Pelanggan Pro Aktif</div>
                 <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#059669', marginTop: '4px' }}>
                   {users.filter(u => u.plan === 'Pro' || u.plan === 'pro').length} <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)' }}>User</span>
                 </div>
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.85)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(245, 158, 11, 0.25)', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.08)' }}>
+              <div style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(245, 158, 11, 0.25)', boxShadow: '0 4px 14px rgba(245, 158, 11, 0.08)' }}>
                 <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Free Access (VIP)</div>
-                <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#d97706', marginTop: '4px' }}>
+                <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#fbbf24', marginTop: '4px' }}>
                   {users.filter(u => u.is_free_access).length || (users.filter(u => u.id === 'usr_catur').length ? 1 : 0)} <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)' }}>VIP</span>
                 </div>
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.85)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.25)', boxShadow: '0 4px 14px rgba(239, 68, 68, 0.08)' }}>
+              <div style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.25)', boxShadow: '0 4px 14px rgba(239, 68, 68, 0.08)' }}>
                 <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Hampir Habis (&lt; 7 Hari)</div>
                 <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#ef4444', marginTop: '4px' }}>
                   {users.filter(u => u.daysRemaining > 0 && u.daysRemaining <= 7).length || 0} <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)' }}>User</span>
                 </div>
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.85)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(100, 116, 139, 0.25)', boxShadow: '0 4px 14px rgba(100, 116, 139, 0.08)' }}>
+              <div style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(100, 116, 139, 0.25)', boxShadow: '0 4px 14px rgba(100, 116, 139, 0.08)' }}>
                 <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Starter (Free Tier)</div>
                 <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#475569', marginTop: '4px' }}>
                   {users.filter(u => u.plan === 'Starter' || !u.plan).length} <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)' }}>User</span>
@@ -2021,7 +2021,7 @@ export default function AdminDashboard() {
                           </td>
                           <td>
                             {isFree ? (
-                              <span className="shadcn-badge" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                              <span className="shadcn-badge" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
                                 ✨ Free Access VIP
                               </span>
                             ) : isPro ? (
@@ -2059,7 +2059,7 @@ export default function AdminDashboard() {
             {/* EDIT SUBSCRIPTION MODAL */}
             {showEditSubModal && selectedSubUser && (
               <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '20px' }}>
-                <div style={{ background: '#ffffff', borderRadius: '24px', maxWidth: '480px', width: '100%', padding: '28px', boxShadow: '0 25px 60px rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                <div style={{ background: 'rgba(13, 20, 38, 0.96)', border: '1px solid rgba(255, 255, 255, 0.12)', color: '#f8fafc', borderRadius: '24px', maxWidth: '480px', width: '100%', padding: '28px', boxShadow: '0 25px 60px rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', gap: '18px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', pb: '12px' }}>
                     <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span>👑</span> Edit Langganan Pengguna
@@ -2067,7 +2067,7 @@ export default function AdminDashboard() {
                     <button onClick={() => setShowEditSubModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
                   </div>
 
-                  <div style={{ background: 'rgba(0,0,0,0.03)', padding: '12px 16px', borderRadius: '12px', fontSize: '0.85rem' }}>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '12px 16px', borderRadius: '12px', fontSize: '0.85rem' }}>
                     <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{selectedSubUser.name}</div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{selectedSubUser.email || '-'}</div>
                   </div>
@@ -2075,10 +2075,10 @@ export default function AdminDashboard() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <label style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-main)' }}>Tambah Masa Aktif (Hari):</label>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-                      <button type="button" onClick={() => setSubModalDays(30)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 30 ? 'var(--primary)' : '#ffffff', color: subModalDays === 30 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+30 Hari</button>
-                      <button type="button" onClick={() => setSubModalDays(90)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 90 ? 'var(--primary)' : '#ffffff', color: subModalDays === 90 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+90 Hari</button>
-                      <button type="button" onClick={() => setSubModalDays(180)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 180 ? 'var(--primary)' : '#ffffff', color: subModalDays === 180 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+180 Hari</button>
-                      <button type="button" onClick={() => setSubModalDays(365)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 365 ? 'var(--primary)' : '#ffffff', color: subModalDays === 365 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+1 Tahun</button>
+                      <button type="button" onClick={() => setSubModalDays(30)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 30 ? 'var(--primary)' : 'rgba(255, 255, 255, 0.05)', color: subModalDays === 30 ? '#fff' : '#cbd5e1', color: subModalDays === 30 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+30 Hari</button>
+                      <button type="button" onClick={() => setSubModalDays(90)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 90 ? 'var(--primary)' : 'rgba(255, 255, 255, 0.05)', color: subModalDays === 90 ? '#fff' : '#cbd5e1', color: subModalDays === 90 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+90 Hari</button>
+                      <button type="button" onClick={() => setSubModalDays(180)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 180 ? 'var(--primary)' : 'rgba(255, 255, 255, 0.05)', color: subModalDays === 180 ? '#fff' : '#cbd5e1', color: subModalDays === 180 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+180 Hari</button>
+                      <button type="button" onClick={() => setSubModalDays(365)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 365 ? 'var(--primary)' : 'rgba(255, 255, 255, 0.05)', color: subModalDays === 365 ? '#fff' : '#cbd5e1', color: subModalDays === 365 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+1 Tahun</button>
                     </div>
                     <input
                       type="number"
@@ -2151,7 +2151,7 @@ export default function AdminDashboard() {
                 <span className="shadcn-badge" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                   Total: {payments.length} Transaksi
                 </span>
-                <span className="shadcn-badge" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                <span className="shadcn-badge" style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
                   Pending: {payments.filter(p => p.status === 'pending').length}
                 </span>
               </div>
@@ -2179,7 +2179,7 @@ export default function AdminDashboard() {
                         <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>ID: {p.userId}</div>
                       </td>
                       <td>
-                        <span style={{ fontSize: '0.85rem', fontWeight: '500', padding: '4px 8px', borderRadius: '6px', background: 'rgba(0,0,0,0.04)' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: '500', padding: '4px 8px', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.06)', color: '#cbd5e1' }}>
                           💳 {p.method}
                         </span>
                       </td>
@@ -2707,7 +2707,7 @@ export default function AdminDashboard() {
                         </div>
 
                         {/* Summary Card: Savings Rate Gauge */}
-                        <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                           <div>
                             <h4 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>📈 SAVINGS RATE</h4>
                             <div style={{ fontSize: '1.6rem', fontWeight: '800', color: repNetSavings >= 0 ? 'var(--primary)' : 'var(--error)' }}>
@@ -2726,7 +2726,7 @@ export default function AdminDashboard() {
                         </div>
 
                         {/* Summary Card: Category Distribution Breakdown */}
-                        <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '160px', overflowY: 'auto' }}>
+                        <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '160px', overflowY: 'auto' }}>
                           <h4 style={{ margin: '0 0 4px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>🍕 PROPORSI PENGELUARAN</h4>
                           {Object.keys(categorySpentMap).length === 0 ? (
                             <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', margin: 0 }}>Belum ada data pengeluaran.</p>
@@ -2891,7 +2891,7 @@ export default function AdminDashboard() {
                                       }
                                     }
                                   }}
-                                  style={{ width: '120px', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem', backgroundColor: '#ffffff', color: 'var(--text-main)' }}
+                                  style={{ width: '120px', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem', backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)', color: 'var(--text-main)' }}
                                 />
                               </div>
                             </div>
@@ -2946,7 +2946,7 @@ export default function AdminDashboard() {
                                   value={editingWalletName} 
                                   onChange={e => setEditingWalletName(e.target.value)} 
                                   placeholder="Nama dompet"
-                                  style={{ width: '100%', padding: '6px 12px', fontSize: '0.9rem', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: '#ffffff', color: 'var(--text-main)' }}
+                                  style={{ width: '100%', padding: '6px 12px', fontSize: '0.9rem', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)', color: 'var(--text-main)' }}
                                 />
                               </div>
                               <div className="form-group" style={{ margin: 0 }}>
@@ -2955,7 +2955,7 @@ export default function AdminDashboard() {
                                   value={editingWalletBalance} 
                                   onChange={e => setEditingWalletBalance(e.target.value)} 
                                   placeholder="Saldo"
-                                  style={{ width: '100%', padding: '6px 12px', fontSize: '0.9rem', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: '#ffffff', color: 'var(--text-main)' }}
+                                  style={{ width: '100%', padding: '6px 12px', fontSize: '0.9rem', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)', color: 'var(--text-main)' }}
                                 />
                               </div>
                               <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
@@ -3143,7 +3143,7 @@ export default function AdminDashboard() {
                     <div style={{ marginTop: '16px' }}>
                       <h4 style={{ marginBottom: '20px' }}>🛒 Paket Top Up Kredit AI</h4>
                       <div className="grid-3" style={{ gap: '20px' }}>
-                        <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', textAlign: 'center', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', textAlign: 'center', backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                           <div>
                             <span style={{ fontSize: '2rem' }}>🥉</span>
                             <h5 style={{ margin: '12px 0 8px 0', fontSize: '1rem' }}>Paket Hemat</h5>
@@ -3160,7 +3160,7 @@ export default function AdminDashboard() {
                           </button>
                         </div>
 
-                        <div style={{ border: '2px solid var(--primary)', borderRadius: '12px', padding: '24px', textAlign: 'center', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative' }}>
+                        <div style={{ border: '2px solid var(--primary)', borderRadius: '12px', padding: '24px', textAlign: 'center', backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative' }}>
                           <span style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'var(--primary)', color: '#ffffff', fontSize: '0.65rem', fontWeight: '700', padding: '2px 8px', borderRadius: '100px', textTransform: 'uppercase' }}>Populer</span>
                           <div>
                             <span style={{ fontSize: '2rem' }}>🥈</span>
@@ -3178,7 +3178,7 @@ export default function AdminDashboard() {
                           </button>
                         </div>
 
-                        <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', textAlign: 'center', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', textAlign: 'center', backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                           <div>
                             <span style={{ fontSize: '2rem' }}>🥇</span>
                             <h5 style={{ margin: '12px 0 8px 0', fontSize: '1rem' }}>Paket Pro</h5>
@@ -3209,7 +3209,7 @@ export default function AdminDashboard() {
         {activeTab === 'ai_config' && (
           <div className="animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto' }}>
             <div style={{
-              backgroundColor: '#ffffff',
+              backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)',
               color: 'var(--text-main)',
               borderRadius: '16px',
               padding: '40px',
@@ -3236,7 +3236,7 @@ export default function AdminDashboard() {
                     required
                     style={{
                       width: '100%',
-                      backgroundColor: '#ffffff',
+                      backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)',
                       border: '1px solid var(--border)',
                       borderRadius: '8px',
                       padding: '12px 16px',
@@ -3261,7 +3261,7 @@ export default function AdminDashboard() {
                       type={showAiApiKey ? 'text' : 'password'}
                       style={{
                         width: '100%',
-                        backgroundColor: '#ffffff',
+                        backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)',
                         border: '1px solid var(--border)',
                         borderRadius: '8px',
                         padding: '12px 16px',
@@ -3326,7 +3326,7 @@ export default function AdminDashboard() {
                     id="defaultAiModel"
                     style={{
                       width: '100%',
-                      backgroundColor: '#ffffff',
+                      backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)',
                       border: '1px solid var(--border)',
                       borderRadius: '8px',
                       padding: '12px 16px',
@@ -3345,7 +3345,7 @@ export default function AdminDashboard() {
                     }}
                   >
                     {modelsList.map(model => (
-                      <option key={model} value={model} style={{ backgroundColor: '#ffffff', color: 'var(--text-main)' }}>
+                      <option key={model} value={model} style={{ backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)', color: 'var(--text-main)' }}>
                         {model}
                       </option>
                     ))}
@@ -3399,7 +3399,7 @@ export default function AdminDashboard() {
                         type="text"
                         style={{
                           flex: 1,
-                          backgroundColor: '#ffffff',
+                          backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)',
                           border: '1px solid var(--border)',
                           borderRadius: '8px',
                           padding: '12px 16px',
