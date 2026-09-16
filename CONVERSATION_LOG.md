@@ -1085,3 +1085,19 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
   * `npm run build` sukses 100% (23 routes, 0 error).
   * Di-commit dan di-push ke branch `main` (`commit a608795`) dan otomatis live di Vercel Production (`https://www.mencatat.my.id`).
 
+## Sesi 74: Penghapusan Graphic Emblem (Clean Text Logo) & Penyelarasan Tema Gelap Dashboard
+- **Permintaan Pengguna:**
+  * Menghilangkan kotak emblem/logo grafis di Landing Page maupun Dashboard, menyisakan tipografi teks merek yang bersih dan elegan.
+  * Menyelaraskan tampilan Dashboard agar memiliki tema gelap (Dark Theme) yang identik dengan Landing Page.
+- **Solusi & Perbaikan yang Diterapkan:**
+  1. **Tipografi Bersih (Clean Text Branding):**
+     - Menghapus elemen kotak emblem grafis di Navbar Landing Page (`src/app/page.tsx`), Sidebar User Dashboard (`src/app/dashboard/page.tsx`), dan Admin Portal (`src/app/admin/page.tsx`).
+     - Mempertahankan tipografi modern `Mencatat` (Putih Platinum) + `Aja` (Gradien Emerald-Cyan) yang rapi dipadukan dengan badge `💰 AI WEALTH OS`.
+  2. **Penyelarasan Tema Gelap Dashboard (Dark Obsidian Glassmorphism):**
+     - Menerapkan latar belakang gelap konsisten (`radial-gradient(circle at 50% 0%, #0c1827 0%, #04060d 75%)`).
+     - Sidebar bernuansa Dark Glass dengan active indicator emerald yang menyala.
+     - Kartu statistik, form input transaksi, modal, dan tabel mutasi diselaraskan menjadi tema gelap bergradien halus dan border kaca transparan.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% (23 routes, 0 error).
+  * Di-commit dan di-push ke branch `main` (`commit 3cdb5f8`) dan otomatis live di Vercel Production (`https://www.mencatat.my.id`).
+
