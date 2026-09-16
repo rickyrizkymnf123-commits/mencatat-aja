@@ -1561,6 +1561,7 @@ export default function AdminDashboard() {
       {/* ADMIN SIDEBAR */}
       <aside className={`sidebar admin-nav animate-fade-in ${sidebarOpen ? 'active' : ''}`} style={{ width: '270px', padding: '24px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>
+          
           <div className="sidebar-logo" style={{ marginBottom: '24px', display: 'flex', alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '1.2rem', fontWeight: '900', color: 'var(--text-main)', letterSpacing: '-0.3px' }}>
@@ -1569,6 +1570,7 @@ export default function AdminDashboard() {
               <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Superadmin Portal</span>
             </div>
           </div>
+
 
 
 

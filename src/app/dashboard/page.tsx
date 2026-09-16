@@ -1657,6 +1657,7 @@ export default function DashboardPage() {
 
       {/* SIDEBAR NAVIGATION */}
       <aside className={`sidebar animate-fade-in ${sidebarOpen ? 'active' : ''}`}>
+        
         <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', marginBottom: '28px' }}>
           <div>
             <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.3px' }}>
@@ -1665,6 +1666,7 @@ export default function DashboardPage() {
             <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.8px' }}>AI Wealth OS</span>
           </div>
         </div>
+
 
 
         <ul className="sidebar-menu" style={{ flex: 'none' }}>
