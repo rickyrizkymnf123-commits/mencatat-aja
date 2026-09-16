@@ -1147,3 +1147,19 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 2. Memperbaiki card status pending di `src/app/dashboard/page.tsx` agar konsisten bertema dark glass.
 3. Build Next.js lolos 100% (`npm run build`).
 4. Commit dan push ke repository GitHub (`dca453d`) untuk langsung trigger deployment di Vercel.
+
+## Sesi 78 - Pembersihan Total Data Dummy & String Mock Mode (2026-09-16)
+
+### Permintaan Pengguna
+- Bersihkan semua data dummy / fake dummy di database dan tools aplikasi.
+
+### Tindakan & Perubahan Teknis
+1. **Pembersihan Database Supabase**:
+   - Menghapus akun test dummy `testuser_1789535645052@example.com` dan `deborahbahajuid119@hikamsmart.com` (`eci`) beserta seluruh relasi data (transactions, wallets, budgets, categories, payments, ai_logs, profiles, auth.users).
+   - Database Supabase kini hanya menyisakan data akun pengguna asli.
+2. **Pembersihan String & Label Dummy / Mock**:
+   - Menghapus seluruh string `(Mock mode)` / `Mock Mode` dari alert transaksi, pendaftaran dompet, dan pesan Telegram webhook.
+   - Memastikan seluruh aliran data aplikasi berjalan 100% pada sistem produksi dan database Supabase yang sesungguhnya.
+3. **Verifikasi & Deployment**:
+   - Build Next.js lolos 100% (`npm run build` - 0 error).
+   - Git commit dan push ke branch `main` di GitHub (`9ecdb99`) untuk trigger auto-deploy Vercel Pro.
