@@ -1418,137 +1418,151 @@ export default function DashboardPage() {
           100% { opacity: 0.6; }
         }
 
-        
-        /* DARK OBSIDIAN THEME (SYNCHRONIZED WITH LANDING PAGE) */
-        :root {
-          --background: #04060d;
-          --card-bg: rgba(13, 20, 38, 0.75);
-          --sidebar-bg: rgba(13, 20, 38, 0.85);
-          --text-main: #f1f5f9;
-          --text-muted: #94a3b8;
-          --border: rgba(255, 255, 255, 0.08);
-          --primary: #10b981;
-          --primary-light: rgba(16, 185, 129, 0.15);
+        /* 4 STAT CARDS SUMMARY GRID */
+        .stats-summary {
+          display: grid !important;
+          grid-template-columns: repeat(4, 1fr) !important;
+          gap: 18px !important;
+          margin-top: 20px !important;
+          margin-bottom: 24px !important;
+          width: 100% !important;
         }
 
-        body {
-          background-color: #04060d !important;
-          color: #f1f5f9 !important;
+        @media (max-width: 1200px) {
+          .stats-summary {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
         }
 
-        .dashboard-container {
-          background: radial-gradient(circle at 50% 0%, #0c1827 0%, #04060d 75%) !important;
-          min-height: 100vh;
-          color: #f1f5f9;
+        @media (max-width: 640px) {
+          .stats-summary {
+            grid-template-columns: 1fr !important;
+          }
         }
 
-        .mobile-top-bar {
-          background: rgba(4, 6, 13, 0.95) !important;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-          color: #ffffff !important;
+        .chart-grid {
+          display: grid !important;
+          grid-template-columns: 2fr 1fr !important;
+          gap: 24px !important;
+          margin-bottom: 24px !important;
+          width: 100% !important;
         }
 
-        /* Sidebar Dark Glass */
-        .sidebar {
-          width: 280px !important;
-          background: rgba(10, 15, 30, 0.88) !important;
-          backdrop-filter: blur(28px) !important;
-          -webkit-backdrop-filter: blur(28px) !important;
-          border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-          box-shadow: 6px 0 35px rgba(0, 0, 0, 0.5) !important;
-        }
-
-        .menu-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px 16px;
-          border-radius: 14px !important;
-          color: #94a3b8 !important;
-          font-weight: 600 !important;
-          cursor: pointer;
-          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
-        }
-
-        .menu-item:hover {
-          background: rgba(16, 185, 129, 0.12) !important;
-          color: #34d399 !important;
-          transform: translateX(3px) !important;
-        }
-
-        .menu-item.active {
-          background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(6, 182, 212, 0.15) 100%) !important;
-          color: #34d399 !important;
-          border: 1px solid rgba(16, 185, 129, 0.35) !important;
-          box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.25) !important;
-        }
-
-        .sidebar-profile {
-          margin-top: auto;
-          border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-          padding-top: 20px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
+        @media (max-width: 900px) {
+          .chart-grid {
+            grid-template-columns: 1fr !important;
+          }
         }
 
         /* Stat Cards Dark Glass */
         .stat-card {
           background: rgba(13, 20, 38, 0.75) !important;
-          backdrop-filter: blur(24px) !important;
-          -webkit-backdrop-filter: blur(24px) !important;
+          backdrop-filter: blur(24px) saturate(200%) !important;
+          -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
           border: 1px solid rgba(255, 255, 255, 0.08) !important;
-          border-radius: 24px !important;
-          padding: 24px !important;
-          box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+          border-radius: 20px !important;
+          padding: 22px 24px !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: space-between !important;
+          min-height: 130px !important;
+          box-shadow: 0 16px 40px -15px rgba(0, 0, 0, 0.5) !important;
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
-          color: #ffffff !important;
         }
 
         .stat-card:hover {
-          background: rgba(18, 27, 50, 0.85) !important;
+          background: rgba(18, 28, 52, 0.85) !important;
           border-color: rgba(16, 185, 129, 0.35) !important;
-          box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.2) !important;
+          box-shadow: 0 20px 50px -10px rgba(16, 185, 129, 0.15) !important;
           transform: translateY(-3px) !important;
         }
 
         .stat-card.primary {
-          background: linear-gradient(135deg, #059669 0%, #0f766e 100%) !important;
-          color: #ffffff !important;
-          border: 1px solid rgba(255, 255, 255, 0.2) !important;
-          box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.4) !important;
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 182, 212, 0.15) 100%) !important;
+          border: 1px solid rgba(16, 185, 129, 0.35) !important;
+          box-shadow: 0 16px 40px -15px rgba(16, 185, 129, 0.25) !important;
         }
 
         .stat-label {
-          font-size: 0.8rem;
-          font-weight: 700;
+          font-size: 0.75rem !important;
+          font-weight: 700 !important;
           color: #94a3b8 !important;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
+          text-transform: uppercase !important;
+          letter-spacing: 0.8px !important;
         }
 
         .stat-value {
-          font-size: 1.75rem;
-          font-weight: 800;
-          margin-top: 8px;
-          letter-spacing: -0.5px;
+          font-size: 1.75rem !important;
+          font-weight: 800 !important;
+          margin: 6px 0 !important;
+          letter-spacing: -0.5px !important;
           color: #ffffff !important;
+        }
+
+        .stat-sub {
+          font-size: 0.78rem !important;
+          color: #64748b !important;
+          font-weight: 600 !important;
         }
 
         /* Generic Dark Cards & Containers */
         .card, .form-container, .filters-bar, .checklist-card, .transaction-card {
           background: rgba(13, 20, 38, 0.75) !important;
-          backdrop-filter: blur(20px) !important;
-          -webkit-backdrop-filter: blur(20px) !important;
+          backdrop-filter: blur(24px) saturate(200%) !important;
+          -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
           border: 1px solid rgba(255, 255, 255, 0.08) !important;
           border-radius: 20px !important;
-          color: #f1f5f9 !important;
-          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+          color: #f8fafc !important;
+          box-shadow: 0 16px 40px -15px rgba(0, 0, 0, 0.6) !important;
+        }
+
+        /* Checklist / Onboarding Styles */
+        .checklist-card {
+          padding: 24px 28px !important;
+          margin-bottom: 24px !important;
+        }
+
+        .checklist-item {
+          display: flex !important;
+          align-items: center !important;
+          gap: 16px !important;
+          padding: 14px 18px !important;
+          border-radius: 14px !important;
+          background: rgba(255, 255, 255, 0.03) !important;
+          border: 1px solid rgba(255, 255, 255, 0.05) !important;
+          margin-bottom: 12px !important;
+          transition: all 0.2s ease !important;
+        }
+
+        .checklist-item:last-child {
+          margin-bottom: 0 !important;
+        }
+
+        .chk-indicator {
+          width: 32px !important;
+          height: 32px !important;
+          min-width: 32px !important;
+          border-radius: 50% !important;
+          background: rgba(255, 255, 255, 0.08) !important;
+          color: #94a3b8 !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          font-weight: 800 !important;
+          font-size: 0.85rem !important;
+          border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
+
+        .chk-indicator.checked {
+          background: #10b981 !important;
+          color: #ffffff !important;
+          border-color: #10b981 !important;
+          box-shadow: 0 0 12px rgba(16, 185, 129, 0.4) !important;
         }
 
         /* Dark Inputs & Selects */
         input[type="text"], input[type="number"], input[type="email"], input[type="password"], input[type="date"], select, textarea {
-          background: #02040a !important;
+          background: rgba(10, 15, 30, 0.85) !important;
           color: #ffffff !important;
           border: 1px solid rgba(255, 255, 255, 0.15) !important;
           border-radius: 12px !important;
@@ -1573,12 +1587,12 @@ export default function DashboardPage() {
         }
 
         th {
-          background: rgba(6, 10, 22, 0.95) !important;
+          background: rgba(10, 15, 30, 0.95) !important;
           color: #94a3b8 !important;
           font-weight: 700 !important;
-          font-size: 0.75rem !important;
+          font-size: 0.72rem !important;
           text-transform: uppercase !important;
-          letter-spacing: 0.6px !important;
+          letter-spacing: 0.8px !important;
           padding: 14px 18px !important;
           border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
         }
@@ -1593,56 +1607,37 @@ export default function DashboardPage() {
           background: rgba(16, 185, 129, 0.05) !important;
         }
 
-        /* Buttons */
-        .btn-primary, button.btn-primary, .btn {
-          background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
-          color: #04060d !important;
-          font-weight: 800 !important;
-          border: none !important;
-          box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
-        }
-
-        .btn-secondary {
-          background: rgba(255, 255, 255, 0.06) !important;
-          color: #e2e8f0 !important;
-          border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        }
-
-        .btn-outline {
-          background: transparent !important;
-          border: 1px solid rgba(16, 185, 129, 0.4) !important;
-          color: #34d399 !important;
-        }
-
         /* Filter Toggle Buttons */
         .pricing-toggle {
-          background: #02040a !important;
+          display: inline-flex !important;
+          background: rgba(10, 15, 30, 0.85) !important;
           border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 12px !important;
+          padding: 3px !important;
+          gap: 4px !important;
         }
-        .toggle-btn.active {
-          background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
-          color: #04060d !important;
-          font-weight: 800 !important;
+
+        .toggle-btn {
+          background: transparent !important;
+          color: #94a3b8 !important;
+          padding: 6px 14px !important;
+          border-radius: 8px !important;
+          font-size: 0.8rem !important;
+          font-weight: 600 !important;
+          cursor: pointer !important;
+          transition: all 0.2s ease !important;
         }
 
         .toggle-btn:hover {
-          color: var(--primary);
-          background-color: var(--primary-light);
-        }
-        .toggle-btn.active {
-          background-color: var(--primary);
-          color: #ffffff;
-          box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
-          transform: translateY(-1px) scale(1.02);
+          color: #ffffff !important;
+          background: rgba(255, 255, 255, 0.05) !important;
         }
 
-        @media (max-width: 768px) {
-          .stats-summary {
-            grid-template-columns: 1fr;
-          }
-          .chart-grid {
-            grid-template-columns: 1fr;
-          }
+        .toggle-btn.active {
+          background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%) !important;
+          color: #04060d !important;
+          font-weight: 800 !important;
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
         }
       `}</style>
 
