@@ -992,6 +992,21 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
   * `npm run build` sukses 100% (0 error).
   * Di-commit ke Git repository `main` dan otomatis dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
 
+## Sesi 69: Perbaikan Status Checklist Onboarding Telegram untuk Akun Baru
+- **Identifikasi Masalah:**
+  * Pengguna baru yang baru mendaftar dan belum melakukan setup token Bot Telegram mendapati tugas *"Hubungkan Telegram"* pada checklist *Mulai Langkahmu (Onboarding)* di dashboard sudah tercentang hijau (selesai).
+- **Akar Masalah (Root Cause):**
+  * Di `src/app/dashboard/page.tsx`, fungsi `fetchDashboardData` dan `loadMockData` mengevaluasi `checklist.connectTelegram` menggunakan kondisi `(token !== '' && token !== 'TD-LINKED')`. Karena setiap user baru menerima kode pairing `telegram_link_token` saat registrasi (misal: `TD-729402`), ekspresi tersebut selalu bernilai `true` meskipun bot belum terhubung.
+- **Solusi & Perbaikan yang Diterapkan:**
+  1. Memperbaiki logika penentuan status `checklist.connectTelegram` agar hanya bernilai `true` jika:
+     - Bot Telegram benar-benar terhubung dan terverifikasi dari backend (`/api/telegram/setup?userId=...` mengembalikan `connected: true`), ATAU
+     - Pengguna telah memasukkan token bot kustom (`localStorage.getItem('Mencatat Aja_custom_bot_token')`).
+  2. Untuk akun baru yang belum setup, indikator nomor "1" (lingkaran abu-abu belum selesai) akan tampil dengan benar sampai pengguna memasukkan token bot mereka di menu Settings.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% (0 error).
+  * Di-commit ke Git repository `main` dan otomatis dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
+
+
 
 
 
