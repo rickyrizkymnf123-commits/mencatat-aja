@@ -943,6 +943,23 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
   * `npm run build` sukses 100% (0 error).
   * Di-commit ke Git repository `main` dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
 
+## Sesi 66: Eliminasi Silent Mock Fallback pada Auth Route & Penegakan Autentikasi Kredensial Supabase
+- **Identifikasi Masalah:**
+  * Saat pengguna memasukkan email regular (misalnya `demo@profitlab.com`) pada form Login, sistem masih mengarahkan atau mentransformasi sesi ke akun Superadmin.
+- **Akar Masalah (Root Cause):**
+  * Di endpoint `src/app/api/auth/session/route.ts`, ketika `supabase.auth.signInWithPassword` gagal (misalnya karena kata sandi salah), endpoint tersebut secara diam-diam (*silent fallback*) mengembalikan ID mock non-UUID `usr_mock_email_xxxx` dengan status `success: true`.
+  * Ketika `usr_mock_email_xxxx` masuk ke dashboard, logika validasi UUID mendeteksi string tersebut bukan UUID dan secara keliru menggantinya dengan `SUPERADMIN_ID`.
+- **Solusi & Perbaikan yang Diterapkan:**
+  1. **Penghapusan Total Silent Fallback:**
+     - Endpoint `/api/auth/session` kini secara tegas mengembalikan HTTP 401 dan pesan kesalahan ramah (*"Email atau kata sandi salah"*) jika kredensial tidak cocok. Tidak ada lagi ID tiruan/mock yang digenerate.
+  2. **Validasi Password Superadmin Ketat:**
+     - Akun Superadmin hanya dapat masuk jika kata sandi yang dimasukkan terverifikasi valid.
+  3. **Integritas Sesi Pengguna Biasa:**
+     - Sesi pengguna biasa diikat secara langsung ke profil dan UUID unik pengguna tersebut dari Supabase.
+- **Verifikasi & Deployment:**
+  * `npm run build` sukses 100% (0 error).
+  * Di-commit ke Git repository `main` dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
+
 
 
 
