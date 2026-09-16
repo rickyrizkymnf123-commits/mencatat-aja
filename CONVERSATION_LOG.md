@@ -1135,3 +1135,15 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 4. **Verifikasi & Deployment**:
    - Build Next.js lolos 100% (`npm run build` - 0 error).
    - Git commit dan push ke `main` untuk auto-deploy Vercel Pro.
+
+## Sesi 77 - Root-Cause Fix: Global Style Tag Purge in Admin Portal (2026-09-16)
+
+### Analisis Akar Masalah (Root Cause)
+- Terdapat tag `<style jsx global>` di dalam `src/app/admin/page.tsx` yang meng-inject CSS hardcoded putih (`rgba(255, 255, 255, 0.7) !important`, `color: #334155 !important`, dan `.admin-nav background: rgba(255, 255, 255, 0.75)`) ke browser.
+- Hal ini menyebabkan tampilan admin tetap terang dan teks gelap tidak terbaca meskipun `globals.css` sudah diubah.
+
+### Tindakan Penyelesaian
+1. Mengganti seluruh isi blok `<style jsx global>` di `src/app/admin/page.tsx` dengan stylesheet Dark Obsidian Glass yang murni.
+2. Memperbaiki card status pending di `src/app/dashboard/page.tsx` agar konsisten bertema dark glass.
+3. Build Next.js lolos 100% (`npm run build`).
+4. Commit dan push ke repository GitHub (`dca453d`) untuk langsung trigger deployment di Vercel.
