@@ -192,7 +192,7 @@ export default function AdminDashboard() {
   });
   const [prevBotStatusMsg, setPrevBotStatusMsg] = useState(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('Mencatat Aja_custom_bot_token_preview')) {
-      return '🟢 Terhubung dengan bot kustom (Mock Mode)';
+      return '🟢 Terhubung dengan bot kustom';
     }
     return '';
   });

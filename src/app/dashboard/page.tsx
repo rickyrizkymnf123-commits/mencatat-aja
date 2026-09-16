@@ -515,7 +515,7 @@ export default function DashboardPage() {
       setTransactions(updatedTxs);
       setBudgets(updatedBudgets);
 
-      alert('🟢 Transaksi berhasil disimpan (Mock mode)!');
+      alert('🟢 Transaksi berhasil disimpan!');
       setNewTxAmount('');
       setNewTxDescription('');
       setNewTxTransferToWalletId('');
@@ -817,7 +817,7 @@ export default function DashboardPage() {
       localStorage.setItem('Mencatat Aja_mock_wallets', JSON.stringify(updatedWallets));
       setWallets(updatedWallets);
       
-      alert('🟢 Dompet baru berhasil didaftarkan (Mock mode)!');
+      alert('🟢 Dompet baru berhasil didaftarkan!');
       setNewWalletName('');
       setNewWalletBalance('');
       setNewWalletIsDefault(false);

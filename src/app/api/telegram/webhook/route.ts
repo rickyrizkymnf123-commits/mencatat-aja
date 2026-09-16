@@ -195,7 +195,7 @@ export async function POST(request: Request) {
           await telegram.sendMessage(
             botToken,
             chatId,
-            `🟢 <b>Mencatat Aja (Mock Mode) Berhasil Terhubung!</b>\nHalo, akun Anda berhasil terhubung dengan Telegram bot kustom di Localhost.\n\nSekarang Anda bisa mulai mencatat keuangan. Cukup ketik seperti:\n• <i>"beli bakso 15rb"</i>\n• <i>"gaji freelance 2.5jt"</i>\n• <i>"transfer kasir ke dompet BCA 500k"</i>\n\nKetik /bantuan untuk melihat daftar perintah.`,
+            `🟢 <b>Mencatat Aja Berhasil Terhubung!</b>\nHalo, akun Anda berhasil terhubung dengan Telegram bot kustom di Localhost.\n\nSekarang Anda bisa mulai mencatat keuangan. Cukup ketik seperti:\n• <i>"beli bakso 15rb"</i>\n• <i>"gaji freelance 2.5jt"</i>\n• <i>"transfer kasir ke dompet BCA 500k"</i>\n\nKetik /bantuan untuk melihat daftar perintah.`,
             keyboardMarkup
           );
           return NextResponse.json({ ok: true });
