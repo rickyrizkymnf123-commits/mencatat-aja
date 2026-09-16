@@ -1650,51 +1650,49 @@ export default function DashboardPage() {
       </div>
 
       {/* SIDEBAR NAVIGATION */}
-      <aside className={`sidebar animate-fade-in ${sidebarOpen ? 'active' : ''}`}>
-        
-        <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', marginBottom: '28px' }}>
-          <div>
-            <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.3px' }}>
-              Mencatat<span style={{ background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Aja</span>
+      <aside className={`sidebar animate-fade-in ${sidebarOpen ? 'active' : ''}`} style={{ top: isAdminMode ? '44px' : '0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+            <div>
+              <div style={{ fontSize: '1.3rem', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.3px' }}>
+                Mencatat<span style={{ background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Aja</span>
+              </div>
+              <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.8px' }}>AI Wealth OS</span>
             </div>
-            <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.8px' }}>AI Wealth OS</span>
           </div>
+
+          <ul className="sidebar-menu" style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: 0, margin: 0, listStyle: 'none' }}>
+            <li onClick={() => { setActiveTab('beranda'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'beranda' ? 'active' : ''}`}>
+              🏠 Beranda
+            </li>
+            <li onClick={() => { setActiveTab('transaksi'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'transaksi' ? 'active' : ''}`}>
+              💳 Transaksi
+            </li>
+            <li onClick={() => { setActiveTab('laporan'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'laporan' ? 'active' : ''}`}>
+              📊 Laporan
+            </li>
+            <li onClick={() => { setActiveTab('budget'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'budget' ? 'active' : ''}`}>
+              🎯 Budget
+            </li>
+            <li onClick={() => { setActiveTab('wallet'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'wallet' ? 'active' : ''}`}>
+              👛 Wallet
+            </li>
+            <li onClick={() => { setActiveTab('settings'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'settings' ? 'active' : ''}`}>
+              ⚙️ Settings
+            </li>
+            <li onClick={() => { setActiveTab('langganan'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'langganan' ? 'active' : ''}`}>
+              💎 Kelola Langganan
+            </li>
+            <li onClick={() => { setActiveTab('profile'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'profile' ? 'active' : ''}`}>
+              👤 Profil & Kredit
+            </li>
+            {(userRole === 'superadmin' || userEmail.toLowerCase() === 'rickyrizkymnf123@gmail.com' || isAdminMode) && (
+              <Link href="/admin" className="menu-item" style={{ color: '#059669', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.25)', fontWeight: '700', textDecoration: 'none', marginTop: '12px' }}>
+                👑 Panel Admin (/admin)
+              </Link>
+            )}
+          </ul>
         </div>
-
-
-
-        <ul className="sidebar-menu" style={{ flex: 'none' }}>
-          <li onClick={() => { setActiveTab('beranda'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'beranda' ? 'active' : ''}`}>
-            🏠 Beranda
-          </li>
-          <li onClick={() => { setActiveTab('transaksi'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'transaksi' ? 'active' : ''}`}>
-            💳 Transaksi
-          </li>
-          <li onClick={() => { setActiveTab('laporan'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'laporan' ? 'active' : ''}`}>
-            📊 Laporan
-          </li>
-          <li onClick={() => { setActiveTab('budget'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'budget' ? 'active' : ''}`}>
-            🎯 Budget
-          </li>
-          <li onClick={() => { setActiveTab('wallet'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'wallet' ? 'active' : ''}`}>
-            👛 Wallet
-          </li>
-          
-          <li onClick={() => { setActiveTab('settings'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'settings' ? 'active' : ''}`}>
-            ⚙️ Settings
-          </li>
-          <li onClick={() => { setActiveTab('langganan'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'langganan' ? 'active' : ''}`}>
-            💎 Kelola Langganan
-          </li>
-          <li onClick={() => { setActiveTab('profile'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'profile' ? 'active' : ''}`}>
-            👤 Profil & Kredit
-          </li>
-          {(userRole === 'superadmin' || userEmail.toLowerCase() === 'rickyrizkymnf123@gmail.com' || isAdminMode) && (
-            <Link href="/admin" className="menu-item" style={{ color: '#059669', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.25)', fontWeight: '700', textDecoration: 'none', marginTop: '12px' }}>
-              👑 Panel Admin (/admin)
-            </Link>
-          )}
-        </ul>
         <div className="sidebar-profile" style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'stretch' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div className="profile-avatar">{userName ? userName.substring(0,2).toUpperCase() : 'US'}</div>
