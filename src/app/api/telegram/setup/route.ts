@@ -162,7 +162,7 @@ export async function POST(request: Request) {
 
     const webhookBaseUrl = process.env.WEBHOOK_BASE_URL && process.env.WEBHOOK_BASE_URL.startsWith('https://')
       ? process.env.WEBHOOK_BASE_URL
-      : (autoBaseUrl.startsWith('https://') ? autoBaseUrl : 'http://localhost:3000');
+      : (autoBaseUrl.startsWith('https://') ? autoBaseUrl : 'https://www.mencatat.my.id');
 
     const isHttps = webhookBaseUrl.startsWith('https://');
     let webhookRegistered = false;

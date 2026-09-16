@@ -815,3 +815,22 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 - **Verifikasi & Deployment:**
   * `npm run build` sukses 100% dengan 0 error.
   * Di-commit ke GitHub dan dideploy ke Vercel Live Production (`https://www.mencatat.my.id`).
+
+## Sesi 59: Pemulihan Penuh Balasan Bot Telegram, Helper `toYearMonth`, Default Webhook HTTPS, dan Guardrail `/learn`
+- **Identifikasi Masalah:**
+  * Pengguna melaporkan bahwa bot Telegram yang sudah terhubung tidak memberikan balasan saat dikirimi perintah `/saldo` atau pesan pencatatan keuangan.
+  * Pengguna meminta agar fitur yang sudah bagus tidak dihapus atau dirusak di masa depan (`/learn`).
+- **Akar Masalah (Root Cause):**
+  * Pada `src/app/api/telegram/webhook/route.ts`, fungsi `toYearMonth()` dipanggil pada baris kalkulasi anggaran bulanan namun belum terdefinisi secara global di file tersebut, menyebabkan runtime crash `ReferenceError: toYearMonth is not defined`.
+  * URL Webhook Telegram sempat terkonfigurasi kosong atau default ke `http://localhost:3000` jika header domain belum termuat saat setup.
+- **Solusi & Perbaikan yang Diterapkan:**
+  1. **Definisi Helper `toYearMonth` di `src/app/api/telegram/webhook/route.ts`:**
+     - Menambahkan helper `toYearMonth(date: Date): string` untuk format periode anggaran `YYYY-MM`.
+  2. **Default Webhook URL Fallback ke Produksi:**
+     - Mengubah fallback URL di `src/app/api/telegram/setup/route.ts` dan `src/app/api/telegram/webhook/route.ts` agar selalu menggunakan domain HTTPS produksi `https://www.mencatat.my.id`.
+  3. **Implementasi Proposal `/learn`:**
+     - Membuat dokumen artefak `learning_proposal.md` yang menetapkan prinsip Zero-Regression, audit runtime reference sebelum build, dan verifikasi berkelanjutan.
+- **Verifikasi & Deployment:**
+  * `npm run build` berhasil 100% dengan 0 error.
+  * Perubahan di-commit ke Git dan dideploy ke Vercel Production (`https://www.mencatat.my.id`).
+

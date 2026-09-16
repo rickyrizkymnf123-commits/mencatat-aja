@@ -576,7 +576,7 @@ export async function POST(request: Request) {
       }
       
       if (command === '/sheet' || command === '/dashboard') {
-        const dashboardUrl = `${process.env.WEBHOOK_BASE_URL || 'http://localhost:3000'}/dashboard`;
+        const dashboardUrl = `${process.env.WEBHOOK_BASE_URL || 'https://www.mencatat.my.id'}/dashboard`;
         await telegram.sendMessage(
           botToken,
           chatId,
