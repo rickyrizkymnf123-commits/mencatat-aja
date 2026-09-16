@@ -1101,3 +1101,20 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
   * `npm run build` sukses 100% (23 routes, 0 error).
   * Di-commit dan di-push ke branch `main` (`commit 3cdb5f8`) dan otomatis live di Vercel Production (`https://www.mencatat.my.id`).
 
+
+## Sesi 75 - Full Obsidian Dark Theme & Text-Only Typography Branding (2026-09-16)
+
+### Permintaan Pengguna
+1. Hilangkan logo kotak/emblem grafis di Landing Page maupun Dashboard, sisakan logo tipografi bersih yang mewah.
+2. Pastikan tampilan Dashboard (/dashboard) 100% senada dengan Landing Page (Obsidian Dark Glassmorphism), perbaiki dashboard yang masih tampak terang/putih.
+
+### Tindakan & Perubahan Teknis
+1. **Pembersihan Emblem Grafis (Logo)**:
+   - Menghapus box icon / emblem grafis dari Navbar Landing Page (`src/app/page.tsx`), Sidebar Web Dashboard (`src/app/dashboard/page.tsx`), dan Admin Panel (`src/app/admin/page.tsx`).
+   - Menyajikan tipografi premium: teks **Mencatat** (putih platinum) + **Aja** (gradient emerald-cyan) + badge subtitle **💰 AI WEALTH OS**.
+2. **Transformasi Penuh Dashboard ke Obsidian Dark Theme**:
+   - Memperbarui `src/app/globals.css` secara menyeluruh dari warna putih terang (`--background: hsl(0, 0%, 98%)`, `rgba(255,255,255,0.72)`) menjadi Obsidian Dark Theme (`--background: #04060d`, card glass `rgba(13, 20, 38, 0.75)`, sidebar glass `rgba(10, 15, 30, 0.92)`, table th `rgba(10, 15, 30, 0.9)`, dsb.).
+   - Menghilangkan semua styling putih hardcoded sehingga seluruh halaman (Landing Page, Dashboard, Admin, Auth) tampil gelap mewah dan serasi dengan efek glassmorphism, radial glow mesh, dan aksen neon emerald.
+3. **Build & Deployment**:
+   - Verifikasi `npm run build` (100% lolos, 0 error).
+   - Melakukan git commit dan push ke `origin/main` untuk trigger auto-deploy Vercel Pro.
