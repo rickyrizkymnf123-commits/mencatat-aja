@@ -224,45 +224,121 @@ export default function AdminDashboard() {
     setShowAddUserModal(false);
   };
 
-  const handleDeleteUser = (id: string, name: string) => {
-    const confirmDelete = window.confirm(`Apakah Anda yakin ingin menghapus user "${name}"?`);
+  const handleDeleteUser = async (id: string, name: string) => {
+    const confirmDelete = window.confirm(`Apakah Anda yakin ingin menghapus user "${name}"?\n\nSemua data transaksi, dompet, anggaran, bot, dan akun database akan dihapus permanen.`);
     if (!confirmDelete) return;
 
-    const updatedUsers = users.filter(u => u.id !== id);
-    setUsers(updatedUsers);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('Mencatat_Aja_mock_users', JSON.stringify(updatedUsers));
-    }
-    setSelectedUserIds(prev => prev.filter(x => x !== id));
-    alert(`🗑️ User "${name}" berhasil dihapus.`);
-  };
+    try {
+      setIsLoading(true);
+      const res = await fetch('/api/admin/data', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: id })
+      });
 
-  const handleBatchDeleteUsers = () => {
-    if (selectedUserIds.length === 0) return;
-    const confirmDelete = window.confirm(`Apakah Anda yakin ingin menghapus ${selectedUserIds.length} user terpilih?`);
-    if (!confirmDelete) return;
-
-    const updatedUsers = users.filter(u => !selectedUserIds.includes(u.id));
-    setUsers(updatedUsers);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('Mencatat_Aja_mock_users', JSON.stringify(updatedUsers));
-    }
-    setSelectedUserIds([]);
-    alert(`🗑️ ${selectedUserIds.length} user berhasil dihapus massal.`);
-  };
-
-  const handleApproveUser = (id: string, name: string) => {
-    const updatedUsers = users.map(u => {
-      if (u.id === id) {
-        return { ...u, is_approved: true };
+      if (!res.ok) {
+        const errData = await res.json();
+        alert(`❌ Gagal menghapus user: ${errData.error || 'Terjadi kesalahan di server'}`);
+        return;
       }
-      return u;
-    });
-    setUsers(updatedUsers);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('Mencatat_Aja_mock_users', JSON.stringify(updatedUsers));
+
+      const updatedUsers = users.filter(u => u.id !== id);
+      setUsers(updatedUsers);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('Mencatat_Aja_mock_users', JSON.stringify(updatedUsers));
+      }
+      setSelectedUserIds(prev => prev.filter(x => x !== id));
+
+      // Log Audit
+      const newAudit = {
+        id: `aud_${Date.now()}`,
+        admin: 'rickyrizkymnf123@gmail.com',
+        action: `Hapus User & Data Database (${name})`,
+        target: id,
+        time: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
+      };
+      setAuditLogs(prev => [newAudit, ...prev]);
+
+      alert(`🗑️ User "${name}" dan seluruh datanya di database & tools berhasil dihapus permanen.`);
+      fetchAdminData();
+    } catch (err: any) {
+      alert(`❌ Terjadi kesalahan: ${err.message}`);
+    } finally {
+      setIsLoading(false);
     }
-    alert(`🟢 Pendaftaran user "${name}" berhasil disetujui (ACC)!`);
+  };
+
+  const handleBatchDeleteUsers = async () => {
+    if (selectedUserIds.length === 0) return;
+    const confirmDelete = window.confirm(`Apakah Anda yakin ingin menghapus ${selectedUserIds.length} user terpilih?\n\nSemua data transaksi, dompet, bot, dan akun di database akan dihapus permanen.`);
+    if (!confirmDelete) return;
+
+    try {
+      setIsLoading(true);
+      const res = await fetch('/api/admin/data', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: selectedUserIds })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        alert(`❌ Gagal menghapus user: ${errData.error || 'Terjadi kesalahan di server'}`);
+        return;
+      }
+
+      const count = selectedUserIds.length;
+      const updatedUsers = users.filter(u => !selectedUserIds.includes(u.id));
+      setUsers(updatedUsers);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('Mencatat_Aja_mock_users', JSON.stringify(updatedUsers));
+      }
+      setSelectedUserIds([]);
+
+      // Log Audit
+      const newAudit = {
+        id: `aud_${Date.now()}`,
+        admin: 'rickyrizkymnf123@gmail.com',
+        action: `Hapus Massal (${count} Users & DB)`,
+        target: `${count} users`,
+        time: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
+      };
+      setAuditLogs(prev => [newAudit, ...prev]);
+
+      alert(`🗑️ ${count} user beserta seluruh datanya di database & tools berhasil dihapus permanen.`);
+      fetchAdminData();
+    } catch (err: any) {
+      alert(`❌ Terjadi kesalahan: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleApproveUser = async (id: string, name: string) => {
+    try {
+      setIsLoading(true);
+      await fetch('/api/admin/data', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: id, is_approved: true })
+      });
+
+      const updatedUsers = users.map(u => {
+        if (u.id === id) {
+          return { ...u, is_approved: true };
+        }
+        return u;
+      });
+      setUsers(updatedUsers);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('Mencatat_Aja_mock_users', JSON.stringify(updatedUsers));
+      }
+      alert(`🟢 Pendaftaran user "${name}" berhasil disetujui (ACC)!`);
+    } catch (err: any) {
+      alert(`❌ Terjadi kesalahan: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Payment Manual Approval

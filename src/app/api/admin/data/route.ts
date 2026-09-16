@@ -173,3 +173,109 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    let userId = searchParams.get('userId');
+    let userIds: string[] = [];
+
+    try {
+      const body = await request.json();
+      if (body.userId) userId = body.userId;
+      if (Array.isArray(body.userIds)) userIds = body.userIds;
+    } catch {
+      // Body might be empty if query param is used
+    }
+
+    if (userId && !userIds.includes(userId)) {
+      userIds.push(userId);
+    }
+
+    if (userIds.length === 0) {
+      return NextResponse.json({ error: 'Tidak ada ID pengguna yang dikirim untuk dihapus' }, { status: 400 });
+    }
+
+    const isPlaceholder = !supabaseUrl || 
+      supabaseUrl.includes('your-supabase-project-id') || 
+      supabaseUrl.includes('placeholder-project');
+
+    if (isPlaceholder) {
+      return NextResponse.json({ success: true, deletedCount: userIds.length });
+    }
+
+    const deleteResults = [];
+
+    for (const uid of userIds) {
+      try {
+        // 1. Clean up Telegram Webhook if user had a custom bot token
+        const { data: prof } = await supabaseAdmin.from('profiles').select('telegram_bot_token').eq('id', uid).maybeSingle();
+        if (prof?.telegram_bot_token) {
+          try {
+            await fetch(`https://api.telegram.org/bot${prof.telegram_bot_token}/deleteWebhook`, { method: 'POST' });
+          } catch (e) {
+            console.warn(`Could not delete telegram webhook for user ${uid}:`, e);
+          }
+        }
+
+        // 2. Cascade delete all child database tables
+        await Promise.allSettled([
+          supabaseAdmin.from('transactions').delete().eq('user_id', uid),
+          supabaseAdmin.from('wallets').delete().eq('user_id', uid),
+          supabaseAdmin.from('budgets').delete().eq('user_id', uid),
+          supabaseAdmin.from('categories').delete().eq('user_id', uid),
+          supabaseAdmin.from('payments').delete().eq('user_id', uid),
+          supabaseAdmin.from('ai_logs').delete().eq('user_id', uid),
+          supabaseAdmin.from('profiles').delete().eq('id', uid)
+        ]);
+
+        // 3. Delete from Supabase Auth (auth.users)
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid);
+        if (isUUID) {
+          await supabaseAdmin.auth.admin.deleteUser(uid);
+        }
+
+        deleteResults.push({ id: uid, status: 'deleted' });
+      } catch (err: any) {
+        console.error(`Error deleting user ${uid}:`, err);
+        deleteResults.push({ id: uid, status: 'error', error: err.message });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      deletedCount: deleteResults.filter(r => r.status === 'deleted').length,
+      results: deleteResults
+    });
+  } catch (err: any) {
+    console.error('Delete user error:', err);
+    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { userId, is_approved, plan } = body;
+    if (!userId) {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    }
+
+    const isPlaceholder = !supabaseUrl || 
+      supabaseUrl.includes('your-supabase-project-id') || 
+      supabaseUrl.includes('placeholder-project');
+
+    if (!isPlaceholder) {
+      const updateData: any = {};
+      if (is_approved !== undefined) updateData.is_approved = is_approved;
+      if (plan !== undefined) updateData.plan = plan;
+
+      await supabaseAdmin.from('profiles').update(updateData).eq('id', userId);
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    console.error('Update user error:', err);
+    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
+  }
+}
