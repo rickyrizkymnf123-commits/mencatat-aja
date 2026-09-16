@@ -1794,17 +1794,57 @@ export default function DashboardPage() {
       {/* SIDEBAR NAVIGATION */}
       <aside className={`sidebar animate-fade-in ${sidebarOpen ? 'active' : ''}`}>
         
-        <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '28px' }}>
-          <div style={{ position: 'relative', width: '38px', height: '38px', borderRadius: '12px', background: 'linear-gradient(135deg, #052e16 0%, #022c22 100%)', border: '1px solid rgba(16, 185, 129, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(16, 185, 129, 0.35)' }}>
-            <span style={{ fontSize: '1.25rem' }}>💎</span>
-          </div>
+        
+        <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '28px' }}>
+          <div style={{ position: 'relative', width: '42px', height: '42px', flexShrink: 0 }}>
+                <div style={{ position: 'absolute', inset: '-2px', background: 'linear-gradient(135deg, #f59e0b, #10b981, #fde047)', borderRadius: '14px', filter: 'blur(5px)', opacity: 0.8 }}></div>
+                <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '12px', background: 'linear-gradient(180deg, #1c1505 0%, #0a0802 100%)', border: '1.5px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 16px rgba(245, 158, 11, 0.45)', overflow: 'hidden' }}>
+                  <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '26px', height: '26px' }}>
+                    <polygon points="24,3 39,9 45,24 39,39 24,45 9,39 3,24 9,9" fill="url(#gold-out)" stroke="url(#gold-edge)" strokeWidth="1.2" />
+                    <polygon points="24,7 36,12 41,24 36,36 24,41 12,36 7,24 12,12" fill="url(#em-bg)" />
+                    <circle cx="24" cy="24" r="10" fill="url(#gold-center)" stroke="#FEF08A" strokeWidth="1" />
+                    <path d="M19.5 17H25C26.8 17 28.2 18.2 28.2 20C28.2 21.8 26.8 23 25 23H19.5V17Z" fill="#1A1405" />
+                    <path d="M19.5 17V31M19.5 23H24L28.5 31" stroke="#1A1405" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M19.5 17V31M19.5 23H24L28.5 31" stroke="url(#gold-sym)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="34" cy="11" r="1.2" fill="#FEF08A" />
+                    <circle cx="13" cy="34" r="1" fill="#6EE7B7" />
+                    <defs>
+                      <linearGradient id="gold-out" x1="3" y1="3" x2="45" y2="45" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#FDE047" />
+                        <stop offset="0.5" stopColor="#F59E0B" />
+                        <stop offset="1" stopColor="#78350F" />
+                      </linearGradient>
+                      <linearGradient id="gold-edge" x1="3" y1="3" x2="45" y2="45" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#FFFBEB" />
+                        <stop offset="0.5" stopColor="#FDE047" />
+                        <stop offset="1" stopColor="#D97706" />
+                      </linearGradient>
+                      <linearGradient id="em-bg" x1="7" y1="7" x2="41" y2="41" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#064E3B" />
+                        <stop offset="0.6" stopColor="#022C22" />
+                        <stop offset="1" stopColor="#011812" />
+                      </linearGradient>
+                      <linearGradient id="gold-center" x1="14" y1="14" x2="34" y2="34" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#FEF08A" />
+                        <stop offset="0.5" stopColor="#F59E0B" />
+                        <stop offset="1" stopColor="#B45309" />
+                      </linearGradient>
+                      <linearGradient id="gold-sym" x1="19.5" y1="17" x2="28.5" y2="31" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#FEF08A" />
+                        <stop offset="1" stopColor="#F59E0B" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </div>
+              </div>
           <div>
             <div style={{ fontSize: '1.15rem', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.3px' }}>
               Mencatat<span style={{ color: '#10b981' }}>Aja</span>
             </div>
-            <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.6px' }}>AI Financial OS</span>
+            <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>AI Wealth OS</span>
           </div>
         </div>
+
 
         <ul className="sidebar-menu" style={{ flex: 'none' }}>
           <li onClick={() => { setActiveTab('beranda'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'beranda' ? 'active' : ''}`}>
