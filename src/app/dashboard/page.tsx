@@ -105,6 +105,100 @@ export default function DashboardPage() {
   const [isToppingUp, setIsToppingUp] = useState(false);
   const [isApproved, setIsApproved] = useState(true);
 
+  // Transaction Edit & Delete States
+  const [editingTx, setEditingTx] = useState<any | null>(null);
+  const [editTxAmount, setEditTxAmount] = useState('');
+  const [editTxType, setEditTxType] = useState<'expense' | 'income' | 'transfer'>('expense');
+  const [editTxDescription, setEditTxDescription] = useState('');
+  const [editTxCategoryId, setEditTxCategoryId] = useState('');
+  const [editTxWalletId, setEditTxWalletId] = useState('');
+  const [editTxTransferToWalletId, setEditTxTransferToWalletId] = useState('');
+  const [editTxDate, setEditTxDate] = useState('');
+  const [isSavingEditTx, setIsSavingEditTx] = useState(false);
+  const [isDeletingTxId, setIsDeletingTxId] = useState<string | null>(null);
+
+  const handleOpenEditTxModal = (tx: any) => {
+    setEditingTx(tx);
+    setEditTxAmount(String(tx.amount || ''));
+    setEditTxType(tx.type || 'expense');
+    setEditTxDescription(tx.description || '');
+    setEditTxCategoryId(tx.category_id || (categories.length > 0 ? categories[0].id : ''));
+    setEditTxWalletId(tx.wallet_id || (wallets.length > 0 ? wallets[0].id : ''));
+    setEditTxTransferToWalletId(tx.transfer_to_wallet_id || '');
+    const dateVal = tx.transaction_date ? new Date(tx.transaction_date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16);
+    setEditTxDate(dateVal);
+  };
+
+  const handleSaveEditTx = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTx) return;
+    if (!editTxAmount || Number(editTxAmount) <= 0) {
+      alert('⚠️ Nominal transaksi harus lebih besar dari 0');
+      return;
+    }
+    if (!editTxDescription.trim()) {
+      alert('⚠️ Catatan/Deskripsi transaksi tidak boleh kosong');
+      return;
+    }
+
+    setIsSavingEditTx(true);
+    try {
+      const res = await fetch('/api/transactions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingTx.id,
+          amount: Number(editTxAmount),
+          type: editTxType,
+          description: editTxDescription.trim(),
+          categoryId: editTxType !== 'transfer' ? editTxCategoryId : null,
+          walletId: editTxWalletId,
+          transferToWalletId: editTxType === 'transfer' ? editTxTransferToWalletId : null,
+          transactionDate: editTxDate ? new Date(editTxDate).toISOString() : new Date().toISOString()
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal memperbarui transaksi');
+      }
+
+      alert('🟢 Catatan transaksi berhasil diperbarui!');
+      setEditingTx(null);
+      await fetchDashboardData(userId, telegramToken);
+    } catch (err: any) {
+      console.error('Error updating transaction:', err);
+      alert(`⚠️ Gagal memperbarui transaksi: ${err.message}`);
+    } finally {
+      setIsSavingEditTx(false);
+    }
+  };
+
+  const handleDeleteTx = async (txId: string, txDesc: string) => {
+    const confirmDelete = window.confirm(`Apakah Anda yakin ingin menghapus catatan transaksi "${txDesc}"?\n\nSaldo dompet terkait akan disesuaikan secara otomatis.`);
+    if (!confirmDelete) return;
+
+    setIsDeletingTxId(txId);
+    try {
+      const res = await fetch(`/api/transactions?id=${txId}`, {
+        method: 'DELETE'
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal menghapus transaksi');
+      }
+
+      alert('🗑️ Catatan transaksi berhasil dihapus!');
+      await fetchDashboardData(userId, telegramToken);
+    } catch (err: any) {
+      console.error('Error deleting transaction:', err);
+      alert(`⚠️ Gagal menghapus transaksi: ${err.message}`);
+    } finally {
+      setIsDeletingTxId(null);
+    }
+  };
+
   const safeJsonParse = (str: string | null, fallback: any) => {
     if (!str) return fallback;
     try {
@@ -2996,6 +3090,181 @@ export default function DashboardPage() {
             )}
           </>
         )}
+      
+      {/* EDIT TRANSACTION MODAL */}
+      {editingTx && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '20px' }}>
+          <div className="card animate-slide-up" style={{ maxWidth: '520px', width: '100%', padding: '28px', background: 'rgba(13, 20, 38, 0.98)', border: '1px solid rgba(255, 255, 255, 0.12)', boxShadow: '0 30px 70px rgba(0,0,0,0.8)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '14px', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                ✏️ Edit Catatan Transaksi
+              </h3>
+              <button onClick={() => setEditingTx(null)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#94a3b8' }}>✕</button>
+            </div>
+
+            <form onSubmit={handleSaveEditTx} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Type Selection */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditTxType('expense')}
+                  style={{
+                    padding: '10px',
+                    borderRadius: '10px',
+                    border: editTxType === 'expense' ? '2px solid var(--error)' : '1px solid var(--border)',
+                    background: editTxType === 'expense' ? 'rgba(244, 63, 94, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                    color: editTxType === 'expense' ? '#f43f5e' : '#94a3b8',
+                    fontWeight: '700',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ↑ Pengeluaran
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditTxType('income')}
+                  style={{
+                    padding: '10px',
+                    borderRadius: '10px',
+                    border: editTxType === 'income' ? '2px solid var(--success)' : '1px solid var(--border)',
+                    background: editTxType === 'income' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                    color: editTxType === 'income' ? '#10b981' : '#94a3b8',
+                    fontWeight: '700',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ↓ Pemasukan
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditTxType('transfer')}
+                  style={{
+                    padding: '10px',
+                    borderRadius: '10px',
+                    border: editTxType === 'transfer' ? '2px solid var(--info)' : '1px solid var(--border)',
+                    background: editTxType === 'transfer' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                    color: editTxType === 'transfer' ? '#38bdf8' : '#94a3b8',
+                    fontWeight: '700',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ⇄ Transfer
+                </button>
+              </div>
+
+              {/* Nominal */}
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#cbd5e1' }}>Nominal (Rp)</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={editTxAmount}
+                  onChange={e => setEditTxAmount(e.target.value)}
+                  placeholder="Contoh: 50000"
+                  style={{ width: '100%', fontSize: '1.1rem', fontWeight: '700' }}
+                />
+              </div>
+
+              {/* Deskripsi */}
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#cbd5e1' }}>Catatan / Keterangan</label>
+                <input
+                  type="text"
+                  required
+                  value={editTxDescription}
+                  onChange={e => setEditTxDescription(e.target.value)}
+                  placeholder="Contoh: Beli bensin Pertamax"
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              {/* Kategori (jika bukan transfer) */}
+              {editTxType !== 'transfer' && (
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#cbd5e1' }}>Kategori</label>
+                  <select
+                    value={editTxCategoryId}
+                    onChange={e => setEditTxCategoryId(e.target.value)}
+                    style={{ width: '100%' }}
+                  >
+                    {categories.filter(c => c.type === editTxType).map(c => (
+                      <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Dompet Asal */}
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#cbd5e1' }}>
+                  {editTxType === 'transfer' ? 'Dompet Sumber' : 'Dompet'}
+                </label>
+                <select
+                  value={editTxWalletId}
+                  onChange={e => setEditTxWalletId(e.target.value)}
+                  style={{ width: '100%' }}
+                >
+                  {wallets.map(w => (
+                    <option key={w.id} value={w.id}>{w.name} (Saldo: Rp {Number(w.balance).toLocaleString('id-ID')})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Dompet Tujuan (jika transfer) */}
+              {editTxType === 'transfer' && (
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#cbd5e1' }}>Dompet Tujuan Transfer</label>
+                  <select
+                    value={editTxTransferToWalletId}
+                    onChange={e => setEditTxTransferToWalletId(e.target.value)}
+                    style={{ width: '100%' }}
+                  >
+                    <option value="">Pilih Dompet Tujuan...</option>
+                    {wallets.filter(w => w.id !== editTxWalletId).map(w => (
+                      <option key={w.id} value={w.id}>{w.name} (Saldo: Rp {Number(w.balance).toLocaleString('id-ID')})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Tanggal & Waktu */}
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#cbd5e1' }}>Tanggal & Waktu Transaksi</label>
+                <input
+                  type="datetime-local"
+                  value={editTxDate}
+                  onChange={e => setEditTxDate(e.target.value)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingTx(null)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, padding: '12px' }}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEditTx}
+                  className="btn btn-primary"
+                  style={{ flex: 1, padding: '12px', fontWeight: '700' }}
+                >
+                  {isSavingEditTx ? 'Menyimpan...' : '💾 Simpan Perubahan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       </main>
     </div>
     </>
