@@ -2024,11 +2024,8 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            <div className="mobile-table-hint">
-              <span>👈 Geser tabel untuk melihat semua kolom & tombol aksi 👉</span>
-            </div>
-
-            <div className="tx-table-container animate-slide-up">
+            {/* Desktop Table View */}
+            <div className="desktop-table-view tx-table-container animate-slide-up">
               <table className="tx-table">
                 <thead>
                   <tr>
@@ -2130,6 +2127,91 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Native Cards View (No Horizontal Scroll) */}
+            <div className="mobile-cards-view animate-slide-up">
+              {users.map(u => (
+                <div key={u.id} className="mobile-data-card">
+                  <div className="mobile-card-header">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <input 
+                        type="checkbox"
+                        checked={selectedUserIds.includes(u.id)}
+                        onChange={e => {
+                          if (e.target.checked) setSelectedUserIds(prev => [...prev, u.id]);
+                          else setSelectedUserIds(prev => prev.filter(id => id !== u.id));
+                        }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '1rem' }}>{u.name}</div>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: '#38bdf8', fontWeight: '600' }}>
+                          {u.email || '-'}
+                        </span>
+                      </div>
+                    </div>
+                    <span className={`plan-badge ${u.plan.toLowerCase()}`}>
+                      {u.plan}
+                    </span>
+                  </div>
+
+                  <div className="mobile-card-body">
+                    <div className="mobile-card-row">
+                      <span>Status Approval</span>
+                      {u.is_approved !== false ? (
+                        <span className="plan-badge pro" style={{ backgroundColor: 'var(--success-light)', color: 'var(--success)', borderColor: 'var(--success)', fontSize: '0.72rem' }}>🟢 Aktif (Ter-ACC)</span>
+                      ) : (
+                        <span className="plan-badge starter" style={{ backgroundColor: 'var(--warning-light)', color: 'var(--warning)', borderColor: 'var(--warning)', fontSize: '0.72rem' }}>⚠️ Pending ACC</span>
+                      )}
+                    </div>
+                    <div className="mobile-card-row">
+                      <span>No. Handphone</span>
+                      <span style={{ color: '#e2e8f0', fontWeight: '600' }}>{u.phone || '-'}</span>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span>Telegram Bot</span>
+                      <span style={{ color: '#e2e8f0', fontWeight: '600' }}>{u.telegram || 'Belum Terhubung'}</span>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span>Total Transaksi</span>
+                      <span style={{ color: '#e2e8f0', fontWeight: '700' }}>{u.txCount} Catatan</span>
+                    </div>
+                  </div>
+
+                  <div className="mobile-card-actions">
+                    <button
+                      onClick={() => handleOpenEditSub(u)}
+                      className="btn"
+                      style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '8px 12px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: '700' }}
+                    >
+                      👑 Langganan
+                    </button>
+                    {u.is_approved === false && (
+                      <button 
+                        onClick={() => handleApproveUser(u.id, u.name)} 
+                        className="btn" 
+                        style={{ backgroundColor: 'var(--success)', color: '#ffffff', border: 'none', padding: '8px 12px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: '700' }}
+                      >
+                        ✅ ACC User
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleImpersonation(u)}
+                      className="btn btn-secondary"
+                      style={{ padding: '8px 12px', fontSize: '0.8rem', borderRadius: '8px' }}
+                    >
+                      🕵️ Masuk Versi User
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUser(u.id, u.name)}
+                      className="btn btn-outline"
+                      style={{ padding: '8px 12px', fontSize: '0.8rem', color: 'var(--error)', borderColor: 'var(--error)', borderRadius: '8px' }}
+                    >
+                      🗑️ Hapus
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}
@@ -2310,11 +2392,8 @@ export default function AdminDashboard() {
               </select>
             </div>
 
-            {/* Table */}
-            <div className="mobile-table-hint">
-              <span>👈 Geser tabel untuk melihat status & tombol aksi 👉</span>
-            </div>
-            <div className="shadcn-table-wrapper">
+            {/* Desktop Table View */}
+            <div className="desktop-table-view shadcn-table-wrapper animate-slide-up">
               <table className="shadcn-table">
                 <thead>
                   <tr>
@@ -2407,6 +2486,86 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Native Cards View (No Horizontal Scroll) */}
+            <div className="mobile-cards-view animate-slide-up">
+              {users
+                .filter(u => {
+                  const matchQuery = (u.name || '').toLowerCase().includes(subSearchQuery.toLowerCase()) || 
+                                     (u.email || '').toLowerCase().includes(subSearchQuery.toLowerCase());
+                  let matchStatus = true;
+                  if (subStatusFilter === 'pro') matchStatus = u.plan === 'Pro' && !u.is_free_access;
+                  if (subStatusFilter === 'free') matchStatus = !!u.is_free_access;
+                  if (subStatusFilter === 'basic') matchStatus = u.plan === 'Basic' || !u.plan;
+                  return matchQuery && matchStatus;
+                })
+                .map(u => {
+                  const isFree = !!u.is_free_access;
+                  const isPro = u.plan === 'Pro';
+                  return (
+                    <div key={u.id} className="mobile-data-card">
+                      <div className="mobile-card-header">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedUserIds.includes(u.id)}
+                            onChange={e => {
+                              if (e.target.checked) setSelectedUserIds(prev => [...prev, u.id]);
+                              else setSelectedUserIds(prev => prev.filter(id => id !== u.id));
+                            }}
+                          />
+                          <div>
+                            <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '1rem' }}>{u.name}</div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{u.email || '-'}</div>
+                          </div>
+                        </div>
+                        <span className={`plan-badge ${isPro ? 'pro' : 'starter'}`}>
+                          {isFree ? 'Pro VIP' : (isPro ? 'Pro' : 'Basic')}
+                        </span>
+                      </div>
+
+                      <div className="mobile-card-body">
+                        <div className="mobile-card-row">
+                          <span>Status Masa Aktif</span>
+                          {isFree ? (
+                            <span className="shadcn-badge" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)', fontSize: '0.72rem' }}>
+                              ✨ Free Access VIP
+                            </span>
+                          ) : isPro ? (
+                            <span className="shadcn-badge shadcn-badge-approved" style={{ fontSize: '0.72rem' }}>
+                              🟢 Pro Aktif
+                            </span>
+                          ) : (
+                            <span className="shadcn-badge" style={{ background: 'rgba(100, 116, 139, 0.1)', color: '#94a3b8', border: '1px solid rgba(100, 116, 139, 0.2)', fontSize: '0.72rem' }}>
+                              Free Tier
+                            </span>
+                          )}
+                        </div>
+                        <div className="mobile-card-row">
+                          <span>Masa Berlaku</span>
+                          <span style={{ color: '#e2e8f0', fontWeight: '600' }}>
+                            {isFree ? 'Selamanya (VIP Lifetime)' : (isPro ? '30 Hari Tersisa' : 'Tanpa Kuota Pro')}
+                          </span>
+                        </div>
+                        <div className="mobile-card-row">
+                          <span>Catatan</span>
+                          <span style={{ color: '#cbd5e1' }}>{u.notes || '-'}</span>
+                        </div>
+                      </div>
+
+                      <div className="mobile-card-actions">
+                        <button
+                          onClick={() => handleOpenEditSub(u)}
+                          className="btn"
+                          style={{ width: '100%', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '10px 14px', borderRadius: '10px', fontWeight: '700', fontSize: '0.85rem' }}
+                        >
+                          👑 Atur Paket & Masa Aktif
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
         )}
 
@@ -2432,10 +2591,8 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="mobile-table-hint">
-              <span>👈 Geser tabel untuk melihat bukti & tombol aksi 👉</span>
-            </div>
-            <div className="shadcn-table-wrapper animate-slide-up">
+            {/* Desktop Table View */}
+            <div className="desktop-table-view shadcn-table-wrapper animate-slide-up">
               <table className="shadcn-table">
                 <thead>
                   <tr>
@@ -2513,6 +2670,79 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Native Cards View (No Horizontal Scroll) */}
+            <div className="mobile-cards-view animate-slide-up">
+              {payments.map(p => (
+                <div key={p.id} className="mobile-data-card">
+                  <div className="mobile-card-header">
+                    <div>
+                      <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '1rem' }}>{p.user}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{p.time} • ID: {p.userId}</div>
+                    </div>
+                    {p.status === 'approved' ? (
+                      <span className="shadcn-badge shadcn-badge-approved" style={{ fontSize: '0.72rem' }}>
+                        <span className="pulse-dot green"></span> Approved
+                      </span>
+                    ) : (
+                      <span className="shadcn-badge shadcn-badge-pending" style={{ fontSize: '0.72rem' }}>
+                        <span className="pulse-dot amber"></span> Pending
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mobile-card-body">
+                    <div className="mobile-card-row">
+                      <span>Metode Pembayaran</span>
+                      <span style={{ color: '#cbd5e1', fontWeight: '600' }}>💳 {p.method}</span>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span>Nominal Transfer</span>
+                      <span style={{ fontWeight: '800', color: '#059669', fontSize: '1rem' }}>{p.amount}</span>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span>Bukti Transfer</span>
+                      {p.proof !== '-' ? (
+                        <div 
+                          className="payment-proof-thumbnail-wrapper"
+                          onClick={() => setSelectedProofModal(p)}
+                          title="Klik untuk memperbesar bukti transfer"
+                        >
+                          <img src={p.proof} alt="Bukti Transfer" className="payment-proof-thumbnail" style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '8px' }} />
+                        </div>
+                      ) : (
+                        <span style={{ color: '#94a3b8' }}>-</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mobile-card-actions">
+                    {p.status === 'pending' ? (
+                      <>
+                        <button
+                          onClick={() => handleApprovePayment(p.id, p.userId, p.user)}
+                          className="btn-liquid-emerald"
+                          style={{ flex: 1, padding: '10px 14px', borderRadius: '10px' }}
+                        >
+                          ✓ Approve
+                        </button>
+                        <button
+                          onClick={() => alert('Pembayaran ditolak.')}
+                          className="btn-liquid-rose"
+                          style={{ flex: 1, padding: '10px 14px', borderRadius: '10px' }}
+                        >
+                          ✕ Reject
+                        </button>
+                      </>
+                    ) : (
+                      <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#059669', display: 'inline-flex', alignItems: 'center', gap: '4px', margin: 'auto' }}>
+                        ✨ Selesai (Pro Aktif)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </>
         )}
 
@@ -2533,10 +2763,8 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            <div className="mobile-table-hint">
-              <span>👈 Geser tabel untuk melihat status & token 👉</span>
-            </div>
-            <div className="tx-table-container animate-slide-up">
+            {/* Desktop Table View */}
+            <div className="desktop-table-view tx-table-container animate-slide-up">
               <table className="tx-table">
                 <thead>
                   <tr>
@@ -2566,6 +2794,38 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Native Cards View (No Horizontal Scroll) */}
+            <div className="mobile-cards-view animate-slide-up">
+              {aiLogs.map(l => (
+                <div key={l.id} className="mobile-data-card">
+                  <div className="mobile-card-header">
+                    <div>
+                      <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '0.98rem' }}>{l.user}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{l.time}</div>
+                    </div>
+                    <span style={{ fontSize: '0.72rem', fontWeight: '800', padding: '2px 8px', borderRadius: '6px', background: l.status === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: l.status === 'success' ? '#10b981' : '#f87171' }}>
+                      {l.status.toUpperCase()}
+                    </span>
+                  </div>
+
+                  <div className="mobile-card-body">
+                    <div className="mobile-card-row">
+                      <span>Provider & Action</span>
+                      <span style={{ color: '#c084fc', fontWeight: '600' }}>{l.provider} • <code>{l.action}</code></span>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span>Total Tokens</span>
+                      <span style={{ color: '#cbd5e1' }}>{l.tokens}</span>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span>Biaya Estimasi</span>
+                      <span style={{ fontWeight: '700', color: '#38bdf8' }}>{l.cost}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </>
         )}
 
@@ -2577,10 +2837,8 @@ export default function AdminDashboard() {
               <p style={{ color: 'var(--text-muted)' }}>Merekam seluruh aktivitas administratif sensitif demi mematuhi kepatuhan privasi pengguna.</p>
             </div>
 
-            <div className="mobile-table-hint">
-              <span>👈 Geser tabel untuk melihat riwayat aktivitas 👉</span>
-            </div>
-            <div className="tx-table-container animate-slide-up">
+            {/* Desktop Table View */}
+            <div className="desktop-table-view tx-table-container animate-slide-up">
               <table className="tx-table">
                 <thead>
                   <tr>
@@ -2601,6 +2859,31 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Native Cards View (No Horizontal Scroll) */}
+            <div className="mobile-cards-view animate-slide-up">
+              {auditLogs.map(a => (
+                <div key={a.id} className="mobile-data-card">
+                  <div className="mobile-card-header">
+                    <div>
+                      <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '0.98rem' }}>{a.admin}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{a.time}</div>
+                    </div>
+                  </div>
+
+                  <div className="mobile-card-body">
+                    <div className="mobile-card-row">
+                      <span>Aktivitas</span>
+                      <span style={{ color: '#f87171', fontWeight: '600' }}>{a.action}</span>
+                    </div>
+                    <div className="mobile-card-row">
+                      <span>Target ID</span>
+                      <code style={{ fontSize: '0.75rem' }}>{a.target}</code>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </>
         )}

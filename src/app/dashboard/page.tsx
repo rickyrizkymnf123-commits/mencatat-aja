@@ -2992,11 +2992,8 @@ export default function DashboardPage() {
                     </select>
                   </div>
 
-                  {/* Reports visual table */}
-                  <div className="mobile-table-hint">
-                    <span>👈 Geser tabel untuk melihat rincian lengkap 👉</span>
-                  </div>
-                  <div className="tx-table-container animate-slide-up">
+                  {/* Desktop Table View */}
+                  <div className="desktop-table-view tx-table-container animate-slide-up">
                     {filteredTxs.length === 0 ? (
                       <div className="empty-state">
                         <span className="empty-icon">🔍</span>
@@ -3070,6 +3067,76 @@ export default function DashboardPage() {
                           })}
                         </tbody>
                       </table>
+                    )}
+                  </div>
+
+                  {/* Mobile Native Cards View (No Horizontal Scroll) */}
+                  <div className="mobile-cards-view animate-slide-up">
+                    {filteredTxs.length === 0 ? (
+                      <div className="empty-state">
+                        <span className="empty-icon">🔍</span>
+                        <h4>Tidak ada data transaksi yang cocok</h4>
+                        <p>Silakan ubah filter pencarian Anda.</p>
+                      </div>
+                    ) : (
+                      filteredTxs.map((t) => {
+                        const dateStr = new Date(t.transaction_date).toLocaleString('id-ID', {
+                          timeZone: 'Asia/Jakarta',
+                          dateStyle: 'medium',
+                          timeStyle: 'short'
+                        });
+                        const cat = categories.find(c => c.id === t.category_id);
+                        const wName = wallets.find(w => w.id === t.wallet_id)?.name || 'Default';
+                        return (
+                          <div 
+                            key={t.id} 
+                            className="mobile-data-card"
+                            onClick={() => t.ocr_structured_data ? setExpandedTxId(expandedTxId === t.id ? null : t.id) : null}
+                          >
+                            <div className="mobile-card-header">
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontSize: '1.4rem' }}>{cat?.emoji || '💰'}</span>
+                                <div>
+                                  <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '0.98rem' }}>{cat?.name || 'Kategori'}</div>
+                                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{dateStr} • 👛 {wName}</div>
+                                </div>
+                              </div>
+                              <div className={`tx-amount ${t.type}`} style={{ fontWeight: '800', fontSize: '1rem' }}>
+                                {t.type === 'expense' ? '-' : '+'}Rp {Number(t.amount).toLocaleString('id-ID')}
+                              </div>
+                            </div>
+
+                            {t.description && (
+                              <div style={{ fontSize: '0.84rem', color: '#e2e8f0', background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '10px' }}>
+                                {t.description}
+                              </div>
+                            )}
+
+                            {t.ocr_structured_data && (
+                              <div style={{ marginTop: '4px' }}>
+                                <button className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '6px 10px', width: '100%', justifyContent: 'center' }}>
+                                  📸 {expandedTxId === t.id ? 'Tutup Rincian Struk' : 'Lihat Rincian Struk AI'}
+                                </button>
+                                {expandedTxId === t.id && (
+                                  <div className="expanded-content" style={{ marginTop: '8px' }}>
+                                    <h5 style={{ fontSize: '0.82rem', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                                      Barang Belanjaan Struk AI OCR
+                                    </h5>
+                                    <div className="sub-item-list">
+                                      {t.ocr_structured_data.items?.map((item: any, idx: number) => (
+                                        <div key={idx} className="sub-item-row" style={{ fontSize: '0.8rem' }}>
+                                          <span>{item.name} ({item.quantity}x)</span>
+                                          <span>Rp {Number(item.price * item.quantity).toLocaleString('id-ID')}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
                     )}
                   </div>
 
