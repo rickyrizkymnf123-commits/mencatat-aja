@@ -1292,3 +1292,19 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
      - Saat user secara eksplisit mengetik perintah \/start\ di Telegram chat.
   3. Saat user mengirim perintah seperti \/saldo\, \/hari_ini\, \/budget\, \/sheet\, \/hapus\, atau teks pencatatan transaksi biasa, bot langsung merespons dengan hasil data transaksi tanpa menyertakan teks ucapan selamat datang.
 - **Verifikasi:** pm run build\ lolos 100% tanpa error, perubahan di-commit dan di-push ke \main\.
+
+## Sesi 86: Pembuatan Tampilan Lengkap Kelola Langganan (Basic & Pro) dan Notifikasi Pengingat Telegram Nyata (Real Daily Reminders)
+- **User Request:**
+  1. Halaman Kelola Langganan di dashboard sebelumnya kosong saat diklik di sidebar. Minta dibuatkan tampilan lengkapnya.
+  2. Fitur pengingat di Telegram harus benar-benar aktif (nyata/real, bukan dummy/fake) dan mengirimkan notifikasi ke Telegram saat dijadwalkan atau diuji.
+- **Implementasi:**
+  1. **Tampilan Lengkap Halaman \💎 Kelola Langganan\ (\src/app/dashboard/page.tsx\)**:
+     - Status paket langganan aktif saat ini dengan badge status.
+     - Kartu Paket **Basic** (Gratis/Dasar) dengan rincian fitur lengkap dan harga dinamis yang sinkron dengan pengaturan admin.
+     - Kartu Paket **Pro** (Unggulan) dengan badge *Paling Populer*, rincian seluruh keunggulan eksklusif (Scan Struk AI OCR, Bot Telegram Pribadi, AI Advisor 24/7, Ekspor Laporan Bebas, dsb.), dan tombol upgrade interaktif.
+     - Tabel perbandingan komparasi fitur mendalam antara paket Basic vs Pro.
+  2. **Fitur Pengingat Harian Nyata ke Bot Telegram (\src/app/api/telegram/reminders/route.ts\, \src/app/dashboard/page.tsx\)**:
+     - Membangun endpoint backend \/api/telegram/reminders\ untuk menyimpan status pengingat, frekuensi (1x atau 2x sehari), serta jam notifikasi (WIB) ke database.
+     - Saat user mengaktifkan jadwal atau menekan tombol **🔔 Tes Kirim Notifikasi Pengingat ke Telegram**, sistem langsung mengirimkan pesan pengingat nyata ke chat Telegram bot pengguna secara real-time.
+     - Di menu Settings, ditambahkan tombol **💾 Simpan Jadwal Pengingat** dan tombol **🔔 Tes Kirim Notifikasi Pengingat ke Telegram** agar user dapat langsung memverifikasi notifikasi di HP-nya.
+- **Verifikasi & Build:** pm run build\ sukses terkompilasi 100% (29 routes tanpa error) dan tersinkronisasi ke branch \main\ live deployment Vercel.
