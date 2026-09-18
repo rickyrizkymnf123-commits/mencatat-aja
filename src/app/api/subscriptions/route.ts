@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin, supabaseUrl } from '@/lib/supabase';
+import { getPricingConfig } from '@/lib/pricing';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const pricing = await getPricingConfig();
 
     const isPlaceholder = !supabaseUrl || 
       supabaseUrl.includes('your-supabase-project-id') || 
@@ -19,7 +21,8 @@ export async function GET(request: Request) {
         is_active: true,
         days_remaining: 30,
         status: 'active',
-        admin_whatsapp: '6281234567890'
+        admin_whatsapp: '6281234567890',
+        pricing
       });
     }
 
@@ -32,18 +35,19 @@ export async function GET(request: Request) {
     if (error || !profile) {
       return NextResponse.json({
         success: true,
-        plan: 'Starter',
+        plan: 'Basic',
         subscription_end: null,
         is_free_access: false,
         is_active: true,
         days_remaining: 0,
-        status: 'starter',
-        admin_whatsapp: '6281234567890'
+        status: 'basic',
+        admin_whatsapp: '6281234567890',
+        pricing
       });
     }
 
     let daysRemaining = 0;
-    let status = 'starter';
+    let status = 'basic';
 
     if (profile.is_free_access) {
       status = 'free_access';
@@ -59,15 +63,19 @@ export async function GET(request: Request) {
       }
     }
 
+    let resolvedPlan = profile.plan || (status === 'active' || status === 'free_access' ? 'Pro' : 'Basic');
+    if (resolvedPlan === 'Starter') resolvedPlan = 'Basic';
+
     return NextResponse.json({
       success: true,
-      plan: profile.plan || (status === 'active' || status === 'free_access' ? 'Pro' : 'Starter'),
+      plan: resolvedPlan,
       subscription_end: profile.subscription_end,
       is_free_access: !!profile.is_free_access,
       is_active: profile.is_active !== false,
       days_remaining: daysRemaining,
       status: status,
-      admin_whatsapp: '6281234567890'
+      admin_whatsapp: '6281234567890',
+      pricing
     });
   } catch (err: any) {
     console.error('Fetch user subscription error:', err);

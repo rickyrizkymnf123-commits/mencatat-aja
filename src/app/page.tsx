@@ -928,10 +928,10 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
           </div>
 
           <div className="pricing-wrap">
-            {/* Starter */}
+            {/* Basic */}
             <div className="glass-box" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px' }}>
               <div>
-                <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#fff' }}>Starter (Gratis)</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#fff' }}>Basic (Gratis)</div>
                 <div style={{ fontSize: '2rem', fontWeight: '900', color: '#fff', fontFamily: 'monospace', margin: '10px 0' }}>
                   Rp 0 <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>/ selamanya</span>
                 </div>

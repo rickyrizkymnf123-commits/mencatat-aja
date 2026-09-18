@@ -17,7 +17,7 @@ function generateProgressBar(percentage: number) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'beranda' | 'transaksi' | 'laporan' | 'budget' | 'wallet' | 'settings' | 'profile' | 'langganan'>('beranda');
+  const [activeTab, setActiveTab] = useState<'beranda' | 'transaksi' | 'scan_struk' | 'laporan' | 'budget' | 'wallet' | 'settings' | 'profile' | 'langganan'>('beranda');
   const [isLoading, setIsLoading] = useState(true);
   
   // User info
@@ -27,7 +27,7 @@ export default function DashboardPage() {
   const [userRole, setUserRole] = useState('user');
   const [userPhone, setUserPhone] = useState('');
   const [telegramToken, setTelegramToken] = useState('');
-  const [userPlan, setUserPlan] = useState('Starter');
+  const [userPlan, setUserPlan] = useState('Basic');
   
   // Data States
   const [wallets, setWallets] = useState<any[]>([]);
@@ -96,6 +96,16 @@ export default function DashboardPage() {
   const [aiInputText, setAiInputText] = useState('');
   const [isParsingAi, setIsParsingAi] = useState(false);
   const [isParsingReceipt, setIsParsingReceipt] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
+  const [parsedReceiptData, setParsedReceiptData] = useState<any | null>(null);
+  const [ocrMerchant, setOcrMerchant] = useState('');
+  const [ocrDate, setOcrDate] = useState('');
+  const [ocrTotal, setOcrTotal] = useState<number | string>('');
+  const [ocrWalletId, setOcrWalletId] = useState('');
+  const [ocrCategoryId, setOcrCategoryId] = useState('');
+  const [ocrItems, setOcrItems] = useState<any[]>([]);
+  const [pricingConfig, setPricingConfig] = useState<any>(null);
   const [userCredits, setUserCredits] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(`Mencatat Aja_credits_usr_budi`);
@@ -319,7 +329,7 @@ export default function DashboardPage() {
       let storedName = localStorage.getItem('Mencatat Aja_user_name') || 'Nasabah';
       let storedPhone = localStorage.getItem('Mencatat Aja_user_phone') || '';
       let storedToken = localStorage.getItem('Mencatat Aja_telegram_token') || '';
-      let storedPlan = localStorage.getItem('Mencatat Aja_plan') || 'Starter';
+      let storedPlan = localStorage.getItem('Mencatat Aja_plan') || 'Basic';
 
       try {
         const { data } = await supabase.auth.getSession();
@@ -348,7 +358,7 @@ export default function DashboardPage() {
               .maybeSingle();
             
             if (profile) {
-              storedPlan = profile.plan || 'Starter';
+              storedPlan = profile.plan || 'Basic';
               storedToken = profile.telegram_link_token || '';
               if (profile.full_name) storedName = profile.full_name;
               localStorage.setItem('Mencatat Aja_plan', storedPlan);
@@ -829,6 +839,113 @@ export default function DashboardPage() {
     }, 1800);
   };
 
+  
+  const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setReceiptFile(file);
+    setReceiptPreviewUrl(URL.createObjectURL(file));
+    setParsedReceiptData(null);
+  };
+
+  const handleProcessReceiptOcr = async () => {
+    if (!receiptFile) {
+      alert('Silakan pilih foto struk belanja terlebih dahulu.');
+      return;
+    }
+
+    if (userPlan !== 'Pro') {
+      alert('🔒 Fitur Scan Struk AI Vision khusus untuk pelanggan paket Pro. Silakan upgrade ke paket Pro!');
+      setActiveTab('profile');
+      return;
+    }
+
+    setIsParsingReceipt(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', receiptFile);
+      formData.append('userId', userId);
+      formData.append('categories', JSON.stringify(categories.map(c => ({ id: c.id, name: c.name, emoji: c.emoji }))));
+
+      const res = await fetch('/api/ai/ocr-receipt', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal memindai struk belanja.');
+      }
+
+      if (data.receipt) {
+        setParsedReceiptData(data.receipt);
+        setOcrMerchant(data.receipt.merchant || 'Struk Belanja');
+        setOcrDate(data.receipt.date || new Date().toISOString().split('T')[0]);
+        setOcrTotal(data.receipt.total || 0);
+        setOcrItems(data.receipt.items || []);
+
+        const defaultW = wallets.find(w => w.is_default) || wallets[0];
+        if (defaultW) setOcrWalletId(defaultW.id);
+
+        const matchedCat = categories.find(c => c.name.toLowerCase().includes('belanja') || c.name.toLowerCase().includes('makan')) || categories[0];
+        if (matchedCat) setOcrCategoryId(matchedCat.id);
+      }
+    } catch (err: any) {
+      alert('❌ ' + (err.message || 'Gagal membaca struk dengan AI Vision'));
+    } finally {
+      setIsParsingReceipt(false);
+    }
+  };
+
+  const handleSaveReceiptTransaction = async () => {
+    if (!ocrTotal || Number(ocrTotal) <= 0) {
+      alert('Nominal total belanja tidak valid.');
+      return;
+    }
+
+    const selectedW = wallets.find(w => w.id === ocrWalletId) || wallets[0];
+    if (!selectedW) {
+      alert('Pilih dompet pembayaran terlebih dahulu.');
+      return;
+    }
+
+    try {
+      const desc = ocrMerchant ? `Belanja: ${ocrMerchant}` : 'Belanja Struk OCR';
+      const res = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId,
+          walletId: selectedW.id,
+          categoryId: ocrCategoryId || categories[0]?.id || null,
+          amount: Number(ocrTotal),
+          type: 'expense',
+          description: desc,
+          source: 'receipt',
+          date: ocrDate || new Date().toISOString().split('T')[0],
+          notes: ocrItems && ocrItems.length > 0 ? JSON.stringify(ocrItems) : undefined
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Gagal menyimpan transaksi struk.');
+      }
+
+      alert(`🎉 Berhasil Mencatat Pengeluaran Struk!\n\n• Merchant: ${ocrMerchant}\n• Nominal: Rp ${Number(ocrTotal).toLocaleString('id-ID')}\n• Dompet: ${selectedW.name}`);
+      
+      // Reset OCR state
+      setReceiptFile(null);
+      setReceiptPreviewUrl(null);
+      setParsedReceiptData(null);
+      
+      await fetchDashboardData(userId, telegramToken);
+      setActiveTab('beranda');
+    } catch (err: any) {
+      alert('❌ Gagal menyimpan transaksi: ' + err.message);
+    }
+  };
+
   const handleAddWallet = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWalletName || !newWalletBalance) {
@@ -1188,7 +1305,7 @@ export default function DashboardPage() {
   // Handle Export Report (PDF / Excel)
   const [isExporting, setIsExporting] = useState(false);
   const handleTriggerExport = async (format: 'pdf' | 'xlsx') => {
-    if (userPlan === 'Starter') {
+    if (userPlan === 'Basic') {
       alert('⚠️ Fitur ekspor laporan PDF/Excel hanya tersedia untuk pengguna paket PRO.');
       return;
     }
@@ -1469,7 +1586,7 @@ export default function DashboardPage() {
           <button
             onClick={handleExitImpersonation}
             style={{
-              backgroundColor: '#ffffff',
+              background: 'rgba(13, 20, 38, 0.75)',
               color: 'var(--primary)',
               border: 'none',
               borderRadius: '4px',
@@ -1762,6 +1879,10 @@ export default function DashboardPage() {
             </li>
             <li onClick={() => { setActiveTab('transaksi'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'transaksi' ? 'active' : ''}`}>
               💳 Transaksi
+            </li>
+            <li onClick={() => { setActiveTab('scan_struk'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'scan_struk' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>📸 Scan Struk</span>
+              {userPlan !== 'Pro' && <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', fontWeight: '800' }}>PRO</span>}
             </li>
             <li onClick={() => { setActiveTab('laporan'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'laporan' ? 'active' : ''}`}>
               📊 Laporan
@@ -2167,59 +2288,23 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* 📸 AI Vision Receipt Uploader */}
-                <div className="card animate-slide-up" style={{ borderLeft: '6px solid #FF8A00' }}>
-                  <h2 style={{ marginBottom: '8px' }}>📸 Unggah Struk Belanja (AI Vision)</h2>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '20px' }}>
-                    Unggah foto nota atau struk belanja Anda. AI Vision akan memindai teks struk dan mencatat pengeluaran Anda secara otomatis.
-                  </p>
-                  
-                  <div style={{ 
-                    border: '2px dashed var(--border)', 
-                    borderRadius: '12px', 
-                    padding: '24px', 
-                    textAlign: 'center', 
-                    backgroundColor: 'var(--background)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '12px',
-                    position: 'relative',
-                    cursor: 'pointer'
-                  }}>
-                    {isParsingReceipt ? (
-                      <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '2rem' }}>🔄</span>
-                        <span style={{ fontWeight: '600', color: 'var(--primary)' }}>Memindai struk dengan AI Vision...</span>
+                {/* Link to Scan Struk Tab */}
+                  <div style={{ padding: '16px 20px', borderRadius: '14px', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', margin: '20px 0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '1.6rem' }}>📸</span>
+                      <div>
+                        <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '0.95rem' }}>Punya Foto Struk Belanja Kasir atau Nota?</div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Gunakan fitur khusus Scan Struk AI Vision untuk otomatis mendeteksi merchant, total & rincian belanja.</div>
                       </div>
-                    ) : (
-                      <>
-                        <span style={{ fontSize: '2.5rem' }}>📷</span>
-                        <div style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-main)' }}>
-                          Klik untuk mengambil foto struk atau pilih file
-                        </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-light)' }}>
-                          Format gambar JPG, JPEG, atau PNG (Maks 5MB)
-                        </div>
-                        <input 
-                          type="file" 
-                          accept="image/*"
-                          onChange={handleUploadReceipt}
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            opacity: 0,
-                            cursor: 'pointer'
-                          }}
-                        />
-                      </>
-                    )}
+                    </div>
+                    <button
+                      onClick={() => setActiveTab('scan_struk')}
+                      className="btn btn-primary"
+                      style={{ padding: '8px 18px', fontSize: '0.85rem', fontWeight: '800', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', border: 'none', borderRadius: '10px', cursor: 'pointer' }}
+                    >
+                      Buka Fitur Scan Struk 📸
+                    </button>
                   </div>
-                </div>
 
                 {/* Manual Transaction Card */}
                 <div className="card animate-slide-up">
@@ -2325,6 +2410,296 @@ export default function DashboardPage() {
             )}
 
             {/* 3. LAPORAN & NATIVE EXPORT */}
+            
+            {/* 2.5 SCAN STRUK TAB (AI VISION OCR) */}
+            {activeTab === 'scan_struk' && (
+              <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                  <div>
+                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      📸 Scan Struk Belanja (AI Vision)
+                      <span style={{ fontSize: '0.75rem', padding: '3px 8px', borderRadius: '6px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', fontWeight: '900' }}>PRO ONLY</span>
+                    </h2>
+                    <p style={{ color: 'var(--text-muted)' }}>Foto struk kasir, nota belanjaan, atau kuitansi manual. AI Vision mendeteksi nama toko, total, dan rincian barang otomatis.</p>
+                  </div>
+                  {userPlan === 'Pro' ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '6px 14px', borderRadius: '10px', color: '#10b981', fontWeight: '700', fontSize: '0.85rem' }}>
+                      💎 Pro Member Aktif
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setActiveTab('profile')}
+                      style={{ padding: '6px 14px', borderRadius: '10px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', fontWeight: '800', fontSize: '0.85rem', border: 'none', cursor: 'pointer' }}
+                    >
+                      🔒 Upgrade ke Pro
+                    </button>
+                  )}
+                </div>
+
+                {userPlan !== 'Pro' ? (
+                  /* PRO LOCK SCREEN */
+                  <div className="card" style={{ background: 'rgba(13, 20, 38, 0.85)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '16px', padding: '40px 28px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+                    <div style={{ width: '70px', height: '70px', borderRadius: '20px', background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                      🔒
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '1.4rem', fontWeight: '800', color: '#ffffff', marginBottom: '8px' }}>Fitur Eksklusif Paket Pro</h3>
+                      <p style={{ color: 'var(--text-muted)', maxWidth: '540px', margin: '0 auto', fontSize: '0.92rem', lineHeight: '1.6' }}>
+                        Fitur <b>Scan Struk Belanja (AI Vision OCR)</b> hanya tersedia untuk pelanggan paket <b>Pro</b>. Nikmati kemudahan foto struk kasir dan biarkan AI kami membaca rincian pengeluaran Anda otomatis!
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', width: '100%', maxWidth: '720px', marginTop: '10px', textAlign: 'left' }}>
+                      <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px', borderRadius: '12px' }}>
+                        <div style={{ fontSize: '1.2rem', marginBottom: '6px' }}>🧾</div>
+                        <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.9rem' }}>Deteksi Struk Akurat</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Membaca struk Indomaret, Alfamart, restoran, SPBU, hingga nota tulisan tangan.</div>
+                      </div>
+                      <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px', borderRadius: '12px' }}>
+                        <div style={{ fontSize: '1.2rem', marginBottom: '6px' }}>⚡</div>
+                        <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.9rem' }}>Ekstraksi Rincian Barang</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>AI memecah item belanja beserta nominal harga dan kategori masing-masing.</div>
+                      </div>
+                      <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px', borderRadius: '12px' }}>
+                        <div style={{ fontSize: '1.2rem', marginBottom: '6px' }}>👛</div>
+                        <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.9rem' }}>Langsung Masuk Dompet</div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Cukup konfirmasi nominal, pengeluaran otomatis tercatat ke dompet pilihan Anda.</div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setActiveTab('profile')}
+                      className="btn btn-primary"
+                      style={{ padding: '12px 32px', fontSize: '1rem', fontWeight: '800', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', border: 'none', borderRadius: '12px', cursor: 'pointer', marginTop: '10px', boxShadow: '0 8px 24px rgba(245, 158, 11, 0.25)' }}
+                    >
+                      💎 Upgrade ke Paket Pro ({pricingConfig?.pro?.price ? `Rp ${pricingConfig.pro.price.toLocaleString('id-ID')}/${pricingConfig.pro.period || 'bln'}` : 'Mulai Rp 49.000/bln'})
+                    </button>
+                  </div>
+                ) : (
+                  /* PRO OCR SCANNER INTERFACE */
+                  <div style={{ display: 'grid', gridTemplateColumns: parsedReceiptData ? 'repeat(auto-fit, minmax(340px, 1fr))' : '1fr', gap: '24px' }}>
+                    {/* Upload Card */}
+                    <div className="card" style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <h3 style={{ fontSize: '1.15rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        📷 1. Unggah / Ambil Foto Struk
+                      </h3>
+                      
+                      <div
+                        style={{
+                          border: '2px dashed rgba(255, 255, 255, 0.18)',
+                          borderRadius: '16px',
+                          padding: '36px 20px',
+                          textAlign: 'center',
+                          background: 'rgba(255, 255, 255, 0.02)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '12px',
+                          position: 'relative',
+                          cursor: 'pointer',
+                          minHeight: '220px'
+                        }}
+                      >
+                        {receiptPreviewUrl ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', width: '100%' }}>
+                            <img
+                              src={receiptPreviewUrl}
+                              alt="Receipt Preview"
+                              style={{ maxHeight: '240px', maxWidth: '100%', objectFit: 'contain', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.15)' }}
+                            />
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                              Klik untuk ganti foto struk
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>
+                              📸
+                            </div>
+                            <div style={{ fontSize: '1rem', fontWeight: '700', color: '#ffffff' }}>
+                              Ambil Foto atau Pilih Gambar Struk
+                            </div>
+                            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', maxWidth: '320px' }}>
+                              Mendukung format JPG, PNG, WEBP. Bisa langsung menggunakan kamera HP.
+                            </div>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleReceiptFileChange}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            opacity: 0,
+                            cursor: 'pointer'
+                          }}
+                        />
+                      </div>
+
+                      <button
+                        onClick={handleProcessReceiptOcr}
+                        disabled={!receiptFile || isParsingReceipt}
+                        className="btn btn-primary"
+                        style={{
+                          width: '100%',
+                          padding: '14px',
+                          fontSize: '0.95rem',
+                          fontWeight: '800',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '10px',
+                          background: isParsingReceipt ? 'rgba(255, 255, 255, 0.1)' : 'linear-gradient(135deg, #10b981, #059669)',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '12px',
+                          cursor: !receiptFile || isParsingReceipt ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        {isParsingReceipt ? (
+                          <>
+                            <span style={{ animation: 'spin 1s linear infinite' }}>🔄</span> Memindai Teks Struk dengan AI Vision...
+                          </>
+                        ) : (
+                          <>
+                            <span>✨</span> Pindai Struk dengan AI Vision
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Results Form Card */}
+                    {parsedReceiptData && (
+                      <div className="card animate-slide-up" style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '16px', padding: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px' }}>
+                          <h3 style={{ fontSize: '1.15rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            🧾 2. Hasil Ekstraksi Struk AI
+                          </h3>
+                          <span style={{ fontSize: '0.75rem', fontWeight: '700', padding: '3px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+                            SIAP DISIMPAN
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                          <div className="form-group" style={{ margin: 0 }}>
+                            <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Nama Toko / Merchant</label>
+                            <input
+                              type="text"
+                              value={ocrMerchant}
+                              onChange={e => setOcrMerchant(e.target.value)}
+                              placeholder="Misal: Indomaret, Starbucks"
+                              style={{ width: '100%', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                            />
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div className="form-group" style={{ margin: 0 }}>
+                              <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Tanggal Struk</label>
+                              <input
+                                type="date"
+                                value={ocrDate}
+                                onChange={e => setOcrDate(e.target.value)}
+                                style={{ width: '100%', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                              />
+                            </div>
+                            <div className="form-group" style={{ margin: 0 }}>
+                              <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Total Bayar (Rp)</label>
+                              <input
+                                type="number"
+                                value={ocrTotal}
+                                onChange={e => setOcrTotal(e.target.value)}
+                                style={{ width: '100%', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#10b981', fontWeight: '800', fontSize: '1.05rem' }}
+                              />
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <div className="form-group" style={{ margin: 0 }}>
+                              <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Dompet Pembayaran</label>
+                              <select
+                                value={ocrWalletId}
+                                onChange={e => setOcrWalletId(e.target.value)}
+                                style={{ width: '100%', padding: '10px 14px', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                              >
+                                {wallets.map(w => (
+                                  <option key={w.id} value={w.id}>👛 {w.name} (Rp {Number(w.balance || 0).toLocaleString('id-ID')})</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="form-group" style={{ margin: 0 }}>
+                              <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Kategori Transaksi</label>
+                              <select
+                                value={ocrCategoryId}
+                                onChange={e => setOcrCategoryId(e.target.value)}
+                                style={{ width: '100%', padding: '10px 14px', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                              >
+                                {categories.map(c => (
+                                  <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Items Breakdown Table */}
+                          {ocrItems && ocrItems.length > 0 && (
+                            <div style={{ marginTop: '6px' }}>
+                              <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'block' }}>
+                                Rincian Barang Terdeteksi ({ocrItems.length} Item)
+                              </label>
+                              <div style={{ maxHeight: '150px', overflowY: 'auto', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: '8px', padding: '8px' }}>
+                                <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
+                                  <thead>
+                                    <tr style={{ color: 'var(--text-muted)', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                                      <th style={{ textAlign: 'left', padding: '4px' }}>Item</th>
+                                      <th style={{ textAlign: 'center', padding: '4px' }}>Qty</th>
+                                      <th style={{ textAlign: 'right', padding: '4px' }}>Harga</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {ocrItems.map((item, idx) => (
+                                      <tr key={idx} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.03)' }}>
+                                        <td style={{ padding: '6px 4px', color: '#ffffff' }}>{item.name}</td>
+                                        <td style={{ textAlign: 'center', padding: '6px 4px', color: 'var(--text-muted)' }}>{item.quantity || 1}</td>
+                                        <td style={{ textAlign: 'right', padding: '6px 4px', color: '#10b981' }}>Rp {Number(item.price || 0).toLocaleString('id-ID')}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+
+                          <button
+                            onClick={handleSaveReceiptTransaction}
+                            className="btn btn-primary"
+                            style={{
+                              width: '100%',
+                              padding: '12px',
+                              fontSize: '0.95rem',
+                              fontWeight: '800',
+                              background: 'linear-gradient(135deg, #10b981, #059669)',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '10px',
+                              cursor: 'pointer',
+                              marginTop: '8px'
+                            }}
+                          >
+                            💾 Simpan ke Catatan Transaksi
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {activeTab === 'laporan' && (() => {
               const repIncomeTxs = filteredTxs.filter(t => t.type === 'income');
               const repExpenseTxs = filteredTxs.filter(t => t.type === 'expense');
@@ -2355,7 +2730,7 @@ export default function DashboardPage() {
                         className="btn btn-secondary"
                       >
                         {isExporting ? 'Mengekspor...' : '📥 Ekspor Excel'}
-                        {userPlan === 'Starter' && <span className="badge-pro-only">PRO</span>}
+                        {userPlan === 'Basic' && <span className="badge-pro-only">PRO</span>}
                       </button>
                       <button
                         onClick={() => handleTriggerExport('pdf')}
@@ -2363,7 +2738,7 @@ export default function DashboardPage() {
                         className="btn btn-outline"
                       >
                         {isExporting ? 'Mengekspor...' : '📄 Ekspor PDF'}
-                        {userPlan === 'Starter' && <span className="badge-pro-only">PRO</span>}
+                        {userPlan === 'Basic' && <span className="badge-pro-only">PRO</span>}
                       </button>
                     </div>
                   </div>
@@ -2371,7 +2746,7 @@ export default function DashboardPage() {
                   {/* Visual Charts & Summary Row */}
                   <div className="grid-3 animate-slide-up" style={{ gap: '20px', margin: '24px 0' }}>
                     {/* Summary Card: Income vs Expense Bar */}
-                    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', backgroundColor: '#ffffff' }}>
+                    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', background: 'rgba(13, 20, 38, 0.75)' }}>
                       <h4 style={{ margin: '0 0 16px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>📊 CASHFLOW SUMMARY</h4>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <div>
@@ -2396,7 +2771,7 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Summary Card: Savings Rate Gauge */}
-                    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', background: 'rgba(13, 20, 38, 0.75)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       <div>
                         <h4 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>📈 SAVINGS RATE</h4>
                         <div style={{ fontSize: '1.6rem', fontWeight: '800', color: repNetSavings >= 0 ? 'var(--primary)' : 'var(--error)' }}>
@@ -2415,7 +2790,7 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Summary Card: Category Distribution Breakdown */}
-                    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '160px', overflowY: 'auto' }}>
+                    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', background: 'rgba(13, 20, 38, 0.75)', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '160px', overflowY: 'auto' }}>
                       <h4 style={{ margin: '0 0 4px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>🍕 PROPORSI PENGELUARAN</h4>
                       {Object.keys(categorySpentMap).length === 0 ? (
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', margin: 0 }}>Belum ada data pengeluaran.</p>
@@ -2439,28 +2814,28 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Advanced Filter and Search Bar */}
-                  {userPlan === 'Starter' && (
+                  {userPlan === 'Basic' && (
                     <div className="animate-slide-up" style={{ padding: '12px 16px', backgroundColor: 'var(--primary-light)', color: 'var(--primary)', borderRadius: '8px', fontSize: '0.9rem', fontWeight: '600', marginBottom: '16px', border: '1px dashed hsla(20, 100%, 50%, 0.2)' }}>
                       🔒 <b>Fitur Pro:</b> Filter pencarian mendalam & Ekspor PDF/Excel dinonaktifkan untuk paket Starter. Silakan upgrade ke paket Pro!
                     </div>
                   )}
 
-                  <div className="filters-bar animate-slide-up" style={{ opacity: userPlan === 'Starter' ? 0.6 : 1 }}>
+                  <div className="filters-bar animate-slide-up" style={{ opacity: userPlan === 'Basic' ? 0.6 : 1 }}>
                     <input
                       type="text"
-                      placeholder={userPlan === 'Starter' ? "Cari catatan (Pro saja)..." : "Cari catatan..."}
+                      placeholder={userPlan === 'Basic' ? "Cari catatan (Pro saja)..." : "Cari catatan..."}
                       className="tg-input"
                       style={{ flex: 1, minWidth: '200px' }}
                       value={filterSearch}
                       onChange={e => setFilterSearch(e.target.value)}
-                      disabled={userPlan === 'Starter'}
+                      disabled={userPlan === 'Basic'}
                     />
                     
                     <select
                       className="filter-select"
                       value={filterWallet}
                       onChange={e => setFilterWallet(e.target.value)}
-                      disabled={userPlan === 'Starter'}
+                      disabled={userPlan === 'Basic'}
                     >
                       <option value="">Semua Dompet</option>
                       {wallets.map(w => (
@@ -2472,7 +2847,7 @@ export default function DashboardPage() {
                       className="filter-select"
                       value={filterCategory}
                       onChange={e => setFilterCategory(e.target.value)}
-                      disabled={userPlan === 'Starter'}
+                      disabled={userPlan === 'Basic'}
                     >
                       <option value="">Semua Kategori</option>
                       {categories.map(c => (
@@ -2484,7 +2859,7 @@ export default function DashboardPage() {
                       className="filter-select"
                       value={filterType}
                       onChange={e => setFilterType(e.target.value)}
-                      disabled={userPlan === 'Starter'}
+                      disabled={userPlan === 'Basic'}
                     >
                       <option value="">Semua Tipe</option>
                       <option value="expense">Pengeluaran</option>
@@ -2716,7 +3091,7 @@ export default function DashboardPage() {
                                   }
                                 }
                               }}
-                              style={{ width: '120px', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem', backgroundColor: '#ffffff', color: 'var(--text-main)' }}
+                              style={{ width: '120px', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '0.85rem', background: 'rgba(13, 20, 38, 0.75)', color: 'var(--text-main)' }}
                             />
                           </div>
                         </div>
@@ -2750,7 +3125,7 @@ export default function DashboardPage() {
                               value={editingWalletName} 
                               onChange={e => setEditingWalletName(e.target.value)} 
                               placeholder="Nama dompet"
-                              style={{ width: '100%', padding: '6px 12px', fontSize: '0.9rem', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: '#ffffff', color: 'var(--text-main)' }}
+                              style={{ width: '100%', padding: '6px 12px', fontSize: '0.9rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'rgba(13, 20, 38, 0.75)', color: 'var(--text-main)' }}
                             />
                           </div>
                           <div className="form-group" style={{ margin: 0 }}>
@@ -2759,7 +3134,7 @@ export default function DashboardPage() {
                               value={editingWalletBalance} 
                               onChange={e => setEditingWalletBalance(e.target.value)} 
                               placeholder="Saldo"
-                              style={{ width: '100%', padding: '6px 12px', fontSize: '0.9rem', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: '#ffffff', color: 'var(--text-main)' }}
+                              style={{ width: '100%', padding: '6px 12px', fontSize: '0.9rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'rgba(13, 20, 38, 0.75)', color: 'var(--text-main)' }}
                             />
                           </div>
                           <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
@@ -2958,21 +3333,21 @@ export default function DashboardPage() {
                         return (
                           <div key={c.id}>
                             {editingCategoryId === c.id ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 16px', border: '2px solid var(--primary)', borderRadius: '12px', backgroundColor: '#ffffff' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 16px', border: '2px solid var(--primary)', borderRadius: '12px', background: 'rgba(13, 20, 38, 0.75)' }}>
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                   <input 
                                     type="text" 
                                     value={editingCategoryEmoji} 
                                     onChange={e => setEditingCategoryEmoji(e.target.value)} 
                                     placeholder="Emoji" 
-                                    style={{ width: '45px', padding: '4px', textAlign: 'center', fontSize: '1rem', border: '1px solid var(--border)', borderRadius: '6px', backgroundColor: '#ffffff', color: 'var(--text-main)' }} 
+                                    style={{ width: '45px', padding: '4px', textAlign: 'center', fontSize: '1rem', border: '1px solid var(--border)', borderRadius: '6px', background: 'rgba(13, 20, 38, 0.75)', color: 'var(--text-main)' }} 
                                   />
                                   <input 
                                     type="text" 
                                     value={editingCategoryName} 
                                     onChange={e => setEditingCategoryName(e.target.value)} 
                                     placeholder="Nama Kategori" 
-                                    style={{ flex: 1, padding: '4px 8px', fontSize: '0.9rem', border: '1px solid var(--border)', borderRadius: '6px', backgroundColor: '#ffffff', color: 'var(--text-main)' }} 
+                                    style={{ flex: 1, padding: '4px 8px', fontSize: '0.9rem', border: '1px solid var(--border)', borderRadius: '6px', background: 'rgba(13, 20, 38, 0.75)', color: 'var(--text-main)' }} 
                                   />
                                 </div>
                                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
@@ -2982,7 +3357,7 @@ export default function DashboardPage() {
                                 </div>
                               </div>
                             ) : (
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', border: '1px solid var(--border)', borderRadius: '12px', backgroundColor: '#ffffff', height: '100%' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', border: '1px solid var(--border)', borderRadius: '12px', background: 'rgba(13, 20, 38, 0.75)', height: '100%' }}>
                                 <span style={{ fontSize: '1.2rem', marginRight: '8px' }}>{c.emoji}</span>
                                 <span style={{ fontWeight: '600', flex: 1, color: 'var(--text-main)' }}>{c.name}</span>
                                 {!isDefault && (
@@ -3014,7 +3389,7 @@ export default function DashboardPage() {
 
                 <div className="grid-2" style={{ gap: '32px' }}>
                   {/* Profile Details */}
-                  <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', backgroundColor: '#ffffff' }}>
+                  <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', background: 'rgba(13, 20, 38, 0.75)' }}>
                     <h3 style={{ marginBottom: '20px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>👤 Informasi Profil</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
@@ -3055,7 +3430,7 @@ export default function DashboardPage() {
                 <div style={{ marginTop: '16px' }}>
                   <h3 style={{ marginBottom: '20px', fontSize: '1.2rem' }}>🛒 Paket Top Up Kredit AI</h3>
                   <div className="grid-3" style={{ gap: '20px' }}>
-                    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', textAlign: 'center', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', textAlign: 'center', background: 'rgba(13, 20, 38, 0.75)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       <div>
                         <span style={{ fontSize: '2rem' }}>🥉</span>
                         <h4 style={{ margin: '12px 0 8px 0', fontSize: '1.1rem' }}>Paket Hemat</h4>
@@ -3072,7 +3447,7 @@ export default function DashboardPage() {
                       </button>
                     </div>
 
-                    <div style={{ border: '2px solid var(--primary)', borderRadius: '12px', padding: '24px', textAlign: 'center', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative' }}>
+                    <div style={{ border: '2px solid var(--primary)', borderRadius: '12px', padding: '24px', textAlign: 'center', background: 'rgba(13, 20, 38, 0.75)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative' }}>
                       <span style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'var(--primary)', color: '#ffffff', fontSize: '0.7rem', fontWeight: '700', padding: '2px 10px', borderRadius: '100px', textTransform: 'uppercase' }}>Populer</span>
                       <div>
                         <span style={{ fontSize: '2rem' }}>🥈</span>
@@ -3090,7 +3465,7 @@ export default function DashboardPage() {
                       </button>
                     </div>
 
-                    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', textAlign: 'center', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', textAlign: 'center', background: 'rgba(13, 20, 38, 0.75)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       <div>
                         <span style={{ fontSize: '2rem' }}>🥇</span>
                         <h4 style={{ margin: '12px 0 8px 0', fontSize: '1.1rem' }}>Paket Pro</h4>

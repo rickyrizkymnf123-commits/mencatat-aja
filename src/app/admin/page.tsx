@@ -32,6 +32,13 @@ export default function AdminDashboard() {
   // SUBSCRIPTION MANAGEMENT STATES (Ala ProfitLab)
   const [subscriptionsList, setSubscriptionsList] = useState<any[]>([]);
   const [subSearchQuery, setSubSearchQuery] = useState('');
+  const [adminBasicPrice, setAdminBasicPrice] = useState<number>(0);
+  const [adminBasicPeriod, setAdminBasicPeriod] = useState<string>('Gratis');
+  const [adminBasicDesc, setAdminBasicDesc] = useState<string>('Pencatatan keuangan personal dasar & dompet standar.');
+  const [adminProPrice, setAdminProPrice] = useState<number>(49000);
+  const [adminProPeriod, setAdminProPeriod] = useState<string>('Bulan');
+  const [adminProDesc, setAdminProDesc] = useState<string>('Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
+  const [isSavingPricing, setIsSavingPricing] = useState(false);
   const [subStatusFilter, setSubStatusFilter] = useState('all');
   const [selectedSubUser, setSelectedSubUser] = useState<any | null>(null);
   const [showEditSubModal, setShowEditSubModal] = useState(false);
@@ -88,10 +95,65 @@ export default function AdminDashboard() {
       setShowEditSubModal(false);
       await fetchSubscriptions();
       await fetchAdminData();
+    // Fetch pricing settings for admin
+    fetch('/api/subscriptions/pricing')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.pricing) {
+          if (data.pricing.basic) {
+            setAdminBasicPrice(data.pricing.basic.price || 0);
+            setAdminBasicPeriod(data.pricing.basic.period || 'Gratis');
+            setAdminBasicDesc(data.pricing.basic.description || 'Pencatatan keuangan personal dasar & dompet standar.');
+          }
+          if (data.pricing.pro) {
+            setAdminProPrice(data.pricing.pro.price || 49000);
+            setAdminProPeriod(data.pricing.pro.period || 'Bulan');
+            setAdminProDesc(data.pricing.pro.description || 'Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
+          }
+        }
+      })
+      .catch(e => console.warn('Admin fetch pricing error:', e));
     } catch (err: any) {
       alert(`❌ Gagal: ${err.message}`);
     } finally {
       setIsSavingSub(false);
+    }
+  };
+
+  
+  const handleSavePricingConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingPricing(true);
+    try {
+      const res = await fetch('/api/subscriptions/pricing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          basic: {
+            id: 'basic',
+            name: 'Basic',
+            price: Number(adminBasicPrice),
+            period: adminBasicPeriod,
+            description: adminBasicDesc
+          },
+          pro: {
+            id: 'pro',
+            name: 'Pro',
+            price: Number(adminProPrice),
+            period: adminProPeriod,
+            description: adminProDesc
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal menyimpan harga paket');
+
+      alert(`✅ Berhasil Memperbarui Harga Paket Langganan!\n\n• Basic: Rp ${Number(adminBasicPrice).toLocaleString('id-ID')} / ${adminBasicPeriod}\n• Pro: Rp ${Number(adminProPrice).toLocaleString('id-ID')} / ${adminProPeriod}`);
+    } catch (err: any) {
+      alert('❌ Error: ' + err.message);
+    } finally {
+      setIsSavingPricing(false);
     }
   };
 
@@ -123,6 +185,24 @@ export default function AdminDashboard() {
       alert(`🎉 Sukses menambahkan +${days} hari untuk ${selectedUserIds.length} pengguna!`);
       await fetchSubscriptions();
       await fetchAdminData();
+    // Fetch pricing settings for admin
+    fetch('/api/subscriptions/pricing')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.pricing) {
+          if (data.pricing.basic) {
+            setAdminBasicPrice(data.pricing.basic.price || 0);
+            setAdminBasicPeriod(data.pricing.basic.period || 'Gratis');
+            setAdminBasicDesc(data.pricing.basic.description || 'Pencatatan keuangan personal dasar & dompet standar.');
+          }
+          if (data.pricing.pro) {
+            setAdminProPrice(data.pricing.pro.price || 49000);
+            setAdminProPeriod(data.pricing.pro.period || 'Bulan');
+            setAdminProDesc(data.pricing.pro.description || 'Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
+          }
+        }
+      })
+      .catch(e => console.warn('Admin fetch pricing error:', e));
     } catch (err: any) {
       alert(`❌ Gagal: ${err.message}`);
     }
@@ -139,7 +219,7 @@ export default function AdminDashboard() {
   const [newUserNameInput, setNewUserNameInput] = useState('');
   const [newUserEmailInput, setNewUserEmailInput] = useState('');
   const [newUserPhoneInput, setNewUserPhoneInput] = useState('');
-  const [newUserPlanInput, setNewUserPlanInput] = useState('Starter');
+  const [newUserPlanInput, setNewUserPlanInput] = useState('Basic');
   const [newUserApproveInput, setNewUserApproveInput] = useState(true);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   
@@ -151,7 +231,7 @@ export default function AdminDashboard() {
   const [previewBudgets, setPreviewBudgets] = useState<any[]>([]);
   const [previewCategories, setPreviewCategories] = useState<any[]>([]);
   const [previewPeriodFilter, setPreviewPeriodFilter] = useState<'harian' | 'mingguan' | 'bulanan' | 'tahunan'>('bulanan');
-  const [previewUserPlan, setPreviewUserPlan] = useState('Starter');
+  const [previewUserPlan, setPreviewUserPlan] = useState('Basic');
   const [previewUserName, setPreviewUserName] = useState('');
   const [previewUserPhone, setPreviewUserPhone] = useState('');
   
@@ -264,6 +344,24 @@ export default function AdminDashboard() {
       }
 
       await fetchAdminData();
+    // Fetch pricing settings for admin
+    fetch('/api/subscriptions/pricing')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.pricing) {
+          if (data.pricing.basic) {
+            setAdminBasicPrice(data.pricing.basic.price || 0);
+            setAdminBasicPeriod(data.pricing.basic.period || 'Gratis');
+            setAdminBasicDesc(data.pricing.basic.description || 'Pencatatan keuangan personal dasar & dompet standar.');
+          }
+          if (data.pricing.pro) {
+            setAdminProPrice(data.pricing.pro.price || 49000);
+            setAdminProPeriod(data.pricing.pro.period || 'Bulan');
+            setAdminProDesc(data.pricing.pro.description || 'Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
+          }
+        }
+      })
+      .catch(e => console.warn('Admin fetch pricing error:', e));
     };
     initAdmin();
   }, []);
@@ -319,7 +417,7 @@ export default function AdminDashboard() {
     setNewUserNameInput('');
     setNewUserEmailInput('');
     setNewUserPhoneInput('');
-    setNewUserPlanInput('Starter');
+    setNewUserPlanInput('Basic');
     setNewUserApproveInput(true);
     setShowAddUserModal(false);
   };
@@ -361,6 +459,24 @@ export default function AdminDashboard() {
 
       alert(`🗑️ User "${name}" dan seluruh datanya di database & tools berhasil dihapus permanen.`);
       fetchAdminData();
+    // Fetch pricing settings for admin
+    fetch('/api/subscriptions/pricing')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.pricing) {
+          if (data.pricing.basic) {
+            setAdminBasicPrice(data.pricing.basic.price || 0);
+            setAdminBasicPeriod(data.pricing.basic.period || 'Gratis');
+            setAdminBasicDesc(data.pricing.basic.description || 'Pencatatan keuangan personal dasar & dompet standar.');
+          }
+          if (data.pricing.pro) {
+            setAdminProPrice(data.pricing.pro.price || 49000);
+            setAdminProPeriod(data.pricing.pro.period || 'Bulan');
+            setAdminProDesc(data.pricing.pro.description || 'Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
+          }
+        }
+      })
+      .catch(e => console.warn('Admin fetch pricing error:', e));
     } catch (err: any) {
       alert(`❌ Terjadi kesalahan: ${err.message}`);
     } finally {
@@ -407,6 +523,24 @@ export default function AdminDashboard() {
 
       alert(`🗑️ ${count} user beserta seluruh datanya di database & tools berhasil dihapus permanen.`);
       fetchAdminData();
+    // Fetch pricing settings for admin
+    fetch('/api/subscriptions/pricing')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.pricing) {
+          if (data.pricing.basic) {
+            setAdminBasicPrice(data.pricing.basic.price || 0);
+            setAdminBasicPeriod(data.pricing.basic.period || 'Gratis');
+            setAdminBasicDesc(data.pricing.basic.description || 'Pencatatan keuangan personal dasar & dompet standar.');
+          }
+          if (data.pricing.pro) {
+            setAdminProPrice(data.pricing.pro.price || 49000);
+            setAdminProPeriod(data.pricing.pro.period || 'Bulan');
+            setAdminProDesc(data.pricing.pro.description || 'Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
+          }
+        }
+      })
+      .catch(e => console.warn('Admin fetch pricing error:', e));
     } catch (err: any) {
       alert(`❌ Terjadi kesalahan: ${err.message}`);
     } finally {
@@ -521,6 +655,24 @@ export default function AdminDashboard() {
 
       alert(`🟢 Pembayaran manual untuk ${userName} berhasil disetujui! Paket Pro aktif.`);
       await fetchAdminData();
+    // Fetch pricing settings for admin
+    fetch('/api/subscriptions/pricing')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.pricing) {
+          if (data.pricing.basic) {
+            setAdminBasicPrice(data.pricing.basic.price || 0);
+            setAdminBasicPeriod(data.pricing.basic.period || 'Gratis');
+            setAdminBasicDesc(data.pricing.basic.description || 'Pencatatan keuangan personal dasar & dompet standar.');
+          }
+          if (data.pricing.pro) {
+            setAdminProPrice(data.pricing.pro.price || 49000);
+            setAdminProPeriod(data.pricing.pro.period || 'Bulan');
+            setAdminProDesc(data.pricing.pro.description || 'Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
+          }
+        }
+      })
+      .catch(e => console.warn('Admin fetch pricing error:', e));
     } catch (err: any) {
       alert(`Gagal memproses approval: ${err.message}`);
     } finally {
@@ -540,6 +692,24 @@ export default function AdminDashboard() {
       
       alert(`🟢 Status provider ${name} berhasil diubah.`);
       await fetchAdminData();
+    // Fetch pricing settings for admin
+    fetch('/api/subscriptions/pricing')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.pricing) {
+          if (data.pricing.basic) {
+            setAdminBasicPrice(data.pricing.basic.price || 0);
+            setAdminBasicPeriod(data.pricing.basic.period || 'Gratis');
+            setAdminBasicDesc(data.pricing.basic.description || 'Pencatatan keuangan personal dasar & dompet standar.');
+          }
+          if (data.pricing.pro) {
+            setAdminProPrice(data.pricing.pro.price || 49000);
+            setAdminProPeriod(data.pricing.pro.period || 'Bulan');
+            setAdminProDesc(data.pricing.pro.description || 'Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
+          }
+        }
+      })
+      .catch(e => console.warn('Admin fetch pricing error:', e));
     } catch (err: any) {
       alert(`Gagal mengubah status: ${err.message}`);
     }
@@ -556,6 +726,24 @@ export default function AdminDashboard() {
 
       alert(`🟢 Mode operasional ${name} diubah ke ${mode}.`);
       await fetchAdminData();
+    // Fetch pricing settings for admin
+    fetch('/api/subscriptions/pricing')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.pricing) {
+          if (data.pricing.basic) {
+            setAdminBasicPrice(data.pricing.basic.price || 0);
+            setAdminBasicPeriod(data.pricing.basic.period || 'Gratis');
+            setAdminBasicDesc(data.pricing.basic.description || 'Pencatatan keuangan personal dasar & dompet standar.');
+          }
+          if (data.pricing.pro) {
+            setAdminProPrice(data.pricing.pro.price || 49000);
+            setAdminProPeriod(data.pricing.pro.period || 'Bulan');
+            setAdminProDesc(data.pricing.pro.description || 'Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
+          }
+        }
+      })
+      .catch(e => console.warn('Admin fetch pricing error:', e));
     } catch (err: any) {
       alert(`Gagal mengubah mode: ${err.message}`);
     }
@@ -610,8 +798,44 @@ export default function AdminDashboard() {
     let interval: NodeJS.Timeout | null = null;
     if (activeTab === 'ai_logs') {
       fetchAdminData();
+    // Fetch pricing settings for admin
+    fetch('/api/subscriptions/pricing')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.pricing) {
+          if (data.pricing.basic) {
+            setAdminBasicPrice(data.pricing.basic.price || 0);
+            setAdminBasicPeriod(data.pricing.basic.period || 'Gratis');
+            setAdminBasicDesc(data.pricing.basic.description || 'Pencatatan keuangan personal dasar & dompet standar.');
+          }
+          if (data.pricing.pro) {
+            setAdminProPrice(data.pricing.pro.price || 49000);
+            setAdminProPeriod(data.pricing.pro.period || 'Bulan');
+            setAdminProDesc(data.pricing.pro.description || 'Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
+          }
+        }
+      })
+      .catch(e => console.warn('Admin fetch pricing error:', e));
       interval = setInterval(() => {
         fetchAdminData();
+    // Fetch pricing settings for admin
+    fetch('/api/subscriptions/pricing')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.pricing) {
+          if (data.pricing.basic) {
+            setAdminBasicPrice(data.pricing.basic.price || 0);
+            setAdminBasicPeriod(data.pricing.basic.period || 'Gratis');
+            setAdminBasicDesc(data.pricing.basic.description || 'Pencatatan keuangan personal dasar & dompet standar.');
+          }
+          if (data.pricing.pro) {
+            setAdminProPrice(data.pricing.pro.price || 49000);
+            setAdminProPeriod(data.pricing.pro.period || 'Bulan');
+            setAdminProDesc(data.pricing.pro.description || 'Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
+          }
+        }
+      })
+      .catch(e => console.warn('Admin fetch pricing error:', e));
       }, 5000);
     }
 
@@ -1759,7 +1983,7 @@ export default function AdminDashboard() {
                       onChange={e => setNewUserPlanInput(e.target.value)}
                       style={{ width: '100%', padding: '10px', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.9rem' }}
                     >
-                      <option value="Starter">Starter</option>
+                      <option value="Basic">Basic</option>
                       <option value="Pro">Pro</option>
                     </select>
                   </div>
@@ -1917,6 +2141,109 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            
+            {/* PRICING MANAGER CARD (BASIC & PRO) */}
+            <div className="card animate-slide-up" style={{ background: 'rgba(13, 20, 38, 0.85)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                    ⚙️ Atur Harga Paket Langganan (Basic & Pro)
+                  </h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px', margin: 0 }}>
+                    Sesuaikan nominal harga dan periode paket yang tampil di halaman pendaftaran & dashboard pengguna secara dinamis.
+                  </p>
+                </div>
+                <button
+                  onClick={handleSavePricingConfig}
+                  disabled={isSavingPricing}
+                  className="btn btn-primary"
+                  style={{ padding: '10px 24px', fontWeight: '800', fontSize: '0.88rem', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', border: 'none', borderRadius: '10px', cursor: isSavingPricing ? 'not-allowed' : 'pointer', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)' }}
+                >
+                  {isSavingPricing ? 'Menyimpan...' : '💾 Simpan Perubahan Harga'}
+                </button>
+              </div>
+
+              <form onSubmit={handleSavePricingConfig} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+                {/* Basic Tier Card */}
+                <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#ffffff' }}>📦 Paket Basic</span>
+                    <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '2px 8px', borderRadius: '6px', background: 'rgba(100, 116, 139, 0.2)', color: '#94a3b8' }}>FREE TIER / DASAR</span>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Harga Paket (Rp)</label>
+                    <input
+                      type="number"
+                      value={adminBasicPrice}
+                      onChange={e => setAdminBasicPrice(Number(e.target.value))}
+                      style={{ width: '100%', padding: '10px 12px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff', fontWeight: '700' }}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Periode Penagihan</label>
+                    <input
+                      type="text"
+                      value={adminBasicPeriod}
+                      onChange={e => setAdminBasicPeriod(e.target.value)}
+                      placeholder="Contoh: Gratis, Bulan, dll."
+                      style={{ width: '100%', padding: '10px 12px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Deskripsi Singkat</label>
+                    <input
+                      type="text"
+                      value={adminBasicDesc}
+                      onChange={e => setAdminBasicDesc(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Pro Tier Card */}
+                <div style={{ background: 'rgba(245, 158, 11, 0.03)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#fbbf24' }}>💎 Paket Pro</span>
+                    <span style={{ fontSize: '0.72rem', fontWeight: '800', padding: '2px 8px', borderRadius: '6px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000' }}>PALING POPULER</span>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Harga Paket (Rp)</label>
+                    <input
+                      type="number"
+                      value={adminProPrice}
+                      onChange={e => setAdminProPrice(Number(e.target.value))}
+                      style={{ width: '100%', padding: '10px 12px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#10b981', fontWeight: '800', fontSize: '1.1rem' }}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Periode Penagihan</label>
+                    <input
+                      type="text"
+                      value={adminProPeriod}
+                      onChange={e => setAdminProPeriod(e.target.value)}
+                      placeholder="Contoh: Bulan, Tahun"
+                      style={{ width: '100%', padding: '10px 12px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Deskripsi Singkat</label>
+                    <input
+                      type="text"
+                      value={adminProDesc}
+                      onChange={e => setAdminProDesc(e.target.value)}
+                      style={{ width: '100%', padding: '10px 12px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                    />
+                  </div>
+                </div>
+              </form>
+            </div>
+
             {/* Metrics Quick Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
               <div style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(16, 185, 129, 0.25)', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.08)' }}>
@@ -1938,9 +2265,9 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <div style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(100, 116, 139, 0.25)', boxShadow: '0 4px 14px rgba(100, 116, 139, 0.08)' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Starter (Free Tier)</div>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Basic (Free Tier)</div>
                 <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#475569', marginTop: '4px' }}>
-                  {users.filter(u => u.plan === 'Starter' || !u.plan).length} <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)' }}>User</span>
+                  {users.filter(u => u.plan === 'Basic' || !u.plan).length} <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)' }}>User</span>
                 </div>
               </div>
             </div>
@@ -1952,17 +2279,17 @@ export default function AdminDashboard() {
                 value={subSearchQuery}
                 onChange={e => setSubSearchQuery(e.target.value)}
                 placeholder="Cari pengguna berdasarkan nama atau email..."
-                style={{ flex: '1', minWidth: '240px', padding: '10px 16px', borderRadius: '12px', border: '1px solid var(--border)', background: '#ffffff', fontSize: '0.85rem' }}
+                style={{ flex: '1', minWidth: '240px', padding: '10px 16px', borderRadius: '12px', border: '1px solid var(--border)', background: 'rgba(13, 20, 38, 0.75)', fontSize: '0.85rem' }}
               />
               <select
                 value={subStatusFilter}
                 onChange={e => setSubStatusFilter(e.target.value)}
-                style={{ padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border)', background: '#ffffff', fontSize: '0.85rem', fontWeight: '600' }}
+                style={{ padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border)', background: 'rgba(13, 20, 38, 0.75)', fontSize: '0.85rem', fontWeight: '600' }}
               >
                 <option value="all">Semua Status</option>
                 <option value="pro">Pro Aktif</option>
                 <option value="free">Free Access VIP</option>
-                <option value="starter">Starter</option>
+                <option value="basic">Basic</option>
               </select>
             </div>
 
@@ -1997,7 +2324,7 @@ export default function AdminDashboard() {
                       let matchStatus = true;
                       if (subStatusFilter === 'pro') matchStatus = u.plan === 'Pro' && !u.is_free_access;
                       if (subStatusFilter === 'free') matchStatus = !!u.is_free_access;
-                      if (subStatusFilter === 'starter') matchStatus = u.plan === 'Starter' || !u.plan;
+                      if (subStatusFilter === 'basic') matchStatus = u.plan === 'Basic' || !u.plan;
                       return matchQuery && matchStatus;
                     })
                     .map(u => {
@@ -2021,7 +2348,7 @@ export default function AdminDashboard() {
                           </td>
                           <td>
                             <span className={`plan-badge ${isPro ? 'pro' : 'starter'}`}>
-                              {isFree ? 'Pro (VIP)' : (isPro ? 'Pro Member' : 'Starter')}
+                              {isFree ? 'Pro (VIP)' : (isPro ? 'Pro Member' : 'Basic')}
                             </span>
                           </td>
                           <td>
@@ -2687,7 +3014,7 @@ export default function AdminDashboard() {
                       {/* Visual Charts & Summary Row */}
                       <div className="grid-3 animate-slide-up" style={{ gap: '20px', marginBottom: '24px', width: '100%' }}>
                         {/* Summary Card: Income vs Expense Bar */}
-                        <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', backgroundColor: '#ffffff' }}>
+                        <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', background: 'rgba(13, 20, 38, 0.75)' }}>
                           <h4 style={{ margin: '0 0 16px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>📊 CASHFLOW SUMMARY</h4>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <div>
@@ -3086,7 +3413,7 @@ export default function AdminDashboard() {
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '20px' }}>Kelola daftar kategori transaksi beserta warna dan emoji pilihan Anda.</p>
                         <div className="wallet-select-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
                           {previewCategories.map(c => (
-                            <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', border: '1px solid var(--border)', borderRadius: '12px', backgroundColor: '#ffffff' }}>
+                            <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', border: '1px solid var(--border)', borderRadius: '12px', background: 'rgba(13, 20, 38, 0.75)' }}>
                               <span style={{ fontSize: '1.2rem', marginRight: '8px' }}>{c.emoji}</span>
                               <span style={{ fontWeight: '600', flex: 1 }}>{c.name}</span>
                               <span style={{ color: 'var(--text-light)', cursor: 'pointer' }}>✏️</span>
@@ -3107,7 +3434,7 @@ export default function AdminDashboard() {
 
                     <div className="grid-2" style={{ gap: '32px' }}>
                       {/* Profile Details */}
-                      <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', backgroundColor: '#ffffff' }}>
+                      <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', background: 'rgba(13, 20, 38, 0.75)' }}>
                         <h4 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>👤 Informasi Profil</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
