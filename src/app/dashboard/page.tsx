@@ -51,6 +51,10 @@ export default function DashboardPage() {
   const [reminderActive, setReminderActive] = useState(false);
   const [reminderFreq, setReminderFreq] = useState('1'); // '1' or '2'
   const [reminderTimes, setReminderTimes] = useState<string[]>(['19:00']);
+  const [reminderTime1, setReminderTime1] = useState('19:00');
+  const [reminderTime2, setReminderTime2] = useState('12:00');
+  const [isSavingReminder, setIsSavingReminder] = useState(false);
+  const [isSendingTestReminder, setIsSendingTestReminder] = useState(false);
   
   // Filter States
   const [periodFilter, setPeriodFilter] = useState<'harian' | 'mingguan' | 'bulanan' | 'tahunan' | 'custom'>('bulanan');
@@ -1123,6 +1127,52 @@ export default function DashboardPage() {
       await fetchDashboardData(userId, telegramToken);
     } catch (e) {
       console.error('Failed to update budget:', e);
+    }
+  };
+
+  
+  const handleSaveReminderSettings = async (sendTest = false) => {
+    if (sendTest) {
+      setIsSendingTestReminder(true);
+    } else {
+      setIsSavingReminder(true);
+    }
+
+    try {
+      const times = reminderFreq === '2' ? [reminderTime1, reminderTime2] : [reminderTime1];
+      const res = await fetch('/api/telegram/reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId,
+          active: reminderActive,
+          frequency: reminderFreq,
+          times: times,
+          sendTest: sendTest
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal menyimpan pengaturan pengingat');
+
+      if (sendTest) {
+        if (data.telegramSent) {
+          alert('🔔 Notifikasi tes pengingat berhasil dikirim ke bot Telegram Anda! Silakan cek chat bot.');
+        } else {
+          alert('⚠️ Pengingat tersimpan, tetapi bot Telegram belum terhubung. Silakan hubungkan bot Telegram di menu Settings terlebih dahulu.');
+        }
+      } else {
+        if (reminderActive && data.telegramSent) {
+          alert('✅ Pengingat harian berhasil diaktifkan dan jadwal notifikasi telah dikirim ke Telegram Anda!');
+        } else {
+          alert(data.message || 'Pengaturan pengingat berhasil disimpan.');
+        }
+      }
+    } catch (err: any) {
+      alert('❌ Gagal mengatur pengingat: ' + err.message);
+    } finally {
+      setIsSavingReminder(false);
+      setIsSendingTestReminder(false);
     }
   };
 
@@ -3280,8 +3330,17 @@ export default function DashboardPage() {
 
                   {/* Reminder Settings tab */}
                   <div style={{ paddingBottom: '32px', borderBottom: '1px solid var(--border)' }}>
-                    <h3 style={{ marginBottom: '16px' }}>⏰ Pengingat Pencatatan Harian</h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '20px' }}>Kirimkan pengingat ke Telegram Anda agar tidak lupa mencatat pengeluran hari ini.</p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+                      <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        ⏰ Pengingat Pencatatan Harian (Notifikasi Telegram Nyata)
+                      </h3>
+                      <span style={{ fontSize: '0.75rem', fontWeight: '700', padding: '3px 8px', borderRadius: '6px', background: reminderActive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)', color: reminderActive ? '#10b981' : 'var(--text-muted)' }}>
+                        {reminderActive ? '🟢 AKTIF' : '⚪ NONAKTIF'}
+                      </span>
+                    </div>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '20px', lineHeight: '1.5' }}>
+                      Kirimkan notifikasi pengingat otomatis ke bot Telegram Anda agar tidak lupa mencatat pengeluaran dan pemasukan setiap hari.
+                    </p>
                     
                     <div className="form-group">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -3290,34 +3349,73 @@ export default function DashboardPage() {
                           id="reminderOn"
                           checked={reminderActive}
                           onChange={e => setReminderActive(e.target.checked)}
-                          style={{ width: '20px', height: '20px' }}
+                          style={{ width: '20px', height: '20px', cursor: 'pointer' }}
                         />
-                        <label htmlFor="reminderOn" style={{ fontSize: '1rem', textTransform: 'none', fontWeight: '600', color: 'var(--text-main)', cursor: 'pointer' }}>
-                          Aktifkan Pengingat Harian
+                        <label htmlFor="reminderOn" style={{ fontSize: '1rem', textTransform: 'none', fontWeight: '700', color: '#ffffff', cursor: 'pointer' }}>
+                          Aktifkan Pengingat Harian ke Telegram
                         </label>
                       </div>
                     </div>
 
                     {reminderActive && (
-                      <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px', paddingLeft: '32px' }}>
-                        <div className="form-group" style={{ maxWidth: '300px' }}>
-                          <label>Frekuensi Pengingat</label>
-                          <select
-                            className="filter-select"
-                            value={reminderFreq}
-                            onChange={e => setReminderFreq(e.target.value)}
-                          >
-                            <option value="1">1x Sehari (Sore)</option>
-                            <option value="2">2x Sehari (Siang & Malam)</option>
-                          </select>
+                      <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginTop: '16px', padding: '20px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                          <div className="form-group" style={{ margin: 0 }}>
+                            <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Frekuensi Pengingat</label>
+                            <select
+                              className="filter-select"
+                              value={reminderFreq}
+                              onChange={e => setReminderFreq(e.target.value)}
+                              style={{ width: '100%', padding: '10px 14px', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                            >
+                              <option value="1">1x Sehari (Sore / Malam)</option>
+                              <option value="2">2x Sehari (Siang & Malam)</option>
+                            </select>
+                          </div>
+
+                          <div className="form-group" style={{ margin: 0 }}>
+                            <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Waktu Pengingat Utama (WIB)</label>
+                            <input
+                              type="time"
+                              value={reminderTime1}
+                              onChange={e => setReminderTime1(e.target.value)}
+                              style={{ width: '100%', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                            />
+                          </div>
+
+                          {reminderFreq === '2' && (
+                            <div className="form-group" style={{ margin: 0 }}>
+                              <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Waktu Pengingat Kedua (WIB)</label>
+                              <input
+                                type="time"
+                                value={reminderTime2}
+                                onChange={e => setReminderTime2(e.target.value)}
+                                style={{ width: '100%', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                              />
+                            </div>
+                          )}
                         </div>
 
-                        <div className="form-group" style={{ maxWidth: '200px' }}>
-                          <label>Waktu Pengingat</label>
-                          <input type="time" defaultValue="19:00" />
-                          {reminderFreq === '2' && (
-                            <input type="time" defaultValue="12:00" style={{ marginTop: '8px' }} />
-                          )}
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleSaveReminderSettings(false)}
+                            disabled={isSavingReminder}
+                            className="btn btn-primary"
+                            style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: '800', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', border: 'none', borderRadius: '8px', cursor: isSavingReminder ? 'not-allowed' : 'pointer' }}
+                          >
+                            {isSavingReminder ? 'Menyimpan...' : '💾 Simpan Jadwal Pengingat'}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleSaveReminderSettings(true)}
+                            disabled={isSendingTestReminder}
+                            className="btn btn-outline"
+                            style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: '700', color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.4)', background: 'rgba(245, 158, 11, 0.08)', borderRadius: '8px', cursor: isSendingTestReminder ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          >
+                            <span>🔔</span> {isSendingTestReminder ? 'Mengirim...' : 'Tes Kirim Notifikasi Pengingat ke Telegram'}
+                          </button>
                         </div>
                       </div>
                     )}
@@ -3375,6 +3473,209 @@ export default function DashboardPage() {
                         );
                       })}
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            
+            {/* 7. KELOLA LANGGANAN (2-TIER: BASIC & PRO) */}
+            {activeTab === 'langganan' && (
+              <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                  <div>
+                    <h2 style={{ fontSize: '1.45rem', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
+                      💎 Kelola Langganan (Subscription Plans)
+                    </h2>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px', margin: 0 }}>
+                      Pilih paket terbaik untuk kebutuhan manajemen keuangan Anda. Upgrade ke Pro untuk akses tak terbatas AI Vision & Bot Telegram.
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: userPlan === 'Pro' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)', border: userPlan === 'Pro' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)', padding: '8px 18px', borderRadius: '12px' }}>
+                    <span style={{ fontSize: '1.2rem' }}>{userPlan === 'Pro' ? '💎' : '📦'}</span>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>Paket Aktif Saat Ini</div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: '800', color: userPlan === 'Pro' ? '#10b981' : '#fbbf24' }}>
+                        {userPlan} Member
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2-TIER PRICING CARDS */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+                  {/* BASIC TIER CARD */}
+                  <div className="card" style={{ background: 'rgba(13, 20, 38, 0.75)', border: userPlan === 'Basic' ? '2px solid #64748b' : '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '32px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '24px' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '1.25rem', fontWeight: '800', color: '#ffffff' }}>📦 Paket Basic</span>
+                        <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '3px 8px', borderRadius: '6px', background: 'rgba(100, 116, 139, 0.2)', color: '#94a3b8' }}>
+                          GRATIS / DASAR
+                        </span>
+                      </div>
+
+                      <div style={{ margin: '18px 0 12px 0' }}>
+                        <span style={{ fontSize: '2.2rem', fontWeight: '900', color: '#ffffff', fontFamily: 'monospace' }}>
+                          Rp {Number(pricingConfig?.basic?.price || 0).toLocaleString('id-ID')}
+                        </span>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                          / {pricingConfig?.basic?.period || 'Gratis'}
+                        </span>
+                      </div>
+
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: '1.5', marginBottom: '20px' }}>
+                        {pricingConfig?.basic?.description || 'Pencatatan keuangan personal dasar & dompet standar untuk penggunaan sehari-hari.'}
+                      </p>
+
+                      <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '18px' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: '700', color: '#cbd5e1', marginBottom: '12px', textTransform: 'uppercase' }}>Fitur Termasuk:</div>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.85rem', color: '#cbd5e1' }}>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#10b981' }}>✓</span> Pencatatan transaksi manual & AI teks
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#10b981' }}>✓</span> Manajemen multi-dompet & kategori
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#10b981' }}>✓</span> Laporan ringkasan bulanan & grafik
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#10b981' }}>✓</span> Akses Web Dashboard 24/7
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
+                            <span style={{ color: 'var(--error)' }}>✕</span> Tanpa Scan Struk Belanja (AI Vision)
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
+                            <span style={{ color: 'var(--error)' }}>✕</span> Tanpa Integrasi Bot Telegram Pribadi
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <button
+                      disabled={userPlan === 'Basic'}
+                      className="btn"
+                      style={{ width: '100%', padding: '12px', borderRadius: '12px', fontWeight: '800', fontSize: '0.9rem', background: userPlan === 'Basic' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.1)', color: userPlan === 'Basic' ? '#94a3b8' : '#ffffff', border: '1px solid rgba(255, 255, 255, 0.15)', cursor: userPlan === 'Basic' ? 'default' : 'pointer' }}
+                    >
+                      {userPlan === 'Basic' ? '✓ Paket Aktif Saat Ini' : 'Pilih Paket Basic'}
+                    </button>
+                  </div>
+
+                  {/* PRO TIER CARD */}
+                  <div className="card" style={{ background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(13, 20, 38, 0.85) 100%)', border: '2px solid rgba(245, 158, 11, 0.45)', borderRadius: '16px', padding: '32px 28px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '24px', position: 'relative', boxShadow: '0 12px 36px rgba(245, 158, 11, 0.12)' }}>
+                    <span style={{ position: 'absolute', top: '-12px', right: '24px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', fontSize: '0.72rem', fontWeight: '900', padding: '3px 12px', borderRadius: '100px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {pricingConfig?.pro?.badge || 'PALING POPULER'}
+                    </span>
+
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '1.3rem', fontWeight: '900', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          💎 Paket Pro
+                        </span>
+                      </div>
+
+                      <div style={{ margin: '18px 0 12px 0' }}>
+                        <span style={{ fontSize: '2.4rem', fontWeight: '900', color: '#10b981', fontFamily: 'monospace' }}>
+                          Rp {Number(pricingConfig?.pro?.price || 49000).toLocaleString('id-ID')}
+                        </span>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                          / {pricingConfig?.pro?.period || 'Bulan'}
+                        </span>
+                      </div>
+
+                      <p style={{ color: '#cbd5e1', fontSize: '0.88rem', lineHeight: '1.5', marginBottom: '20px' }}>
+                        {pricingConfig?.pro?.description || 'Akses tak terbatas ke seluruh ekosistem AI, Scan Struk OCR & Bot Telegram pribadi.'}
+                      </p>
+
+                      <div style={{ borderTop: '1px solid rgba(245, 158, 11, 0.2)', paddingTop: '18px' }}>
+                        <div style={{ fontSize: '0.82rem', fontWeight: '800', color: '#fbbf24', marginBottom: '12px', textTransform: 'uppercase' }}>Semua Fitur Termasuk:</div>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.88rem', color: '#ffffff' }}>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#10b981', fontWeight: '800' }}>✓</span> 📸 <b>Scan Struk Belanja Instan (AI Vision OCR)</b>
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#10b981', fontWeight: '800' }}>✓</span> 🤖 <b>Integrasi Bot Telegram Pribadi (BYOB)</b>
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#10b981', fontWeight: '800' }}>✓</span> ⚡ <b>AI Financial Advisor 24/7 Realtime</b>
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#10b981', fontWeight: '800' }}>✓</span> 📊 <b>Ekspor Laporan Lengkap ke Excel & PDF</b>
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#10b981', fontWeight: '800' }}>✓</span> 👛 <b>Multi-dompet & Kategori Tanpa Batas</b>
+                          </li>
+                          <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ color: '#10b981', fontWeight: '800' }}>✓</span> 🚀 <b>Pencatatan Transaksi Tanpa Batas</b>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        const confirmUpgrade = window.confirm(`💎 Upgrade ke Paket Pro seharga Rp ${Number(pricingConfig?.pro?.price || 49000).toLocaleString('id-ID')} / ${pricingConfig?.pro?.period || 'Bulan'}?\n\nKlik OK untuk melanjutkan konfirmasi aktivasi.`);
+                        if (confirmUpgrade) {
+                          alert(`🎉 Permintaan upgrade telah diterima!\n\nSilakan hubungi WhatsApp Admin / selesaikan pembayaran untuk aktivasi instan status Pro.`);
+                          window.open(`https://wa.me/6281234567890?text=Halo%20Admin%20Mencatat%20Aja,%20saya%20ingin%20upgrade%20ke%20Paket%20Pro%20(User%20ID:%20${userId})`, '_blank');
+                        }
+                      }}
+                      className="btn btn-primary"
+                      style={{ width: '100%', padding: '14px', borderRadius: '12px', fontWeight: '900', fontSize: '0.98rem', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', border: 'none', cursor: 'pointer', boxShadow: '0 8px 24px rgba(245, 158, 11, 0.35)' }}
+                    >
+                      {userPlan === 'Pro' ? '✨ Perpanjang Langganan Pro' : '💎 Upgrade ke Paket Pro Sekarang'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* FEATURE COMPARISON TABLE */}
+                <div className="card" style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '28px' }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff', marginBottom: '16px' }}>
+                    📊 Perbandingan Lengkap Fitur Paket
+                  </h3>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--text-muted)' }}>
+                          <th style={{ textAlign: 'left', padding: '12px 8px' }}>Fitur & Layanan</th>
+                          <th style={{ textAlign: 'center', padding: '12px 8px', width: '160px' }}>Basic (Gratis)</th>
+                          <th style={{ textAlign: 'center', padding: '12px 8px', width: '160px', color: '#fbbf24' }}>Pro Member</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                          <td style={{ padding: '12px 8px', color: '#ffffff' }}>Catat Transaksi Manual & AI Teks</td>
+                          <td style={{ textAlign: 'center', padding: '12px 8px', color: '#10b981' }}>✓</td>
+                          <td style={{ textAlign: 'center', padding: '12px 8px', color: '#10b981' }}>✓ (Tanpa Batas)</td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                          <td style={{ padding: '12px 8px', color: '#ffffff' }}>📸 Scan Struk Belanja (AI Vision OCR)</td>
+                          <td style={{ textAlign: 'center', padding: '12px 8px', color: 'var(--error)' }}>✕</td>
+                          <td style={{ textAlign: 'center', padding: '12px 8px', color: '#10b981', fontWeight: '700' }}>✓ Aktif Penuh</td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                          <td style={{ padding: '12px 8px', color: '#ffffff' }}>🤖 Integrasi Bot Telegram Pribadi (BYOB)</td>
+                          <td style={{ textAlign: 'center', padding: '12px 8px', color: 'var(--error)' }}>✕</td>
+                          <td style={{ textAlign: 'center', padding: '12px 8px', color: '#10b981', fontWeight: '700' }}>✓ Aktif Penuh</td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                          <td style={{ padding: '12px 8px', color: '#ffffff' }}>⚡ AI Financial Advisor 24/7</td>
+                          <td style={{ textAlign: 'center', padding: '12px 8px', color: 'var(--error)' }}>✕</td>
+                          <td style={{ textAlign: 'center', padding: '12px 8px', color: '#10b981', fontWeight: '700' }}>✓ Aktif Penuh</td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                          <td style={{ padding: '12px 8px', color: '#ffffff' }}>📊 Ekspor Laporan Excel & PDF</td>
+                          <td style={{ textAlign: 'center', padding: '12px 8px', color: 'var(--error)' }}>✕</td>
+                          <td style={{ textAlign: 'center', padding: '12px 8px', color: '#10b981', fontWeight: '700' }}>✓ Unduhan Bebas</td>
+                        </tr>
+                        <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                          <td style={{ padding: '12px 8px', color: '#ffffff' }}>⏰ Pengingat Harian Otomatis ke Telegram</td>
+                          <td style={{ textAlign: 'center', padding: '12px 8px', color: 'var(--error)' }}>✕</td>
+                          <td style={{ textAlign: 'center', padding: '12px 8px', color: '#10b981', fontWeight: '700' }}>✓ Aktif</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
