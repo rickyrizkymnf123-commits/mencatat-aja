@@ -428,11 +428,74 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
           gap: 24px;
         }
         @media (max-width: 860px) {
+          .max-container {
+            padding: 0 16px !important;
+          }
           .demo-split-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr !important;
           }
           .nav-links-row {
-            display: none;
+            display: none !important;
+          }
+          .hero-wrap {
+            padding: 40px 0 24px 0 !important;
+            gap: 18px !important;
+          }
+          .hero-headline {
+            font-size: 2.1rem !important;
+            letter-spacing: -0.6px !important;
+          }
+          .hero-subhead {
+            font-size: 0.95rem !important;
+          }
+          .hero-cta-group {
+            flex-direction: column !important;
+            width: 100% !important;
+            gap: 12px !important;
+          }
+          .hero-cta-group > * {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+          .metrics-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+          }
+          .metric-cell {
+            padding: 12px 14px !important;
+          }
+          .metric-val {
+            font-size: 1.35rem !important;
+          }
+          .glass-box {
+            padding: 18px 16px !important;
+            border-radius: 20px !important;
+          }
+          .bento-layout {
+            grid-template-columns: 1fr !important;
+            gap: 14px !important;
+          }
+          .pricing-wrap {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+          .floating-dash-pill {
+            bottom: 16px !important;
+            right: 16px !important;
+            padding: 10px 18px !important;
+            font-size: 0.8rem !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .hero-headline {
+            font-size: 1.75rem !important;
+          }
+          .metrics-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .chat-stream-box {
+            height: 250px !important;
           }
         }
 

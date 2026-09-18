@@ -1787,6 +1787,11 @@ export default function AdminDashboard() {
         </button>
       </div>
 
+      {/* Mobile Backdrop Overlay */}
+      {sidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* ADMIN SIDEBAR */}
       <aside className={`sidebar admin-nav animate-fade-in ${sidebarOpen ? 'active' : ''}`} style={{ width: '270px', padding: '24px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>

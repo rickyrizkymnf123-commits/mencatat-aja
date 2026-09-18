@@ -1914,6 +1914,11 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      {/* Mobile Backdrop Overlay */}
+      {sidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* SIDEBAR NAVIGATION */}
       <aside className={`sidebar animate-fade-in ${sidebarOpen ? 'active' : ''}`} style={{ top: isAdminMode ? '44px' : '0' }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -3967,6 +3972,53 @@ export default function DashboardPage() {
         </div>
       )}
       </main>
+
+      {/* Floating Mobile Bottom Navigation Bar */}
+      <nav className="mobile-bottom-nav">
+        <button 
+          type="button"
+          onClick={() => { setActiveTab('beranda'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+          className={`mobile-nav-item ${activeTab === 'beranda' ? 'active' : ''}`}
+        >
+          <span className="nav-icon">🏠</span>
+          <span>Beranda</span>
+        </button>
+        <button 
+          type="button"
+          onClick={() => { setActiveTab('transaksi'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+          className={`mobile-nav-item ${activeTab === 'transaksi' ? 'active' : ''}`}
+        >
+          <span className="nav-icon">💳</span>
+          <span>Transaksi</span>
+        </button>
+        <div style={{ position: 'relative', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button 
+            type="button"
+            onClick={() => { setActiveTab('scan_struk'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+            className="scan-highlight-btn"
+            title="Scan AI"
+            aria-label="Scan AI Struk"
+          >
+            📸
+          </button>
+        </div>
+        <button 
+          type="button"
+          onClick={() => { setActiveTab('laporan'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+          className={`mobile-nav-item ${activeTab === 'laporan' ? 'active' : ''}`}
+        >
+          <span className="nav-icon">📊</span>
+          <span>Laporan</span>
+        </button>
+        <button 
+          type="button"
+          onClick={() => setSidebarOpen(true)} 
+          className={`mobile-nav-item ${['budget', 'wallet', 'settings', 'langganan', 'profile'].includes(activeTab) ? 'active' : ''}`}
+        >
+          <span className="nav-icon">⚙️</span>
+          <span>Menu</span>
+        </button>
+      </nav>
     </div>
     </>
   );
