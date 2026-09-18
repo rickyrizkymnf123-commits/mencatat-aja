@@ -3,13 +3,13 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { supabase, supabaseUrl } from '@/lib/supabase';
 
-export default function AuthPage() {
+function AuthContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   
   // Form inputs
@@ -17,27 +17,33 @@ export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
-  // Onboarding questions
+  // Onboarding & Approval States
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingAnswer, setOnboardingAnswer] = useState('');
   const [selectedWallets, setSelectedWallets] = useState<string[]>(['Cash', 'BCA']);
+  const [isPendingApproval, setIsPendingApproval] = useState(false);
   
   // State
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  
-  // Mock User ID for local session simulations
   const [tempUserId, setTempUserId] = useState('');
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('Mencatat Aja_admin_mode');
       localStorage.removeItem('tatadana_admin_mode');
       localStorage.removeItem('Mencatat Aja_custom_bot_token');
       localStorage.removeItem('tatadana_custom_bot_token');
       localStorage.removeItem('tatadana_bot_token_usr_budi');
+
+      const modeParam = searchParams.get('mode');
+      if (modeParam === 'register') {
+        setMode('register');
+      } else if (modeParam === 'login') {
+        setMode('login');
+      }
     }
-  }, []);
+  }, [searchParams]);
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +85,7 @@ export default function AuthPage() {
         localStorage.setItem('Mencatat Aja_user_email', user.email || email);
         localStorage.setItem('Mencatat Aja_user_name', user.user_metadata?.full_name || user.email?.split('@')[0] || 'Nasabah Mencatat Aja');
         localStorage.setItem('Mencatat Aja_user_phone', user.phone || '');
-        localStorage.setItem('Mencatat Aja_plan', user.user_metadata?.plan || 'Starter');
+        localStorage.setItem('Mencatat Aja_plan', user.user_metadata?.plan || 'Basic');
         const role = user.user_metadata?.role || (user.email?.toLowerCase() === 'rickyrizkymnf123@gmail.com' ? 'superadmin' : 'user');
         localStorage.setItem('Mencatat Aja_role', role);
         if (role === 'superadmin') {
@@ -119,22 +125,18 @@ export default function AuthPage() {
         return;
       }
 
-      // Save user session details
-      localStorage.removeItem('Mencatat Aja_custom_bot_token');
-      localStorage.removeItem('tatadana_custom_bot_token');
-      localStorage.removeItem('tatadana_bot_token_usr_budi');
-      localStorage.setItem('Mencatat Aja_user_id', tempUserId);
-      localStorage.setItem('Mencatat Aja_user_email', email);
-      localStorage.setItem('Mencatat Aja_user_name', fullName || email.split('@')[0] || 'Nasabah Mencatat Aja');
-      localStorage.setItem('Mencatat Aja_telegram_token', resData.telegramLinkToken);
-      localStorage.setItem('Mencatat Aja_plan', 'Starter');
-      const role = email.toLowerCase() === 'rickyrizkymnf123@gmail.com' ? 'superadmin' : 'user';
-      localStorage.setItem('Mencatat Aja_role', role);
-      
-      if (role === 'superadmin') {
+      // Check if superadmin
+      const isSuperadmin = email.toLowerCase() === 'rickyrizkymnf123@gmail.com';
+      if (isSuperadmin) {
+        localStorage.setItem('Mencatat Aja_user_id', tempUserId);
+        localStorage.setItem('Mencatat Aja_user_email', email);
+        localStorage.setItem('Mencatat Aja_user_name', fullName || 'Ricky Rizky');
+        localStorage.setItem('Mencatat Aja_role', 'superadmin');
         router.push('/admin');
       } else {
-        router.push('/dashboard');
+        // Normal user requires Admin ACC before login
+        setShowOnboarding(false);
+        setIsPendingApproval(true);
       }
     } catch (err: any) {
       setIsLoading(false);
@@ -153,432 +155,393 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="auth-container">
-      <style jsx global>{`
-        .auth-container {
-          display: flex;
-          min-height: 100vh;
-          background: #04060d;
-          color: var(--text-main);
-          font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
-        }
-        
-        /* Left branding panel */
-        .branding-panel {
-          width: 44%;
-          background: linear-gradient(145deg, #022c22 0%, #064e3b 50%, #021f1e 100%);
-          color: #ffffff !important;
-          padding: 60px 56px;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          position: relative;
-          overflow: hidden;
-          border-right: 1px solid rgba(16, 185, 129, 0.2);
-        }
-        
-        .branding-logo {
-          font-size: 1.6rem;
-          font-weight: 800;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          color: #ffffff !important;
-          text-decoration: none !important;
-          letter-spacing: -0.02em;
-          z-index: 2;
-        }
-        
-        .branding-mid {
-          z-index: 2;
-        }
-        
-        .branding-mid h2 {
-          font-size: 3.2rem;
-          line-height: 1.15;
-          margin-bottom: 20px;
-          font-weight: 800;
-          letter-spacing: -1px;
-          color: #ffffff !important;
-        }
-        
-        .branding-mid p {
-          font-size: 1.1rem;
-          opacity: 0.9;
-          line-height: 1.6;
-          color: #cbd5e1 !important;
-          max-width: 460px;
-        }
-
-        .branding-features {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          margin-top: 32px;
-        }
-
-        .branding-feature-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          padding: 8px 14px;
-          background: rgba(255, 255, 255, 0.08);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.15);
-          border-radius: 9999px;
-          font-size: 0.88rem;
-          font-weight: 600;
-          color: #e2e8f0;
-          width: fit-content;
-        }
-        
-        .branding-bottom {
-          font-size: 0.85rem;
-          color: #94a3b8 !important;
-          z-index: 2;
-        }
-        
-        /* Decorative ambient glow shapes */
-        .branding-panel::before {
-          content: '';
-          position: absolute;
-          width: 400px;
-          height: 400px;
-          background: radial-gradient(circle, rgba(16, 185, 129, 0.35) 0%, transparent 70%);
-          top: -100px;
-          right: -100px;
-          pointer-events: none;
-        }
-
-        .branding-panel::after {
-          content: '';
-          position: absolute;
-          width: 500px;
-          height: 500px;
-          background: radial-gradient(circle, rgba(5, 150, 105, 0.2) 0%, transparent 70%);
-          bottom: -150px;
-          left: -150px;
-          pointer-events: none;
-        }
-        
-        /* Right Form Panel */
-        .form-panel {
-          width: 56%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 60px 8%;
-          background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.08), transparent 45%), #04060d;
-        }
-        
-        .form-card {
-          width: 100%;
-          max-width: 460px;
-          background: rgba(13, 20, 38, 0.75);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-          border-radius: 24px;
-          padding: 40px;
-          box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        }
-        
-        .form-header h2 {
-          font-size: 2rem;
-          font-weight: 800;
-          letter-spacing: -0.5px;
-          margin-bottom: 8px;
-          color: #ffffff;
-        }
-        
-        .form-header p {
-          color: #94a3b8;
-          font-size: 0.95rem;
-        }
-        
-        .form-header a {
-          font-weight: 700;
-          color: #10b981;
-          text-decoration: none;
-          transition: color 0.15s ease;
-        }
-        
-        .form-header a:hover {
-          color: #34d399;
-          text-decoration: underline;
-        }
-
-        /* Form Controls */
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-        
-        .form-group label {
-          font-size: 0.78rem;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-          color: #cbd5e1;
-        }
-        
-        .form-input {
-          width: 100%;
-          padding: 13px 16px;
-          border-radius: 12px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          color: #ffffff;
-          font-size: 0.95rem;
-          outline: none;
-          transition: all 0.2s ease;
-        }
-        
-        .form-input::placeholder {
-          color: #64748b;
-        }
-        
-        .form-input:focus {
-          border-color: #10b981;
-          background: rgba(255, 255, 255, 0.07);
-          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
-        }
-
-        .btn-submit {
-          width: 100%;
-          margin-top: 10px;
-          padding: 14px;
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-          color: #ffffff;
-          font-weight: 800;
-          font-size: 1rem;
-          border-radius: 12px;
-          border: none;
-          cursor: pointer;
-          box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);
-          transition: all 0.2s ease;
-        }
-        
-        .btn-submit:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 22px rgba(16, 185, 129, 0.45);
-        }
-        
-        .btn-submit:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
-        
-        .alert-error {
-          background-color: rgba(244, 63, 94, 0.12);
-          color: #fb7185;
-          padding: 12px 16px;
-          border-radius: 12px;
-          font-size: 0.88rem;
-          font-weight: 600;
-          border: 1px solid rgba(244, 63, 94, 0.3);
-        }
-
-        /* Onboarding Screen specific */
-        .wallet-select-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 10px;
-          margin-top: 4px;
-        }
-        
-        .wallet-option {
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          background: rgba(255, 255, 255, 0.03);
-          color: #cbd5e1;
-          border-radius: 12px;
-          padding: 12px 8px;
-          text-align: center;
-          cursor: pointer;
-          font-weight: 700;
-          font-size: 0.88rem;
-          transition: all 0.15s ease;
-        }
-        
-        .wallet-option:hover {
-          background: rgba(255, 255, 255, 0.07);
-          border-color: rgba(255, 255, 255, 0.2);
-        }
-        
-        .wallet-option.selected {
-          border-color: #10b981;
-          background: rgba(16, 185, 129, 0.16);
-          color: #34d399;
-          box-shadow: 0 0 0 1px #10b981;
-        }
-
-        @media (max-width: 1024px) {
-          .branding-panel {
-            display: none;
-          }
-          .form-panel {
-            width: 100%;
-            padding: 40px 20px;
-          }
-          .form-card {
-            padding: 28px 20px;
-          }
-          .mobile-brand-header {
-            display: block !important;
-          }
-        }
-      `}</style>
-
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#04060d', color: '#f8fafc', fontFamily: "'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" }}>
+      
       {/* LEFT BRANDING PANEL */}
-      <div className="branding-panel">
-        <Link href="/" className="branding-logo">
-          <span style={{ fontSize: '1.9rem' }}>🏦</span>
-          <span>Mencatat Aja</span>
+      <div 
+        style={{ 
+          width: '44%', 
+          background: 'linear-gradient(145deg, #022c22 0%, #064e3b 50%, #021f1e 100%)', 
+          color: '#ffffff', 
+          padding: '56px 48px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'space-between', 
+          position: 'relative', 
+          overflow: 'hidden', 
+          borderRight: '1px solid rgba(16, 185, 129, 0.25)' 
+        }}
+        className="auth-branding-panel"
+      >
+        {/* Glow Spheres */}
+        <div style={{ position: 'absolute', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(16, 185, 129, 0.4) 0%, transparent 70%)', top: '-100px', right: '-100px', pointerEvents: 'none' }}></div>
+        <div style={{ position: 'absolute', width: '450px', height: '450px', background: 'radial-gradient(circle, rgba(5, 150, 105, 0.25) 0%, transparent 70%)', bottom: '-150px', left: '-150px', pointerEvents: 'none' }}></div>
+
+        {/* Brand Logo Header */}
+        <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', zIndex: 2 }}>
+          <span style={{ fontSize: '1.75rem', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.5px' }}>
+            Mencatat<span style={{ background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Aja</span>
+          </span>
+          <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '3px 10px', borderRadius: '99px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#34d399', letterSpacing: '0.8px', textTransform: 'uppercase', marginLeft: '10px' }}>
+            💰 AI WEALTH OS
+          </span>
         </Link>
-        <div className="branding-mid">
-          <h2>Keuanganmu.<br />Terkontrol.</h2>
-          <p>Mencatat transaksi harian secepat mengirim pesan chat. Bersiaplah terkejut melihat ke mana mengalirnya sisa gaji Anda.</p>
-          <div className="branding-features">
-            <div className="branding-feature-pill">
+
+        {/* Branding Mid Banner */}
+        <div style={{ zIndex: 2, margin: '40px 0' }}>
+          <h2 style={{ fontSize: '3rem', lineHeight: 1.15, marginBottom: '18px', fontWeight: 800, letterSpacing: '-1px', color: '#ffffff' }}>
+            Keuanganmu.<br />Terkontrol.
+          </h2>
+          <p style={{ fontSize: '1.05rem', opacity: 0.9, lineHeight: 1.6, color: '#cbd5e1', maxWidth: '440px' }}>
+            Mencatat transaksi harian secepat mengirim pesan chat. Bersiaplah terkejut melihat ke mana mengalirnya sisa gaji Anda.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '28px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '8px 14px', background: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '9999px', fontSize: '0.85rem', fontWeight: '600', color: '#e2e8f0', width: 'fit-content' }}>
               <span>🤖</span> Asisten AI & Bot Telegram Pribadi
             </div>
-            <div className="branding-feature-pill">
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '8px 14px', background: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '9999px', fontSize: '0.85rem', fontWeight: '600', color: '#e2e8f0', width: 'fit-content' }}>
               <span>📸</span> Scan Struk Belanja Otomatis (Vision AI)
             </div>
-            <div className="branding-feature-pill">
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '8px 14px', background: 'rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255, 255, 255, 0.15)', borderRadius: '9999px', fontSize: '0.85rem', fontWeight: '600', color: '#e2e8f0', width: 'fit-content' }}>
               <span>🔒</span> Enkripsi Data Finansial Bank-Grade
             </div>
           </div>
         </div>
-        <div className="branding-bottom">
+
+        {/* Branding Footer */}
+        <div style={{ fontSize: '0.82rem', color: '#94a3b8', zIndex: 2 }}>
           &copy; {new Date().getFullYear()} Mencatat Aja. Dibuat dengan cinta untuk Indonesia.
         </div>
       </div>
 
       {/* RIGHT FORM PANEL */}
-      <div className="form-panel animate-fade-in">
-        <div className="form-card">
-          {/* Mobile brand header */}
-          <div style={{ display: 'none', marginBottom: '20px' }} className="mobile-brand-header">
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: '#10b981', fontWeight: 800, fontSize: '1.4rem' }}>
-              <span>🏦</span> Mencatat Aja
+      <div 
+        style={{ 
+          width: '56%', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          padding: '40px 6%', 
+          background: 'radial-gradient(circle at top right, rgba(16, 185, 129, 0.08), transparent 45%), #04060d' 
+        }}
+        className="auth-form-panel"
+      >
+        <div 
+          style={{ 
+            width: '100%', 
+            maxWidth: '460px', 
+            background: 'rgba(13, 20, 38, 0.85)', 
+            border: '1px solid rgba(255, 255, 255, 0.08)', 
+            backdropFilter: 'blur(24px)', 
+            WebkitBackdropFilter: 'blur(24px)', 
+            borderRadius: '24px', 
+            padding: '36px', 
+            boxShadow: '0 20px 50px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1)' 
+          }}
+        >
+          {/* Mobile Header Logo */}
+          <div style={{ display: 'none', marginBottom: '24px' }} className="mobile-brand-header">
+            <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff' }}>
+                Mencatat<span style={{ color: '#10b981' }}>Aja</span>
+              </span>
             </Link>
           </div>
 
-          {/* ONBOARDING FLOW */}
-          {showOnboarding ? (
-            <form onSubmit={handleCompleteOnboarding} className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div className="form-header">
-                <h2>Rekomendasi AI Kategori</h2>
-                <p>Jawab pertanyaan singkat di bawah ini agar AI kami merekomendasikan kategori pengeluaran & pemasukan yang cocok untuk gaya hidup Anda.</p>
+          {/* SCREEN 1: PENDING APPROVAL SCREEN (WHEN REGISTRATION COMPLETED) */}
+          {isPendingApproval ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', textAlign: 'center', padding: '10px 0' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.35)', color: '#fbbf24', fontSize: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                ⏳
+              </div>
+              <div>
+                <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#ffffff', margin: '0 0 8px 0' }}>
+                  Pendaftaran Berhasil!
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.5, margin: 0 }}>
+                  Akun Anda dengan email <strong style={{ color: '#ffffff' }}>{email}</strong> telah terdaftar dan saat ini <span style={{ color: '#fbbf24', fontWeight: 700 }}>menunggu persetujuan (ACC) dari Admin</span> sebelum dapat login.
+                </p>
               </div>
 
-              {errorMessage && <div className="alert-error">{errorMessage}</div>}
+              <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '14px', padding: '16px', textAlign: 'left', fontSize: '0.85rem' }}>
+                <div style={{ fontWeight: 700, color: '#ffffff', marginBottom: '4px' }}>💬 Mau aktivasi lebih cepat?</div>
+                <div style={{ color: '#94a3b8', lineHeight: 1.4 }}>
+                  Hubungi Admin Superadmin via WhatsApp untuk meminta konfirmasi aktivasi akun Anda secara instan.
+                </div>
+              </div>
 
-              <div className="form-group">
-                <label htmlFor="onboardingAnswer">Apa pekerjaan Anda & untuk apa saja Anda biasanya belanja?</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                <a 
+                  href={`https://wa.me/6281234567890?text=${encodeURIComponent(`Halo Admin MencatatAja, saya sudah mendaftar akun baru (${email}). Mohon bantu di-ACC ya, terima kasih!`)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '8px', 
+                    padding: '13px', 
+                    background: '#25d366', 
+                    color: '#ffffff', 
+                    borderRadius: '12px', 
+                    fontWeight: 800, 
+                    fontSize: '0.95rem', 
+                    textDecoration: 'none',
+                    boxShadow: '0 4px 14px rgba(37, 211, 102, 0.3)'
+                  }}
+                >
+                  <span>📱</span> Chat Admin via WhatsApp
+                </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPendingApproval(false);
+                    setMode('login');
+                  }}
+                  style={{ 
+                    padding: '12px', 
+                    background: 'rgba(255, 255, 255, 0.06)', 
+                    border: '1px solid rgba(255, 255, 255, 0.12)', 
+                    color: '#cbd5e1', 
+                    borderRadius: '12px', 
+                    fontWeight: 700, 
+                    fontSize: '0.9rem',
+                    cursor: 'pointer' 
+                  }}
+                >
+                  Kembali ke Halaman Masuk
+                </button>
+              </div>
+            </div>
+          ) : showOnboarding ? (
+            /* SCREEN 2: ONBOARDING PROFILE SETUP */
+            <form onSubmit={handleCompleteOnboarding} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.65rem', fontWeight: 800, color: '#ffffff', margin: '0 0 6px 0' }}>
+                  Kustomisasi Akun
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '0.88rem', margin: 0 }}>
+                  Jawab pertanyaan singkat ini agar AI menyiapkan kategori & dompet yang relevan untuk Anda.
+                </p>
+              </div>
+
+              {errorMessage && (
+                <div style={{ background: 'rgba(244, 63, 94, 0.12)', border: '1px solid rgba(244, 63, 94, 0.3)', color: '#fb7185', padding: '12px 14px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 600 }}>
+                  {errorMessage}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#cbd5e1', letterSpacing: '0.5px' }}>
+                  Pekerjaan & Kebutuhan Pengeluaran
+                </label>
                 <textarea
-                  id="onboardingAnswer"
                   rows={3}
                   required
-                  className="form-input"
-                  placeholder="Contoh: Saya freelancer, sering jajan kopi sore, makan di luar, sewa apartemen, bayar gym, dan bayar pulsa..."
+                  placeholder="Contoh: Saya freelancer, sering beli kopi, makan luar, sewa kos, dan bayar pulsa..."
                   value={onboardingAnswer}
                   onChange={e => setOnboardingAnswer(e.target.value)}
-                  style={{ resize: 'vertical' }}
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px 14px', 
+                    background: 'rgba(255, 255, 255, 0.04)', 
+                    border: '1px solid rgba(255, 255, 255, 0.12)', 
+                    borderRadius: '12px', 
+                    color: '#ffffff', 
+                    fontSize: '0.9rem',
+                    resize: 'vertical',
+                    outline: 'none' 
+                  }}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Pilih Dompet Awal Anda (Bisa pilih lebih dari satu)</label>
-                <div className="wallet-select-grid">
-                  {['Cash', 'BCA', 'Gopay', 'Mandiri', 'OVO', 'ShopeePay'].map(w => (
-                    <div
-                      key={w}
-                      onClick={() => toggleWalletSelection(w)}
-                      className={`wallet-option ${selectedWallets.includes(w) ? 'selected' : ''}`}
-                    >
-                      {w}
-                    </div>
-                  ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#cbd5e1', letterSpacing: '0.5px' }}>
+                  Pilih Dompet Awal Anda
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                  {['Cash', 'BCA', 'GoPay', 'Mandiri', 'OVO', 'ShopeePay'].map(w => {
+                    const isSelected = selectedWallets.includes(w);
+                    return (
+                      <div
+                        key={w}
+                        onClick={() => toggleWalletSelection(w)}
+                        style={{ 
+                          padding: '10px 6px', 
+                          borderRadius: '10px', 
+                          textAlign: 'center', 
+                          cursor: 'pointer', 
+                          fontWeight: 700, 
+                          fontSize: '0.82rem',
+                          background: isSelected ? 'rgba(16, 185, 129, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                          border: isSelected ? '1px solid #10b981' : '1px solid rgba(255, 255, 255, 0.08)',
+                          color: isSelected ? '#34d399' : '#94a3b8',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {w}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              <button type="submit" disabled={isLoading} className="btn-submit">
-                {isLoading ? 'Sedang Menyiapkan Data...' : 'Selesaikan & Buka Dashboard →'}
+              <button
+                type="submit"
+                disabled={isLoading}
+                style={{ 
+                  width: '100%', 
+                  padding: '13px', 
+                  marginTop: '6px', 
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
+                  color: '#ffffff', 
+                  borderRadius: '12px', 
+                  border: 'none', 
+                  fontWeight: 800, 
+                  fontSize: '0.95rem', 
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 16px rgba(16, 185, 129, 0.35)'
+                }}
+              >
+                {isLoading ? 'Menyimpan Akun...' : 'Selesaikan Pendaftaran →'}
               </button>
             </form>
           ) : (
-            /* STANDARD LOGIN / REGISTER FLOW */
-            <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div className="form-header">
-                {mode === 'login' ? (
-                  <>
-                    <h2>Selamat Datang Kembali</h2>
-                    <p>
+            /* SCREEN 3: STANDARD LOGIN / REGISTER FORM */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#ffffff', margin: '0 0 6px 0', letterSpacing: '-0.3px' }}>
+                  {mode === 'login' ? 'Selamat Datang Kembali' : 'Daftar Akun Baru'}
+                </h2>
+                <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>
+                  {mode === 'login' ? (
+                    <>
                       Belum punya akun?{' '}
-                      <a href="#" onClick={(e) => { e.preventDefault(); setErrorMessage(''); setMode('register'); }}>
-                        Daftar Gratis
+                      <a 
+                        href="#register" 
+                        onClick={(e) => { e.preventDefault(); setErrorMessage(''); setMode('register'); }}
+                        style={{ color: '#10b981', fontWeight: 700, textDecoration: 'none' }}
+                      >
+                        Daftar Akun Baru
                       </a>
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <h2>Mulai Kelola Uangmu</h2>
-                    <p>
+                    </>
+                  ) : (
+                    <>
                       Sudah memiliki akun?{' '}
-                      <a href="#" onClick={(e) => { e.preventDefault(); setErrorMessage(''); setMode('login'); }}>
+                      <a 
+                        href="#login" 
+                        onClick={(e) => { e.preventDefault(); setErrorMessage(''); setMode('login'); }}
+                        style={{ color: '#10b981', fontWeight: 700, textDecoration: 'none' }}
+                      >
                         Masuk Sekarang
                       </a>
-                    </p>
-                  </>
-                )}
+                    </>
+                  )}
+                </p>
               </div>
 
-              {errorMessage && <div className="alert-error">{errorMessage}</div>}
+              {errorMessage && (
+                <div style={{ background: 'rgba(244, 63, 94, 0.12)', border: '1px solid rgba(244, 63, 94, 0.3)', color: '#fb7185', padding: '12px 14px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 600 }}>
+                  {errorMessage}
+                </div>
+              )}
 
-              {/* Email & Password Form */}
-              <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {mode === 'register' && (
-                  <div className="form-group">
-                    <label htmlFor="fullName">Nama Lengkap</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#cbd5e1', letterSpacing: '0.5px' }}>
+                      Nama Lengkap
+                    </label>
                     <input
-                      id="fullName"
                       type="text"
                       required
-                      className="form-input"
                       placeholder="Masukkan nama lengkap Anda"
                       value={fullName}
                       onChange={e => setFullName(e.target.value)}
+                      style={{ 
+                        width: '100%', 
+                        padding: '13px 16px', 
+                        background: 'rgba(255, 255, 255, 0.04)', 
+                        border: '1px solid rgba(255, 255, 255, 0.12)', 
+                        borderRadius: '12px', 
+                        color: '#ffffff', 
+                        fontSize: '0.92rem',
+                        outline: 'none' 
+                      }}
                     />
                   </div>
                 )}
-                <div className="form-group">
-                  <label htmlFor="email">Alamat Email</label>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#cbd5e1', letterSpacing: '0.5px' }}>
+                    Alamat Email
+                  </label>
                   <input
-                    id="email"
                     type="email"
                     required
-                    className="form-input"
                     placeholder="nama@email.com"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
+                    style={{ 
+                      width: '100%', 
+                      padding: '13px 16px', 
+                      background: 'rgba(255, 255, 255, 0.04)', 
+                      border: '1px solid rgba(255, 255, 255, 0.12)', 
+                      borderRadius: '12px', 
+                      color: '#ffffff', 
+                      fontSize: '0.92rem',
+                      outline: 'none' 
+                    }}
                   />
                 </div>
-                <div className="form-group">
-                  <label htmlFor="password">Kata Sandi (Password)</label>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#cbd5e1', letterSpacing: '0.5px' }}>
+                    Kata Sandi (Password)
+                  </label>
                   <input
-                    id="password"
                     type="password"
                     required
-                    className="form-input"
                     placeholder="Minimal 6 karakter"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
+                    style={{ 
+                      width: '100%', 
+                      padding: '13px 16px', 
+                      background: 'rgba(255, 255, 255, 0.04)', 
+                      border: '1px solid rgba(255, 255, 255, 0.12)', 
+                      borderRadius: '12px', 
+                      color: '#ffffff', 
+                      fontSize: '0.92rem',
+                      outline: 'none' 
+                    }}
                   />
                 </div>
-                <button type="submit" disabled={isLoading} className="btn-submit">
+
+                {mode === 'register' && (
+                  <div style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '10px', padding: '10px 14px', fontSize: '0.78rem', color: '#fbbf24' }}>
+                    ℹ️ <strong>Catatan:</strong> Pendaftaran akun baru memerlukan persetujuan (ACC) dari Admin sebelum akun dapat digunakan.
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  style={{ 
+                    width: '100%', 
+                    padding: '13px', 
+                    marginTop: '6px', 
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
+                    color: '#ffffff', 
+                    borderRadius: '12px', 
+                    border: 'none', 
+                    fontWeight: 800, 
+                    fontSize: '0.95rem', 
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 16px rgba(16, 185, 129, 0.35)'
+                  }}
+                >
                   {isLoading ? 'Memproses...' : mode === 'login' ? 'Masuk' : 'Daftar Sekarang'}
                 </button>
               </form>
@@ -586,6 +549,30 @@ export default function AuthPage() {
           )}
         </div>
       </div>
+
+      <style jsx global>{`
+        @media (max-width: 1024px) {
+          .auth-branding-panel {
+            display: none !important;
+          }
+          .auth-form-panel {
+            width: 100% !important;
+            padding: 30px 16px !important;
+          }
+          .mobile-brand-header {
+            display: block !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#04060d', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Memuat...</div>}>
+      <AuthContent />
+    </Suspense>
+  );
+}
+

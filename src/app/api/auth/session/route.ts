@@ -147,21 +147,31 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: errMsg }, { status: 401 });
         }
 
-        // Fetch user profile name and role if exists
+        // Fetch user profile name, role, and approval status
         let userName = data.user.user_metadata?.full_name || email.split('@')[0];
         let userRole = data.user.user_metadata?.role || (isSuperadminEmail ? 'superadmin' : 'user');
+        let isApproved = isSuperadminEmail ? true : true;
 
         try {
           const { data: prof } = await supabaseAdmin
             .from('profiles')
-            .select('full_name')
+            .select('full_name, is_approved, plan')
             .eq('id', data.user.id)
             .maybeSingle();
-          if (prof && prof.full_name) {
-            userName = prof.full_name;
+          if (prof) {
+            if (prof.full_name) userName = prof.full_name;
+            if (prof.is_approved !== undefined && prof.is_approved !== null) {
+              isApproved = prof.is_approved;
+            }
           }
         } catch (e) {
           // ignore
+        }
+
+        if (!isSuperadminEmail && isApproved === false) {
+          return NextResponse.json({ 
+            error: '⏳ Akun Anda masih menunggu persetujuan (ACC) dari Admin. Silakan hubungi admin di WhatsApp untuk konfirmasi aktivasi akun Anda.' 
+          }, { status: 403 });
         }
 
         return NextResponse.json({
@@ -179,14 +189,15 @@ export async function POST(request: Request) {
         });
 
       } else {
-        // Register action
+        // Register action - New users require admin approval
         const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email,
           password,
           email_confirm: true,
           user_metadata: {
             full_name: fullName || email.split('@')[0],
-            role: isSuperadminEmail ? 'superadmin' : 'user'
+            role: isSuperadminEmail ? 'superadmin' : 'user',
+            is_approved: isSuperadminEmail ? true : false
           }
         });
 
@@ -197,9 +208,23 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: errMsg }, { status: 400 });
         }
 
+        // Create profile with is_approved: false
+        try {
+          await supabaseAdmin.from('profiles').upsert({
+            id: authUser.user.id,
+            full_name: fullName || email.split('@')[0],
+            plan: 'Basic',
+            is_approved: isSuperadminEmail ? true : false,
+            created_at: new Date().toISOString()
+          });
+        } catch (e) {
+          console.warn('Profile creation during register error:', e);
+        }
+
         return NextResponse.json({
           success: true,
           user: authUser.user,
+          requiresApproval: !isSuperadminEmail,
           session: null
         });
       }

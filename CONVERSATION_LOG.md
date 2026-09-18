@@ -1419,4 +1419,22 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
      - `npm run build` lolos 100% (29 routes tanpa error).
      - Commit dan push ke branch `main` GitHub untuk live deployment Vercel.
 
+## Sesi 91: Penyelarasan Logo Brand MencatatAja & Penerapan Wajib ACC Admin untuk Pendaftaran Baru (No Free Registration)
+- **User Request:**
+  1. Sesuaikan logo di halaman auth agar sama persis dengan logo di landing page & dashboard (tanpa emoji bank).
+  2. Hapus opsi "daftar gratis", jika ada user yang mendaftar baru harus menunggu persetujuan (ACC) dari Admin terlebih dahulu sebelum bisa login dan menggunakan dashboard.
+- **Implementasi:**
+  1. **Penyelarasan Logo Brand (`src/app/auth/page.tsx`)**:
+     - Mengganti logo lama menjadi `MencatatAja` dengan gradien teks hijau-cyan (`#10b981` -> `#06b6d4`) dan badge `💰 AI WEALTH OS`.
+  2. **Alur Wajib ACC Admin Saat Pendaftaran Baru**:
+     - Mengubah label link dari "Daftar Gratis" menjadi "Daftar Akun Baru".
+     - Menambahkan catatan peringatan bahwa pendaftaran akun baru wajib di-ACC oleh Admin.
+     - Di backend (`/api/auth/session` & `/api/auth/onboarding`), seluruh pendaftaran baru otomatis diset ke status `is_approved: false` (hanya superadmin yang otomatis aktif).
+     - Jika user baru menyelesaikan registrasi, sistem menampilkan **Layar Menunggu ACC Admin (Pending Approval)** dengan tombol langsung untuk menghubungi Admin via WhatsApp (`wa.me`) untuk konfirmasi aktivasi instan.
+     - Jika user yang belum di-ACC mencoba login dengan email & password, sistem memblokir login dan menampilkan pesan peringatan agar menghubungi Admin.
+  3. **Verifikasi & Deployment**:
+     - `npm run build` lolos 100% (29 routes tanpa error).
+     - Commit dan push ke branch `main` GitHub untuk update live Vercel.
+
+
 
