@@ -1546,6 +1546,18 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
      - Transaksi ditampilkan sebagai kartu vertikal dengan emoji kategori, tanggal & dompet, nominal pengeluaran/pemasukan berukuran tegas, catatan belanja, dan tombol expand rincian struk OCR AI.
   5. **Generative UI Artifact (`mobile_native_cards_showcase.html`)**:
      - Dibuat simulasi visual smartphone dengan tata letak kartu native tanpa perlu geser horizontal sama sekali.
-  6. **Verifikasi & Deployment**:
-     - `npm run build` sukses 100% (29 routes lolos tanpa error).
-     - Commit dan push ke GitHub branch `main` untuk deployment otomatis Vercel.
+## Sesi 98: Perbaikan Menyeluruh Tampilan Terpotong di Dashboard User (Beranda & Langganan)
+- **User Feedback:** "di user masih ada yang kepotong tolong di fiks"
+- **Penyebab:**
+  1. Di tab **Beranda** user (`/dashboard`), daftar 10 transaksi terakhir sebelumnya masih menggunakan tabel HTML (`<table className="tx-table">`) dengan 4 kolom flex yang memotong nominal/tombol aksi di smartphone.
+  2. Di tab **Kelola Langganan** user (`/dashboard`), tabel perbandingan fitur (Basic vs Pro) menggunakan tabel 3 kolom yang terpotong di layar HP.
+- **Solusi & Implementasi:**
+  1. **Dual Render Beranda (`src/app/dashboard/page.tsx`)**:
+     - Di PC/Desktop: Menampilkan tabel transaksi terakhir dengan kolom lengkap.
+     - Di Smartphone (Mobile): Menampilkan **Kartu Transaksi Vertikal (`.mobile-data-card`)** berisi deskripsi, tanggal, kategori, sumber bot/web, nominal tegas, serta tombol Edit dan Hapus yang nyaman disentuh.
+  2. **Dual Render Perbandingan Fitur Langganan (`src/app/dashboard/page.tsx`)**:
+     - Di PC/Desktop: Menampilkan tabel perbandingan 3 kolom yang elegan.
+     - Di Smartphone (Mobile): Menampilkan kartu perbandingan vertikal per fitur dengan perbandingan visual jelas antara paket Basic dan Pro.
+  3. **Verifikasi & Deployment**:
+     - `npm run build` sukses 100% tanpa error di 29 static & dynamic routes.
+     - Commit dan push ke GitHub branch `main` untuk deployment Vercel.

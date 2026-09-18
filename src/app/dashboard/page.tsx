@@ -2280,85 +2280,166 @@ export default function DashboardPage() {
                       <p>Ketik "beli bakso 15rb" ke bot Telegram Anda untuk memicu pencatatan otomatis.</p>
                     </div>
                   ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                      <table className="tx-table" style={{ border: 'none' }}>
-                        <tbody>
-                          {filteredTxs.slice(0, 10).map((t) => {
-                            const dateStr = new Date(t.transaction_date).toLocaleDateString('id-ID', {
-                              day: 'numeric', month: 'short', year: 'numeric'
-                            });
-                            const cat = categories.find(c => c.id === t.category_id);
-                            
-                            return (
-                              <React.Fragment key={t.id}>
-                                <tr onClick={() => t.ocr_structured_data ? setExpandedTxId(expandedTxId === t.id ? null : t.id) : null} style={{ cursor: t.ocr_structured_data ? 'pointer' : 'default' }}>
-                                  <td style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <span style={{ fontSize: '1.4rem' }}>{cat?.emoji || '💰'}</span>
-                                    <div>
-                                      <div style={{ fontWeight: '700' }}>{t.description}</div>
-                                      <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>
-                                        {cat?.name || 'Kategori'} • {dateStr}
-                                      </div>
-                                    </div>
-                                  </td>
-                                  <td>{t.source === 'telegram' ? '🤖 Telegram' : '💻 Web'}</td>
-                                  <td className={`tx-amount ${t.type}`}>
-                                    {t.type === 'expense' ? '-' : '+'}Rp {Number(t.amount).toLocaleString('id-ID')}
-                                    {t.ocr_structured_data && (
-                                      <span style={{ fontSize: '0.75rem', color: 'var(--primary)', marginLeft: '8px' }}>
-                                        {expandedTxId === t.id ? '▲ Sembunyikan' : '▼ Rincian Struk'}
-                                      </span>
-                                    )}
-                                  </td>
-                                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                    <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
-                                      <button 
-                                        type="button" 
-                                        onClick={(e) => { e.stopPropagation(); handleOpenEditTxModal(t); }} 
-                                        className="btn-action-edit" 
-                                        title="Edit Transaksi"
-                                      >
-                                        ✏️ Edit
-                                      </button>
-                                      <button 
-                                        type="button" 
-                                        onClick={(e) => { e.stopPropagation(); handleDeleteTx(t.id, t.description); }} 
-                                        disabled={isDeletingTxId === t.id}
-                                        className="btn-action-delete" 
-                                        title="Hapus Transaksi"
-                                      >
-                                        {isDeletingTxId === t.id ? '⏳' : '🗑️ Hapus'}
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                                
-                                {/* Expanded Row for OCR Receipt Items */}
-                                {t.ocr_structured_data && expandedTxId === t.id && (
-                                  <tr className="expanded-row">
-                                    <td colSpan={3}>
-                                      <div className="expanded-content">
-                                        <h5 style={{ fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase' }}>
-                                          📸 Detail Struk Belanja dari AI Vision
-                                        </h5>
-                                        <div className="sub-item-list">
-                                          {t.ocr_structured_data.items?.map((item: any, idx: number) => (
-                                            <div key={idx} className="sub-item-row">
-                                              <span>{item.name} ({item.quantity}x)</span>
-                                              <span>Rp {Number(item.price * item.quantity).toLocaleString('id-ID')}</span>
-                                            </div>
-                                          ))}
+                    <>
+                      {/* Desktop Table View */}
+                      <div className="desktop-table-view" style={{ overflowX: 'auto' }}>
+                        <table className="tx-table" style={{ border: 'none' }}>
+                          <tbody>
+                            {filteredTxs.slice(0, 10).map((t) => {
+                              const dateStr = new Date(t.transaction_date).toLocaleDateString('id-ID', {
+                                day: 'numeric', month: 'short', year: 'numeric'
+                              });
+                              const cat = categories.find(c => c.id === t.category_id);
+                              
+                              return (
+                                <React.Fragment key={t.id}>
+                                  <tr onClick={() => t.ocr_structured_data ? setExpandedTxId(expandedTxId === t.id ? null : t.id) : null} style={{ cursor: t.ocr_structured_data ? 'pointer' : 'default' }}>
+                                    <td style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                      <span style={{ fontSize: '1.4rem' }}>{cat?.emoji || '💰'}</span>
+                                      <div>
+                                        <div style={{ fontWeight: '700' }}>{t.description}</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>
+                                          {cat?.name || 'Kategori'} • {dateStr}
                                         </div>
                                       </div>
                                     </td>
+                                    <td>{t.source === 'telegram' ? '🤖 Telegram' : '💻 Web'}</td>
+                                    <td className={`tx-amount ${t.type}`}>
+                                      {t.type === 'expense' ? '-' : '+'}Rp {Number(t.amount).toLocaleString('id-ID')}
+                                      {t.ocr_structured_data && (
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--primary)', marginLeft: '8px' }}>
+                                          {expandedTxId === t.id ? '▲ Sembunyikan' : '▼ Rincian Struk'}
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                      <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
+                                        <button 
+                                          type="button" 
+                                          onClick={(e) => { e.stopPropagation(); handleOpenEditTxModal(t); }} 
+                                          className="btn-action-edit" 
+                                          title="Edit Transaksi"
+                                        >
+                                          ✏️ Edit
+                                        </button>
+                                        <button 
+                                          type="button" 
+                                          onClick={(e) => { e.stopPropagation(); handleDeleteTx(t.id, t.description); }} 
+                                          disabled={isDeletingTxId === t.id}
+                                          className="btn-action-delete" 
+                                          title="Hapus Transaksi"
+                                        >
+                                          {isDeletingTxId === t.id ? '⏳' : '🗑️ Hapus'}
+                                        </button>
+                                      </div>
+                                    </td>
                                   </tr>
-                                )}
-                              </React.Fragment>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                                  
+                                  {/* Expanded Row for OCR Receipt Items */}
+                                  {t.ocr_structured_data && expandedTxId === t.id && (
+                                    <tr className="expanded-row">
+                                      <td colSpan={3}>
+                                        <div className="expanded-content">
+                                          <h5 style={{ fontSize: '0.85rem', color: 'var(--primary)', textTransform: 'uppercase' }}>
+                                            📸 Detail Struk Belanja dari AI Vision
+                                          </h5>
+                                          <div className="sub-item-list">
+                                            {t.ocr_structured_data.items?.map((item: any, idx: number) => (
+                                              <div key={idx} className="sub-item-row">
+                                                <span>{item.name} ({item.quantity}x)</span>
+                                                <span>Rp {Number(item.price * item.quantity).toLocaleString('id-ID')}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile Native Cards View (Zero Horizontal Scroll) */}
+                      <div className="mobile-cards-view" style={{ padding: '0 16px' }}>
+                        {filteredTxs.slice(0, 10).map((t) => {
+                          const dateStr = new Date(t.transaction_date).toLocaleDateString('id-ID', {
+                            day: 'numeric', month: 'short', year: 'numeric'
+                          });
+                          const cat = categories.find(c => c.id === t.category_id);
+                          return (
+                            <div 
+                              key={t.id} 
+                              className="mobile-data-card"
+                              onClick={() => t.ocr_structured_data ? setExpandedTxId(expandedTxId === t.id ? null : t.id) : null}
+                            >
+                              <div className="mobile-card-header">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <span style={{ fontSize: '1.4rem' }}>{cat?.emoji || '💰'}</span>
+                                  <div>
+                                    <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '0.98rem' }}>{t.description}</div>
+                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{cat?.name || 'Kategori'} • {dateStr}</div>
+                                  </div>
+                                </div>
+                                <div className={`tx-amount ${t.type}`} style={{ fontWeight: '800', fontSize: '1rem' }}>
+                                  {t.type === 'expense' ? '-' : '+'}Rp {Number(t.amount).toLocaleString('id-ID')}
+                                </div>
+                              </div>
+
+                              <div className="mobile-card-row" style={{ paddingTop: '4px' }}>
+                                <span>Sumber Pencatatan</span>
+                                <span style={{ color: '#cbd5e1', fontWeight: '600' }}>{t.source === 'telegram' ? '🤖 Bot Telegram' : '💻 Web Dashboard'}</span>
+                              </div>
+
+                              {t.ocr_structured_data && (
+                                <div style={{ marginTop: '2px' }}>
+                                  <button className="btn btn-outline" style={{ fontSize: '0.75rem', padding: '6px 10px', width: '100%', justifyContent: 'center' }}>
+                                    📸 {expandedTxId === t.id ? 'Tutup Rincian Struk' : 'Lihat Rincian Struk AI'}
+                                  </button>
+                                  {expandedTxId === t.id && (
+                                    <div className="expanded-content" style={{ marginTop: '8px' }}>
+                                      <h5 style={{ fontSize: '0.82rem', color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                                        Barang Belanjaan Struk AI OCR
+                                      </h5>
+                                      <div className="sub-item-list">
+                                        {t.ocr_structured_data.items?.map((item: any, idx: number) => (
+                                          <div key={idx} className="sub-item-row" style={{ fontSize: '0.8rem' }}>
+                                            <span>{item.name} ({item.quantity}x)</span>
+                                            <span>Rp {Number(item.price * item.quantity).toLocaleString('id-ID')}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              <div className="mobile-card-actions">
+                                <button 
+                                  type="button" 
+                                  onClick={(e) => { e.stopPropagation(); handleOpenEditTxModal(t); }} 
+                                  className="btn btn-secondary"
+                                  style={{ padding: '8px 12px', fontSize: '0.8rem', borderRadius: '8px' }}
+                                >
+                                  ✏️ Edit
+                                </button>
+                                <button 
+                                  type="button" 
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteTx(t.id, t.description); }} 
+                                  disabled={isDeletingTxId === t.id}
+                                  className="btn btn-outline"
+                                  style={{ padding: '8px 12px', fontSize: '0.8rem', color: 'var(--error)', borderColor: 'var(--error)', borderRadius: '8px' }}
+                                >
+                                  {isDeletingTxId === t.id ? '⏳' : '🗑️ Hapus'}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
                   )}
                 </div>
               </>
@@ -3778,7 +3859,8 @@ export default function DashboardPage() {
                   <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff', marginBottom: '16px' }}>
                     📊 Perbandingan Lengkap Fitur Paket
                   </h3>
-                  <div style={{ overflowX: 'auto' }}>
+                  {/* Desktop Table View */}
+                  <div className="desktop-table-view" style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--text-muted)' }}>
@@ -3820,6 +3902,34 @@ export default function DashboardPage() {
                         </tr>
                       </tbody>
                     </table>
+                  </div>
+
+                  {/* Mobile Native Cards View (Zero Horizontal Scroll) */}
+                  <div className="mobile-cards-view">
+                    {[
+                      { name: 'Catat Transaksi Manual & AI Teks', basic: '✓', pro: '✓ Tanpa Batas' },
+                      { name: '📸 Scan Struk Belanja (AI Vision OCR)', basic: '✕', pro: '✓ Aktif Penuh' },
+                      { name: '🤖 Integrasi Bot Telegram Pribadi (BYOB)', basic: '✕', pro: '✓ Aktif Penuh' },
+                      { name: '⚡ AI Financial Advisor 24/7', basic: '✕', pro: '✓ Aktif Penuh' },
+                      { name: '📊 Ekspor Laporan Excel & PDF', basic: '✕', pro: '✓ Unduhan Bebas' },
+                      { name: '⏰ Pengingat Harian Otomatis ke Telegram', basic: '✕', pro: '✓ Aktif' },
+                    ].map((f, idx) => (
+                      <div key={idx} className="mobile-data-card" style={{ padding: '14px' }}>
+                        <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.92rem', marginBottom: '8px' }}>
+                          {f.name}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.82rem' }}>
+                          <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                            <div style={{ color: '#94a3b8', fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: '700' }}>Paket Basic</div>
+                            <div style={{ color: f.basic === '✓' ? '#10b981' : '#f87171', fontWeight: '800', marginTop: '2px' }}>{f.basic}</div>
+                          </div>
+                          <div style={{ background: 'rgba(245, 158, 11, 0.08)', padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                            <div style={{ color: '#fbbf24', fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: '700' }}>Paket Pro</div>
+                            <div style={{ color: '#10b981', fontWeight: '800', marginTop: '2px' }}>{f.pro}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
