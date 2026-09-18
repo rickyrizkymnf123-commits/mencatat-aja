@@ -49,6 +49,29 @@ export default function AdminDashboard() {
   const [subModalPlan, setSubModalPlan] = useState('Pro');
   const [isSavingSub, setIsSavingSub] = useState(false);
 
+  const fetchPricingConfig = async () => {
+    try {
+      const res = await fetch('/api/subscriptions/pricing');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.pricing) {
+          if (data.pricing.basic) {
+            setAdminBasicPrice(data.pricing.basic.price !== undefined ? data.pricing.basic.price : 0);
+            setAdminBasicPeriod(data.pricing.basic.period || 'Gratis');
+            setAdminBasicDesc(data.pricing.basic.description || 'Pencatatan keuangan personal dasar & dompet standar.');
+          }
+          if (data.pricing.pro) {
+            setAdminProPrice(data.pricing.pro.price !== undefined ? data.pricing.pro.price : 49000);
+            setAdminProPeriod(data.pricing.pro.period || 'Bulan');
+            setAdminProDesc(data.pricing.pro.description || 'Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Admin fetch pricing error:', e);
+    }
+  };
+
   const fetchSubscriptions = async () => {
     try {
       const res = await fetch('/api/admin/subscriptions');
@@ -58,6 +81,7 @@ export default function AdminDashboard() {
           setSubscriptionsList(data.subscriptions);
         }
       }
+      await fetchPricingConfig();
     } catch (e) {
       console.error('Fetch subscriptions error:', e);
     }
@@ -95,24 +119,7 @@ export default function AdminDashboard() {
       setShowEditSubModal(false);
       await fetchSubscriptions();
       await fetchAdminData();
-    // Fetch pricing settings for admin
-    fetch('/api/subscriptions/pricing')
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.pricing) {
-          if (data.pricing.basic) {
-            setAdminBasicPrice(data.pricing.basic.price || 0);
-            setAdminBasicPeriod(data.pricing.basic.period || 'Gratis');
-            setAdminBasicDesc(data.pricing.basic.description || 'Pencatatan keuangan personal dasar & dompet standar.');
-          }
-          if (data.pricing.pro) {
-            setAdminProPrice(data.pricing.pro.price || 49000);
-            setAdminProPeriod(data.pricing.pro.period || 'Bulan');
-            setAdminProDesc(data.pricing.pro.description || 'Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
-          }
-        }
-      })
-      .catch(e => console.warn('Admin fetch pricing error:', e));
+      await fetchPricingConfig();
     } catch (err: any) {
       alert(`❌ Gagal: ${err.message}`);
     } finally {
@@ -150,6 +157,7 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error(data.error || 'Gagal menyimpan harga paket');
 
       alert(`✅ Berhasil Memperbarui Harga Paket Langganan!\n\n• Basic: Rp ${Number(adminBasicPrice).toLocaleString('id-ID')} / ${adminBasicPeriod}\n• Pro: Rp ${Number(adminProPrice).toLocaleString('id-ID')} / ${adminProPeriod}`);
+      await fetchPricingConfig();
     } catch (err: any) {
       alert('❌ Error: ' + err.message);
     } finally {
@@ -344,24 +352,7 @@ export default function AdminDashboard() {
       }
 
       await fetchAdminData();
-    // Fetch pricing settings for admin
-    fetch('/api/subscriptions/pricing')
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.pricing) {
-          if (data.pricing.basic) {
-            setAdminBasicPrice(data.pricing.basic.price || 0);
-            setAdminBasicPeriod(data.pricing.basic.period || 'Gratis');
-            setAdminBasicDesc(data.pricing.basic.description || 'Pencatatan keuangan personal dasar & dompet standar.');
-          }
-          if (data.pricing.pro) {
-            setAdminProPrice(data.pricing.pro.price || 49000);
-            setAdminProPeriod(data.pricing.pro.period || 'Bulan');
-            setAdminProDesc(data.pricing.pro.description || 'Akses tanpa batas ke seluruh ekosistem AI & bot otomatisasi.');
-          }
-        }
-      })
-      .catch(e => console.warn('Admin fetch pricing error:', e));
+      await fetchPricingConfig();
     };
     initAdmin();
   }, []);

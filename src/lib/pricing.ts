@@ -60,37 +60,59 @@ export const DEFAULT_PRICING: PricingConfig = {
 
 const FALLBACK_FILE = path.join(process.cwd(), 'src/lib/pricing_config_fallback.json');
 
+// In-memory cache for ultra-fast response
+let cachedPricing: PricingConfig | null = null;
+
 export async function getPricingConfig(): Promise<PricingConfig> {
+  if (cachedPricing) {
+    return cachedPricing;
+  }
+
   try {
     const isPlaceholder = !supabaseUrl || 
       supabaseUrl.includes('your-supabase-project-id') || 
       supabaseUrl.includes('placeholder-project');
 
-    if (isPlaceholder) {
-      if (fs.existsSync(FALLBACK_FILE)) {
-        const raw = fs.readFileSync(FALLBACK_FILE, 'utf-8');
-        return { ...DEFAULT_PRICING, ...JSON.parse(raw) };
+    if (!isPlaceholder) {
+      // Primary: query ai_providers table (guaranteed to exist in DB schema)
+      const { data: providerRow, error: providerErr } = await supabaseAdmin
+        .from('ai_providers')
+        .select('api_key')
+        .eq('name', 'pricing_config')
+        .maybeSingle();
+
+      if (!providerErr && providerRow && providerRow.api_key) {
+        try {
+          const parsed = JSON.parse(providerRow.api_key);
+          if (parsed && (parsed.basic || parsed.pro)) {
+            const merged: PricingConfig = {
+              basic: { ...DEFAULT_PRICING.basic, ...(parsed.basic || {}) },
+              pro: { ...DEFAULT_PRICING.pro, ...(parsed.pro || {}) },
+              updatedAt: parsed.updatedAt
+            };
+            cachedPricing = merged;
+            return merged;
+          }
+        } catch (jsonErr) {
+          console.warn('Error parsing pricing JSON from ai_providers:', jsonErr);
+        }
       }
-      return DEFAULT_PRICING;
-    }
-
-    const { data, error } = await supabaseAdmin
-      .from('system_settings')
-      .select('value')
-      .eq('key', 'pricing_config')
-      .single();
-
-    if (!error && data && data.value) {
-      return { ...DEFAULT_PRICING, ...data.value };
     }
   } catch (err) {
-    console.warn('Error loading pricing config from Supabase, checking local fallback:', err);
+    console.warn('Error loading pricing config from Supabase:', err);
   }
 
   try {
     if (fs.existsSync(FALLBACK_FILE)) {
       const raw = fs.readFileSync(FALLBACK_FILE, 'utf-8');
-      return { ...DEFAULT_PRICING, ...JSON.parse(raw) };
+      const parsed = JSON.parse(raw);
+      const merged: PricingConfig = {
+        basic: { ...DEFAULT_PRICING.basic, ...(parsed.basic || {}) },
+        pro: { ...DEFAULT_PRICING.pro, ...(parsed.pro || {}) },
+        updatedAt: parsed.updatedAt
+      };
+      cachedPricing = merged;
+      return merged;
     }
   } catch (e) {
     console.warn('Error loading pricing local fallback:', e);
@@ -107,28 +129,59 @@ export async function savePricingConfig(config: Partial<PricingConfig>): Promise
     updatedAt: new Date().toISOString()
   };
 
-  try {
-    fs.writeFileSync(FALLBACK_FILE, JSON.stringify(updated, null, 2), 'utf-8');
-  } catch (err) {
-    console.warn('Could not write pricing fallback file:', err);
-  }
+  // Update in-memory cache immediately
+  cachedPricing = updated;
 
+  // 1. Save to Supabase ai_providers table
   try {
     const isPlaceholder = !supabaseUrl || 
       supabaseUrl.includes('your-supabase-project-id') || 
       supabaseUrl.includes('placeholder-project');
 
     if (!isPlaceholder) {
-      await supabaseAdmin
-        .from('system_settings')
-        .upsert({
-          key: 'pricing_config',
-          value: updated,
-          updated_at: new Date().toISOString()
-        });
+      const jsonPayload = JSON.stringify(updated);
+      const { data: existing } = await supabaseAdmin
+        .from('ai_providers')
+        .select('id')
+        .eq('name', 'pricing_config')
+        .maybeSingle();
+
+      if (existing) {
+        const { error: updateErr } = await supabaseAdmin
+          .from('ai_providers')
+          .update({
+            api_key: jsonPayload,
+            is_active: true
+          })
+          .eq('id', existing.id);
+
+        if (updateErr) {
+          console.error('Supabase update pricing_config error:', updateErr);
+        }
+      } else {
+        const { error: insertErr } = await supabaseAdmin
+          .from('ai_providers')
+          .insert({
+            name: 'pricing_config',
+            api_key: jsonPayload,
+            is_active: true,
+            mode: 'single'
+          });
+
+        if (insertErr) {
+          console.error('Supabase insert pricing_config error:', insertErr);
+        }
+      }
     }
   } catch (err) {
     console.warn('Could not save pricing config to Supabase:', err);
+  }
+
+  // 2. Also write to fallback file
+  try {
+    fs.writeFileSync(FALLBACK_FILE, JSON.stringify(updated, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Could not write pricing fallback file:', err);
   }
 
   return updated;

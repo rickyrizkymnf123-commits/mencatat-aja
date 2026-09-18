@@ -443,6 +443,19 @@ export default function DashboardPage() {
       // Initial load - guaranteed to be called
       await fetchDashboardData(storedId, storedToken);
 
+      // Fetch live pricing configuration
+      try {
+        const pricingRes = await fetch('/api/subscriptions/pricing');
+        if (pricingRes.ok) {
+          const pricingData = await pricingRes.json();
+          if (pricingData && pricingData.pricing) {
+            setPricingConfig(pricingData.pricing);
+          }
+        }
+      } catch (e) {
+        console.warn('Dashboard pricing fetch error:', e);
+      }
+
       // Fetch user-specific bot connection status
       try {
         const botStatusRes = await fetch(`/api/telegram/setup?userId=${storedId}`).catch(() => null);
