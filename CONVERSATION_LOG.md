@@ -1460,3 +1460,24 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
   6. **Verifikasi & Deployment**:
      - `npm run build` sukses 100% (29 routes lolos tanpa error).
      - Commit dan push ke branch `main` GitHub (commit `bd28c7b`) untuk live deployment Vercel.
+
+## Sesi 93: Perbaikan Tuntas Bug Tampilan Mobile Landing Page & Admin Dashboard
+- **User Feedback & Screenshot Analysis:**
+  1. Di Landing Page: Header navbar terpotong karena badge dan teks tombol terlalu panjang pada layar sempit HP; pill floating menimpa metrik di bawah.
+  2. Di Admin Dashboard: `.dashboard-container` dengan default flex-direction row menyebabkan `.mobile-top-bar` terhimpit di kolom kiri sempit sehingga teks "Mencatat Aja Admin" terlipat vertikal 3 baris dan kartu metrik statistik terpotong ke kanan.
+- **Solusi & Implementasi:**
+  1. **Landing Page (`src/app/page.tsx`)**:
+     - Menyembunyikan badge `💰 AI WEALTH OS` dan link teks "Masuk" pada layar mobile (≤ 768px).
+     - Menyesuaikan tombol aksi menjadi `🚀 Dashboard ➔` ringkas tanpa overflow.
+     - Menyembunyikan floating pill pada mobile agar tidak menimpa browser URL bar / metrik.
+  2. **Layout Container Global (`src/app/globals.css`)**:
+     - Menetapkan `.dashboard-container { flex-direction: column !important; width: 100% !important; }` pada breakpoint mobile.
+     - Menetapkan `.dashboard-main { margin-left: 0 !important; width: 100% !important; max-width: 100vw !important; box-sizing: border-box !important; }`.
+     - Memberikan `min-width: 580px` dan smooth touch scroll pada container tabel `.tx-table-container, .shadcn-table-wrapper`.
+  3. **Admin Dashboard (`src/app/admin/page.tsx`)**:
+     - Merestrukturisasi `.mobile-top-bar` dengan brand logo horizontal rapi dan badge `ADMIN` kompak.
+     - Mengubah grid kartu metrik menggunakan class responsif `.stats-summary` (2 kolom di tablet/HP, 1 kolom di layar sempit) sehingga tidak ada kartu yang terpotong.
+  4. **Verifikasi & Deployment**:
+     - `npm run build` berhasil 100% tanpa error.
+     - Commit & push ke branch `main` (commit `d3d1a0a`) untuk live deployment Vercel.
+
