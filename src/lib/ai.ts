@@ -1,3 +1,16 @@
+function extractJsonHelper(raw: string) {
+  let cleaned = raw.trim();
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```[a-z]*\s*/i, '').replace(/```\s*$/, '').trim();
+  }
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+  }
+  return JSON.parse(cleaned);
+}
+
 import { supabaseAdmin } from './supabase';
 import { decrypt } from './crypto';
 
@@ -198,15 +211,15 @@ export async function parseTransactionText(
         if (provider.name === 'gemini') {
           const result = await callGeminiAPI(provider.api_key, prompt, 'text');
           await logAIUsage(userId, 'gemini', 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
-          return JSON.parse(result.text);
+          return extractJsonHelper(result.text);
         } else if (provider.name === 'openai') {
           const result = await callOpenAIAPI(provider.api_key, prompt, 'text');
           await logAIUsage(userId, 'openai', 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
-          return JSON.parse(result.text);
+          return extractJsonHelper(result.text);
         } else if (provider.name === 'deepseek') {
           const result = await callDeepSeekAPI(provider.api_key, prompt, 'text');
           await logAIUsage(userId, 'deepseek', 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
-          return JSON.parse(result.text);
+          return extractJsonHelper(result.text);
         } else if (provider.name === 'litellm') {
           const result = await callCustomLLMAPI((provider as any).baseUrl, provider.api_key, (provider as any).defaultModel, prompt);
           await logAIUsage(userId, 'litellm', 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
@@ -214,7 +227,7 @@ export async function parseTransactionText(
           if (cleanText.startsWith('```')) {
             cleanText = cleanText.replace(/^```json\s*/, '').replace(/```$/, '').trim();
           }
-          return JSON.parse(cleanText);
+          return extractJsonHelper(cleanText);
         }
       } catch (err) {
         console.error(`AI Provider ${provider.name} failed during text parsing, trying next...`, err);
@@ -377,11 +390,11 @@ export async function parseReceiptImage(
       if (provider.name === 'gemini') {
         const result = await callGeminiVisionAPI(provider.api_key, imageBuffer, mimeType, prompt);
         await logAIUsage(userId, 'gemini', 'ocr_receipt', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
-        return JSON.parse(result.text);
+        return extractJsonHelper(result.text);
       } else if (provider.name === 'openai') {
         const result = await callOpenAIVisionAPI(provider.api_key, imageBuffer, mimeType, prompt);
         await logAIUsage(userId, 'openai', 'ocr_receipt', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
-        return JSON.parse(result.text);
+        return extractJsonHelper(result.text);
       } else if (provider.name === 'litellm') {
         const result = await callCustomVisionAPI((provider as any).baseUrl, provider.api_key, (provider as any).defaultModel, prompt, imageBuffer, mimeType);
         await logAIUsage(userId, 'litellm', 'ocr_receipt', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
@@ -389,7 +402,7 @@ export async function parseReceiptImage(
         if (cleanText.startsWith('```')) {
           cleanText = cleanText.replace(/^```json\s*/, '').replace(/```$/, '').trim();
         }
-        return JSON.parse(cleanText);
+        return extractJsonHelper(cleanText);
       }
     } catch (err) {
       console.error(`AI Provider ${provider.name} failed during OCR, trying next...`, err);

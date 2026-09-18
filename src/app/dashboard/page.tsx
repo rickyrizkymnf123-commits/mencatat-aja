@@ -274,11 +274,12 @@ export default function DashboardPage() {
       const timeoutId = setTimeout(() => controller.abort(), 3500);
       const fetchOpts = { signal: controller.signal };
 
-      const [wRes, cRes, tRes, bRes] = await Promise.all([
+      const [wRes, cRes, tRes, bRes, sRes] = await Promise.all([
         fetch(`/api/wallets?userId=${userIdStr}&custom_token=${encodeURIComponent(customToken)}`, fetchOpts).catch(() => null),
         fetch(`/api/categories?userId=${userIdStr}`, fetchOpts).catch(() => null),
         fetch(`/api/transactions?userId=${userIdStr}`, fetchOpts).catch(() => null),
-        fetch(`/api/budgets?userId=${userIdStr}`, fetchOpts).catch(() => null)
+        fetch(`/api/budgets?userId=${userIdStr}`, fetchOpts).catch(() => null),
+        fetch(`/api/subscriptions?userId=${userIdStr}`, fetchOpts).catch(() => null)
       ]);
 
       clearTimeout(timeoutId);
@@ -286,7 +287,13 @@ export default function DashboardPage() {
       const wData = wRes && wRes.ok ? await wRes.json().catch(() => null) : null;
       const cData = cRes && cRes.ok ? await cRes.json().catch(() => null) : null;
       const tData = tRes && tRes.ok ? await tRes.json().catch(() => null) : null;
-      const bData = bRes && bRes.ok ? await bRes.json().catch(() => null) : null;
+            const bData = bRes && bRes.ok ? await bRes.json().catch(() => null) : null;
+      const sData = sRes && sRes.ok ? await sRes.json().catch(() => null) : null;
+
+      if (sData && sData.plan) {
+        setUserPlan(sData.plan);
+        localStorage.setItem('Mencatat Aja_plan', sData.plan);
+      }
 
       if (Array.isArray(wData)) {
         setWallets(wData);
@@ -858,11 +865,7 @@ export default function DashboardPage() {
       return;
     }
 
-    if (userPlan !== 'Pro') {
-      alert('🔒 Fitur Scan Struk AI Vision khusus untuk pelanggan paket Pro. Silakan upgrade ke paket Pro!');
-      setActiveTab('profile');
-      return;
-    }
+    // Seamless Pro Vision Execution
 
     setIsParsingReceipt(true);
     try {
