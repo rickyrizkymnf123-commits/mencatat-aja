@@ -1403,3 +1403,20 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
      - `npm run build` berhasil 100% (29 routes tanpa error).
      - Sinkronisasi commit dan push ke branch `main` GitHub.
 
+## Sesi 90: Perbaikan Bug Tampilan Putih & Kontras Teks Halaman Auth/Login (Migrasi ke Dark Obsidian Glass)
+- **User Request:** Mengatasi bug tampilan di halaman Auth/Login (`/auth`) di mana teks tidak terlihat (teks putih/terang di atas background putih) dan tema belum serasi dengan Dark Obsidian di Dashboard.
+- **Penyebab:** Pada `src/app/auth/page.tsx`, kontainer `.form-panel` memiliki background hardcoded `#ffffff`, sedangkan variabel global Next.js sudah di-set ke Dark Mode (`--text-main: #f8fafc`, dsb.) sehingga menghasilkan bentrok visual (*white on white text*).
+- **Implementasi & Solusi:**
+  1. **Dark Obsidian Glass Redesign (`src/app/auth/page.tsx`)**:
+     - Mengubah panel kanan (`.form-panel`) menggunakan background Dark Obsidian Glass `#04060d` dengan radial glow emerald.
+     - Membungkus formulir dalam kartu kaca gelap (`.form-card`) dengan `background: rgba(13, 20, 38, 0.75)`, border halus `rgba(255, 255, 255, 0.08)`, dan efek backdrop-blur.
+     - Memperjelas seluruh tipografi: Judul `#ffffff` tebal, deskripsi `#94a3b8`, label input `#cbd5e1`, link aksi hijau emerald cerah `#10b981`.
+     - Styling input field `.form-input` dengan warna gelap translusen, border glow saat fokus, dan teks putih bersih.
+     - Tombol submit dengan gradien hijau emerald `#10b981` dan bayangan glow.
+  2. **Penyelarasan Panel Kiri (Branding Panel)**:
+     - Mempercantik branding panel dengan gradien Dark Emerald, logo 🏦 Mencatat Aja, tipografi tebal, dan kartu keunggulan fitur (*Asisten AI Telegram, Scan Struk Vision AI, Enkripsi Bank-Grade*).
+  3. **Verifikasi & Build**:
+     - `npm run build` lolos 100% (29 routes tanpa error).
+     - Commit dan push ke branch `main` GitHub untuk live deployment Vercel.
+
+

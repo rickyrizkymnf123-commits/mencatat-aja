@@ -158,117 +158,154 @@ export default function AuthPage() {
         .auth-container {
           display: flex;
           min-height: 100vh;
-          background-color: var(--background);
+          background: #04060d;
+          color: var(--text-main);
+          font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
         }
         
         /* Left branding panel */
         .branding-panel {
-          width: 40%;
-          background: var(--primary-bg-gradient);
+          width: 44%;
+          background: linear-gradient(145deg, #022c22 0%, #064e3b 50%, #021f1e 100%);
           color: #ffffff !important;
-          padding: 60px 48px;
+          padding: 60px 56px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
           position: relative;
           overflow: hidden;
+          border-right: 1px solid rgba(16, 185, 129, 0.2);
         }
+        
         .branding-logo {
           font-size: 1.6rem;
           font-weight: 800;
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 12px;
           color: #ffffff !important;
           text-decoration: none !important;
           letter-spacing: -0.02em;
+          z-index: 2;
         }
-        .branding-logo span {
-          color: #ffffff !important;
+        
+        .branding-mid {
+          z-index: 2;
         }
+        
         .branding-mid h2 {
-          font-size: 3rem;
+          font-size: 3.2rem;
           line-height: 1.15;
           margin-bottom: 20px;
-          color: #ffffff !important;
-        }
-        .branding-mid p {
-          font-size: 1.15rem;
-          opacity: 0.95;
-          line-height: 1.5;
-          color: #ffffff !important;
-        }
-        .branding-bottom {
-          font-size: 0.9rem;
-          opacity: 0.8;
+          font-weight: 800;
+          letter-spacing: -1px;
           color: #ffffff !important;
         }
         
-        /* Decorative background shapes for left panel */
+        .branding-mid p {
+          font-size: 1.1rem;
+          opacity: 0.9;
+          line-height: 1.6;
+          color: #cbd5e1 !important;
+          max-width: 460px;
+        }
+
+        .branding-features {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-top: 32px;
+        }
+
+        .branding-feature-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 14px;
+          background: rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 9999px;
+          font-size: 0.88rem;
+          font-weight: 600;
+          color: #e2e8f0;
+          width: fit-content;
+        }
+        
+        .branding-bottom {
+          font-size: 0.85rem;
+          color: #94a3b8 !important;
+          z-index: 2;
+        }
+        
+        /* Decorative ambient glow shapes */
         .branding-panel::before {
           content: '';
           position: absolute;
-          width: 300px;
-          height: 300px;
-          background: rgba(255,255,255,0.05);
-          border-radius: 50%;
+          width: 400px;
+          height: 400px;
+          background: radial-gradient(circle, rgba(16, 185, 129, 0.35) 0%, transparent 70%);
           top: -100px;
           right: -100px;
+          pointer-events: none;
+        }
+
+        .branding-panel::after {
+          content: '';
+          position: absolute;
+          width: 500px;
+          height: 500px;
+          background: radial-gradient(circle, rgba(5, 150, 105, 0.2) 0%, transparent 70%);
+          bottom: -150px;
+          left: -150px;
+          pointer-events: none;
         }
         
         /* Right Form Panel */
         .form-panel {
-          width: 60%;
+          width: 56%;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 60px 10%;
-          background: #ffffff;
+          padding: 60px 8%;
+          background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.08), transparent 45%), #04060d;
         }
-        .form-box {
+        
+        .form-card {
           width: 100%;
-          max-width: 450px;
-          display: flex;
-          flex-direction: column;
-          gap: 32px;
+          max-width: 460px;
+          background: rgba(13, 20, 38, 0.75);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border-radius: 24px;
+          padding: 40px;
+          box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
+        
         .form-header h2 {
           font-size: 2rem;
+          font-weight: 800;
+          letter-spacing: -0.5px;
           margin-bottom: 8px;
+          color: #ffffff;
         }
+        
         .form-header p {
-          color: var(--text-muted);
+          color: #94a3b8;
           font-size: 0.95rem;
         }
+        
         .form-header a {
-          font-weight: 600;
+          font-weight: 700;
+          color: #10b981;
+          text-decoration: none;
+          transition: color 0.15s ease;
         }
-
-        /* Tabs */
-        .method-tabs {
-          display: flex;
-          border-bottom: 1px solid var(--border);
-          gap: 24px;
-        }
-        .tab-btn {
-          background: transparent;
-          border: none;
-          padding: 10px 4px;
-          font-weight: 600;
-          color: var(--text-muted);
-          position: relative;
-        }
-        .tab-btn.active {
-          color: var(--primary);
-        }
-        .tab-btn.active::after {
-          content: '';
-          position: absolute;
-          bottom: -1px;
-          left: 0;
-          right: 0;
-          height: 2px;
-          background-color: var(--primary);
+        
+        .form-header a:hover {
+          color: #34d399;
+          text-decoration: underline;
         }
 
         /* Form Controls */
@@ -276,88 +313,104 @@ export default function AuthPage() {
           display: flex;
           flex-direction: column;
           gap: 8px;
-          margin-bottom: 20px;
         }
+        
         .form-group label {
-          font-size: 0.85rem;
+          font-size: 0.78rem;
           font-weight: 700;
           text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: var(--text-muted);
+          letter-spacing: 0.06em;
+          color: #cbd5e1;
         }
+        
+        .form-input {
+          width: 100%;
+          padding: 13px 16px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          color: #ffffff;
+          font-size: 0.95rem;
+          outline: none;
+          transition: all 0.2s ease;
+        }
+        
+        .form-input::placeholder {
+          color: #64748b;
+        }
+        
+        .form-input:focus {
+          border-color: #10b981;
+          background: rgba(255, 255, 255, 0.07);
+          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+        }
+
         .btn-submit {
           width: 100%;
           margin-top: 10px;
+          padding: 14px;
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: #ffffff;
+          font-weight: 800;
+          font-size: 1rem;
+          border-radius: 12px;
+          border: none;
+          cursor: pointer;
+          box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);
+          transition: all 0.2s ease;
+        }
+        
+        .btn-submit:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 22px rgba(16, 185, 129, 0.45);
+        }
+        
+        .btn-submit:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
         }
         
         .alert-error {
-          background-color: var(--error-light);
-          color: var(--error);
+          background-color: rgba(244, 63, 94, 0.12);
+          color: #fb7185;
           padding: 12px 16px;
-          border-radius: var(--radius-md);
-          font-size: 0.9rem;
-          font-weight: 500;
-          border: 1px solid hsla(350, 80%, 48%, 0.1);
-        }
-        
-        .oauth-divider {
-          display: flex;
-          align-items: center;
-          text-align: center;
-          color: var(--text-light);
-          font-size: 0.85rem;
-          margin: 16px 0;
-        }
-        .oauth-divider::before, .oauth-divider::after {
-          content: '';
-          flex: 1;
-          border-bottom: 1px solid var(--border);
-        }
-        .oauth-divider:not(:empty)::before {
-          margin-right: .5em;
-        }
-        .oauth-divider:not(:empty)::after {
-          margin-left: .5em;
-        }
-        
-        .btn-google {
-          background: #ffffff;
-          border: 1px solid var(--border);
-          color: var(--text-main);
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          padding: 12px;
-          border-radius: var(--radius-md);
+          border-radius: 12px;
+          font-size: 0.88rem;
           font-weight: 600;
-        }
-        .btn-google:hover {
-          background: var(--background);
+          border: 1px solid rgba(244, 63, 94, 0.3);
         }
 
         /* Onboarding Screen specific */
         .wallet-select-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 12px;
-          margin-top: 8px;
+          gap: 10px;
+          margin-top: 4px;
         }
+        
         .wallet-option {
-          border: 1px solid var(--border);
-          border-radius: var(--radius-md);
-          padding: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.03);
+          color: #cbd5e1;
+          border-radius: 12px;
+          padding: 12px 8px;
           text-align: center;
           cursor: pointer;
-          font-weight: 600;
-          font-size: 0.9rem;
-          transition: all var(--transition-fast);
+          font-weight: 700;
+          font-size: 0.88rem;
+          transition: all 0.15s ease;
         }
+        
+        .wallet-option:hover {
+          background: rgba(255, 255, 255, 0.07);
+          border-color: rgba(255, 255, 255, 0.2);
+        }
+        
         .wallet-option.selected {
-          border-color: var(--primary);
-          background-color: var(--primary-light);
-          color: var(--primary);
+          border-color: #10b981;
+          background: rgba(16, 185, 129, 0.16);
+          color: #34d399;
+          box-shadow: 0 0 0 1px #10b981;
         }
 
         @media (max-width: 1024px) {
@@ -366,7 +419,10 @@ export default function AuthPage() {
           }
           .form-panel {
             width: 100%;
-            padding: 40px 24px;
+            padding: 40px 20px;
+          }
+          .form-card {
+            padding: 28px 20px;
           }
           .mobile-brand-header {
             display: block !important;
@@ -376,13 +432,24 @@ export default function AuthPage() {
 
       {/* LEFT BRANDING PANEL */}
       <div className="branding-panel">
-        <Link href="/" className="branding-logo" style={{ color: '#ffffff', textDecoration: 'none' }}>
-          <span style={{ fontSize: '1.8rem' }}>🏦</span>
-          <span style={{ color: '#ffffff', fontWeight: 800 }}>Mencatat Aja</span>
+        <Link href="/" className="branding-logo">
+          <span style={{ fontSize: '1.9rem' }}>🏦</span>
+          <span>Mencatat Aja</span>
         </Link>
         <div className="branding-mid">
           <h2>Keuanganmu.<br />Terkontrol.</h2>
           <p>Mencatat transaksi harian secepat mengirim pesan chat. Bersiaplah terkejut melihat ke mana mengalirnya sisa gaji Anda.</p>
+          <div className="branding-features">
+            <div className="branding-feature-pill">
+              <span>🤖</span> Asisten AI & Bot Telegram Pribadi
+            </div>
+            <div className="branding-feature-pill">
+              <span>📸</span> Scan Struk Belanja Otomatis (Vision AI)
+            </div>
+            <div className="branding-feature-pill">
+              <span>🔒</span> Enkripsi Data Finansial Bank-Grade
+            </div>
+          </div>
         </div>
         <div className="branding-bottom">
           &copy; {new Date().getFullYear()} Mencatat Aja. Dibuat dengan cinta untuk Indonesia.
@@ -391,16 +458,17 @@ export default function AuthPage() {
 
       {/* RIGHT FORM PANEL */}
       <div className="form-panel animate-fade-in">
-        <div className="form-box">
+        <div className="form-card">
           {/* Mobile brand header */}
-          <div style={{ display: 'none', marginBottom: '8px' }} className="mobile-brand-header">
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'var(--primary)', fontWeight: 800, fontSize: '1.4rem' }}>
+          <div style={{ display: 'none', marginBottom: '20px' }} className="mobile-brand-header">
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: '#10b981', fontWeight: 800, fontSize: '1.4rem' }}>
               <span>🏦</span> Mencatat Aja
             </Link>
           </div>
+
           {/* ONBOARDING FLOW */}
           {showOnboarding ? (
-            <form onSubmit={handleCompleteOnboarding} className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <form onSubmit={handleCompleteOnboarding} className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div className="form-header">
                 <h2>Rekomendasi AI Kategori</h2>
                 <p>Jawab pertanyaan singkat di bawah ini agar AI kami merekomendasikan kategori pengeluaran & pemasukan yang cocok untuk gaya hidup Anda.</p>
@@ -409,14 +477,16 @@ export default function AuthPage() {
               {errorMessage && <div className="alert-error">{errorMessage}</div>}
 
               <div className="form-group">
-                <label htmlFor="onboardingAnswer">Apa pekerjaan Anda & untuk apa saja Anda biasanya membelanjakan uang?</label>
+                <label htmlFor="onboardingAnswer">Apa pekerjaan Anda & untuk apa saja Anda biasanya belanja?</label>
                 <textarea
                   id="onboardingAnswer"
                   rows={3}
                   required
+                  className="form-input"
                   placeholder="Contoh: Saya freelancer, sering jajan kopi sore, makan di luar, sewa apartemen, bayar gym, dan bayar pulsa..."
                   value={onboardingAnswer}
                   onChange={e => setOnboardingAnswer(e.target.value)}
+                  style={{ resize: 'vertical' }}
                 />
               </div>
 
@@ -435,7 +505,7 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              <button type="submit" disabled={isLoading} className="btn btn-primary btn-submit">
+              <button type="submit" disabled={isLoading} className="btn-submit">
                 {isLoading ? 'Sedang Menyiapkan Data...' : 'Selesaikan & Buka Dashboard →'}
               </button>
             </form>
@@ -448,7 +518,7 @@ export default function AuthPage() {
                     <h2>Selamat Datang Kembali</h2>
                     <p>
                       Belum punya akun?{' '}
-                      <a href="#" onClick={(e) => { e.preventDefault(); setMode('register'); }}>
+                      <a href="#" onClick={(e) => { e.preventDefault(); setErrorMessage(''); setMode('register'); }}>
                         Daftar Gratis
                       </a>
                     </p>
@@ -458,7 +528,7 @@ export default function AuthPage() {
                     <h2>Mulai Kelola Uangmu</h2>
                     <p>
                       Sudah memiliki akun?{' '}
-                      <a href="#" onClick={(e) => { e.preventDefault(); setMode('login'); }}>
+                      <a href="#" onClick={(e) => { e.preventDefault(); setErrorMessage(''); setMode('login'); }}>
                         Masuk Sekarang
                       </a>
                     </p>
@@ -469,7 +539,7 @@ export default function AuthPage() {
               {errorMessage && <div className="alert-error">{errorMessage}</div>}
 
               {/* Email & Password Form */}
-              <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                 {mode === 'register' && (
                   <div className="form-group">
                     <label htmlFor="fullName">Nama Lengkap</label>
@@ -477,6 +547,7 @@ export default function AuthPage() {
                       id="fullName"
                       type="text"
                       required
+                      className="form-input"
                       placeholder="Masukkan nama lengkap Anda"
                       value={fullName}
                       onChange={e => setFullName(e.target.value)}
@@ -489,6 +560,7 @@ export default function AuthPage() {
                     id="email"
                     type="email"
                     required
+                    className="form-input"
                     placeholder="nama@email.com"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
@@ -500,12 +572,13 @@ export default function AuthPage() {
                     id="password"
                     type="password"
                     required
+                    className="form-input"
                     placeholder="Minimal 6 karakter"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                   />
                 </div>
-                <button type="submit" disabled={isLoading} className="btn btn-primary btn-submit">
+                <button type="submit" disabled={isLoading} className="btn-submit">
                   {isLoading ? 'Memproses...' : mode === 'login' ? 'Masuk' : 'Daftar Sekarang'}
                 </button>
               </form>
