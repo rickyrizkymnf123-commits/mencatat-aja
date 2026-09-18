@@ -547,6 +547,7 @@ export async function POST(request: Request) {
           `• <code>transfer dari BCA ke Gopay 500rb</code>\n\n` +
           `📋 <b>Perintah Navigasi:</b>\n` +
           `• /saldo - Cek saldo semua dompet Anda secara real-time\n` +
+          `• /hapus - Batalkan/hapus catatan transaksi terakhir Anda jika salah catat\n` +
           `• /hari_ini - Rekap pengeluaran & pemasukan hari ini\n` +
           `• /budget - Cek sisa kuota anggaran/limit belanja kategori\n` +
           `• /sheet - Dapatkan link akses cepat ke Web Dashboard Anda\n` +
@@ -558,6 +559,66 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true });
       }
       
+      
+      if (command === '/hapus' || command === '/batal' || command === '/undo') {
+        if (isPlaceholder) {
+          await telegram.sendMessage(botToken, chatId, '🗑️ Transaksi terakhir berhasil dibatalkan.');
+          return NextResponse.json({ ok: true });
+        }
+
+        // 1. Get user's latest transaction
+        const { data: latestTx, error: txErr } = await supabaseAdmin
+          .from('transactions')
+          .select('*, wallets:wallets!transactions_wallet_id_fkey(name), categories(name, emoji)')
+          .eq('user_id', userProfile.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!latestTx) {
+          await telegram.sendMessage(botToken, chatId, '⚠️ Tidak ada catatan transaksi yang dapat dibatalkan.');
+          return NextResponse.json({ ok: true });
+        }
+
+        const amt = Number(latestTx.amount || 0);
+
+        // 2. Revert wallet balance
+        try {
+          const { data: origWallet } = await supabaseAdmin.from('wallets').select('balance').eq('id', latestTx.wallet_id).single();
+          if (origWallet) {
+            let revBalance = Number(origWallet.balance || 0);
+            if (latestTx.type === 'expense' || latestTx.type === 'transfer') {
+              revBalance += amt;
+            } else if (latestTx.type === 'income') {
+              revBalance -= amt;
+            }
+            await supabaseAdmin.from('wallets').update({ balance: revBalance }).eq('id', latestTx.wallet_id);
+          }
+
+          if (latestTx.type === 'transfer' && latestTx.transfer_to_wallet_id) {
+            const { data: destW } = await supabaseAdmin.from('wallets').select('balance').eq('id', latestTx.transfer_to_wallet_id).single();
+            if (destW) {
+              await supabaseAdmin.from('wallets').update({ balance: Number(destW.balance || 0) - amt }).eq('id', latestTx.transfer_to_wallet_id);
+            }
+          }
+        } catch (wErr) {
+          console.warn('Wallet balance reversal error:', wErr);
+        }
+
+        // 3. Delete the transaction
+        await supabaseAdmin.from('transactions').delete().eq('id', latestTx.id);
+
+        const replyMsg = `🗑️ <b>Transaksi Terakhir Berhasil Dihapus!</b>\n\n` +
+          `• <b>Keterangan:</b> ${latestTx.description}\n` +
+          `• <b>Nominal:</b> Rp ${amt.toLocaleString('id-ID')}\n` +
+          `• <b>Tipe:</b> ${latestTx.type === 'expense' ? 'Pengeluaran' : latestTx.type === 'income' ? 'Pemasukan' : 'Transfer'}\n` +
+          `• <b>Dompet:</b> ${latestTx.wallets?.name || 'Default'}\n\n` +
+          `✅ <i>Saldo dompet Anda telah dikembalikan secara otomatis.</i>`;
+
+        await telegram.sendMessage(botToken, chatId, replyMsg);
+        return NextResponse.json({ ok: true });
+      }
+
       if (command === '/saldo') {
         if (!wallets || wallets.length === 0) {
           await telegram.sendMessage(botToken, chatId, '👛 Kamu belum memiliki dompet aktif.');

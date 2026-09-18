@@ -86,6 +86,7 @@ export default function DashboardPage() {
   const [editingCategoryEmoji, setEditingCategoryEmoji] = useState('');
 
   // Transaction Add Form States
+  const [txSubTab, setTxSubTab] = useState<'daftar' | 'tambah'>('daftar');
   const [newTxType, setNewTxType] = useState('expense');
   const [newTxAmount, setNewTxAmount] = useState('');
   const [newTxCategoryId, setNewTxCategoryId] = useState('');
@@ -2065,6 +2066,27 @@ export default function DashboardPage() {
                                         {expandedTxId === t.id ? '▲ Sembunyikan' : '▼ Rincian Struk'}
                                       </span>
                                     )}
+                                  </td>
+                                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                    <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
+                                      <button 
+                                        type="button" 
+                                        onClick={(e) => { e.stopPropagation(); handleOpenEditTxModal(t); }} 
+                                        className="btn-action-edit" 
+                                        title="Edit Transaksi"
+                                      >
+                                        ✏️ Edit
+                                      </button>
+                                      <button 
+                                        type="button" 
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteTx(t.id, t.description); }} 
+                                        disabled={isDeletingTxId === t.id}
+                                        className="btn-action-delete" 
+                                        title="Hapus Transaksi"
+                                      >
+                                        {isDeletingTxId === t.id ? '⏳' : '🗑️ Hapus'}
+                                      </button>
+                                    </div>
                                   </td>
                                 </tr>
                                 
