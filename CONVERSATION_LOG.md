@@ -1245,3 +1245,39 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 4. **Verifikasi & Deployment**:
    - Kompilasi `npm run build` lolos 100% (0 error).
    - Git commit dan push ke branch `main` (`1940099`) untuk trigger auto-deploy Vercel Pro.
+
+## Sesi 84: Sistem Langganan 2-Tier (Basic & Pro), Dynamic Pricing Manager Admin, Pro-Gating Telegram & Struk OCR, Pemisahan Fitur Scan Struk, dan Perbaikan Dark Obsidian Glass Settings
+- **User Request:**
+  1. Kelola langganan dibuat 2 tier: Basic dan Pro, dengan harga yang bisa diubah sesuka admin.
+  2. Fitur koneksi bot Telegram (BYOB/pairing) hanya ada di tier Pro saja (Basic terkunci).
+  3. Perbaiki UI di menu setting yang berantakan putih polos sehingga teks tidak terbaca.
+  4. Perbaiki deteksi unggah struk belanja (AI Vision OCR) agar bisa mendeteksi rincian belanjaan dan hanya tersedia di tier Pro.
+  5. Pisahkan fitur Unggah Struk ke dalam menu/fitur tersendiri dan jangan disatukan dengan form input transaksi biasa.
+- **Implementasi:**
+  1. **Dynamic 2-Tier Pricing Manager (src/lib/pricing.ts, /api/subscriptions/pricing)**:
+     - Membangun modul konfigurasi harga dinamis untuk tier **Basic** dan **Pro** dengan penyimpanan fallback persist & integrasi Supabase.
+     - Menyediakan API endpoint GET & POST /api/subscriptions/pricing untuk membaca dan mengubah harga paket secara instan.
+  2. **Admin Dynamic Pricing Card (src/app/admin/page.tsx)**:
+     - Menambahkan kartu *Atur Harga Paket Langganan (Basic & Pro)* di tab Kelola Langganan admin dengan form pengubahan harga, periode, dan deskripsi secara dinamis.
+     - Mengubah seluruh label *Starter* menjadi *Basic*.
+     - Memperbaiki seluruh background putih menjadi Dark Obsidian Glass (
+gba(13, 20, 38, 0.75)).
+  3. **Dedicated OCR Receipt Route (src/app/api/ai/ocr-receipt/route.ts)**:
+     - Membuat route khusus untuk menangani OCR foto struk dengan multimodal AI Vision (Gemini Flash / OpenAI Vision / LiteLLM) dengan fallback cerdas.
+     - Menerapkan Pro-gating verifikasi di backend (hanya akun Pro yang dapat mengekstrak struk).
+  4. **Pemisahan Menu 📸 Scan Struk di User Dashboard (src/app/dashboard/page.tsx)**:
+     - Menambahkan tab khusus 📸 Scan Struk di sidebar dan bottom nav.
+     - Menghapus scanner struk yang menumpuk di tab Transaksi dan menggantikannya dengan banner pengarah ke menu Scan Struk.
+     - Untuk user **Basic**: Menampilkan layar kunci Pro eksklusif dengan showcase keunggulan AI Vision dan tombol upgrade.
+     - Untuk user **Pro**: Menyediakan area unggah/kamera HP, pratinjau gambar, tombol deteksi AI Vision, kartu hasil ekstraksi (merchant, tanggal, total bayar, pemilihan dompet, dan tabel rincian barang) serta tombol simpan ke database transaksi.
+  5. **Pro-Gating Koneksi Bot Telegram (src/app/dashboard/page.tsx, src/app/api/telegram/setup/route.ts)**:
+     - Mengunci formulir input token bot Telegram di tab Settings untuk pengguna Basic dengan banner *Fitur Khusus Pengguna Pro* dan tombol *Upgrade ke Pro*.
+  6. **Perbaikan Tampilan Dark Obsidian Glass di Settings (src/app/dashboard/page.tsx)**:
+     - Menghapus semua hardcoded background #ffffff pada kartu Kelola Kategori Kustom, daftar dompet, input batas anggaran, dan paket kredit.
+     - Menerapkan tema Dark Obsidian Glass (
+gba(13, 20, 38, 0.75) dengan border halus 
+gba(255, 255, 255, 0.08)) sehingga seluruh teks putih dan tombol aksi terlihat jelas, elegan, dan kontras.
+  7. **Kompilasi & Deployment**:
+     - Menjalankan 
+pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurna).
+     - Commit dan push ke branch main repositori GitHub untuk sinkronisasi live Vercel.
