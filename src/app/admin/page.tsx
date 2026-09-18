@@ -2084,6 +2084,13 @@ export default function AdminDashboard() {
                       <td>{u.txCount} transaksi</td>
                       <td>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <button
+                            onClick={() => handleOpenEditSub(u)}
+                            className="btn"
+                            style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', fontWeight: '700', cursor: 'pointer' }}
+                          >
+                            👑 Langganan
+                          </button>
                           {u.is_approved === false && (
                             <button 
                               onClick={() => handleApproveUser(u.id, u.name)} 
@@ -2375,10 +2382,10 @@ export default function AdminDashboard() {
                           <td style={{ textAlign: 'right' }}>
                             <button
                               onClick={() => handleOpenEditSub(u)}
-                              className="btn btn-outline"
-                              style={{ padding: '6px 14px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: '700', borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                              className="btn"
+                              style={{ padding: '6px 14px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: '700', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.35)', cursor: 'pointer' }}
                             >
-                              ✏️ Kelola
+                              👑 Kelola
                             </button>
                           </td>
                         </tr>
@@ -2387,83 +2394,6 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
-
-            {/* EDIT SUBSCRIPTION MODAL */}
-            {showEditSubModal && selectedSubUser && (
-              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999, padding: '20px' }}>
-                <div style={{ background: 'rgba(13, 20, 38, 0.96)', border: '1px solid rgba(255, 255, 255, 0.12)', color: '#f8fafc', borderRadius: '24px', maxWidth: '480px', width: '100%', padding: '28px', boxShadow: '0 25px 60px rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', pb: '12px' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '800', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span>👑</span> Edit Langganan Pengguna
-                    </h3>
-                    <button onClick={() => setShowEditSubModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
-                  </div>
-
-                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '12px 16px', borderRadius: '12px', fontSize: '0.85rem' }}>
-                    <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{selectedSubUser.name}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{selectedSubUser.email || '-'}</div>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-main)' }}>Tambah Masa Aktif (Hari):</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-                      <button type="button" onClick={() => setSubModalDays(30)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 30 ? 'var(--primary)' : 'rgba(255, 255, 255, 0.05)', color: subModalDays === 30 ? '#fff' : '#cbd5e1', color: subModalDays === 30 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+30 Hari</button>
-                      <button type="button" onClick={() => setSubModalDays(90)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 90 ? 'var(--primary)' : 'rgba(255, 255, 255, 0.05)', color: subModalDays === 90 ? '#fff' : '#cbd5e1', color: subModalDays === 90 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+90 Hari</button>
-                      <button type="button" onClick={() => setSubModalDays(180)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 180 ? 'var(--primary)' : 'rgba(255, 255, 255, 0.05)', color: subModalDays === 180 ? '#fff' : '#cbd5e1', color: subModalDays === 180 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+180 Hari</button>
-                      <button type="button" onClick={() => setSubModalDays(365)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid var(--border)', background: subModalDays === 365 ? 'var(--primary)' : 'rgba(255, 255, 255, 0.05)', color: subModalDays === 365 ? '#fff' : '#cbd5e1', color: subModalDays === 365 ? '#fff' : 'var(--text-main)', fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer' }}>+1 Tahun</button>
-                    </div>
-                    <input
-                      type="number"
-                      value={subModalDays}
-                      onChange={e => setSubModalDays(Number(e.target.value))}
-                      style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border)', marginTop: '4px', fontSize: '0.85rem' }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'rgba(245, 158, 11, 0.08)', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                    <div>
-                      <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#b45309' }}>Akses Gratis (Free Access VIP)</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Berikan paket Pro aktif selamanya</div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={subModalFreeAccess}
-                      onChange={e => setSubModalFreeAccess(e.target.checked)}
-                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-main)' }}>Catatan Admin:</label>
-                    <textarea
-                      rows={2}
-                      value={subModalNotes}
-                      onChange={e => setSubModalNotes(e.target.value)}
-                      placeholder="Misal: Perpanjangan transfer manual BCA #INV-882"
-                      style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border)', fontSize: '0.85rem' }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-                    <button
-                      onClick={() => setShowEditSubModal(false)}
-                      className="btn btn-outline"
-                      style={{ padding: '10px 18px', borderRadius: '10px', fontWeight: '700' }}
-                    >
-                      Batal
-                    </button>
-                    <button
-                      onClick={handleSaveSubscription}
-                      disabled={isSavingSub}
-                      className="btn"
-                      style={{ backgroundColor: 'var(--primary)', color: '#ffffff', padding: '10px 20px', borderRadius: '10px', fontWeight: '700', border: 'none', cursor: 'pointer' }}
-                    >
-                      {isSavingSub ? 'Menyimpan...' : 'Simpan Perubahan'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -3800,6 +3730,192 @@ export default function AdminDashboard() {
           </div>
         )}
       </main>
+
+      {/* 👑 EDIT LANGGANAN PENGGUNA MODAL (PIXEL-PERFECT MOCKUP) */}
+      {showEditSubModal && selectedSubUser && (
+        <div 
+          style={{ 
+            position: 'fixed', 
+            inset: 0, 
+            background: 'rgba(0, 0, 0, 0.78)', 
+            backdropFilter: 'blur(8px)', 
+            WebkitBackdropFilter: 'blur(8px)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            zIndex: 999999, 
+            padding: '20px' 
+          }}
+          onClick={() => setShowEditSubModal(false)}
+        >
+          <div 
+            onClick={e => e.stopPropagation()} 
+            style={{ 
+              background: '#0d1527', 
+              border: '1px solid rgba(255, 255, 255, 0.12)', 
+              color: '#f8fafc', 
+              borderRadius: '20px', 
+              maxWidth: '480px', 
+              width: '100%', 
+              padding: '24px 26px', 
+              boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.85)', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '18px'
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>👑</span> Edit Langganan Pengguna
+              </h3>
+              <button 
+                onClick={() => setShowEditSubModal(false)} 
+                style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#94a3b8', padding: '4px', lineHeight: 1 }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* User Info Card */}
+            <div style={{ background: '#151f38', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '14px 18px', borderRadius: '12px' }}>
+              <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '1rem' }}>{selectedSubUser.name}</div>
+              <div style={{ color: '#94a3b8', fontSize: '0.82rem', marginTop: '3px' }}>{selectedSubUser.email || '-'}</div>
+            </div>
+
+            {/* Tambah Masa Aktif */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#ffffff' }}>Tambah Masa Aktif (Hari):</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                {[
+                  { label: '+30 Hari', days: 30 },
+                  { label: '+90 Hari', days: 90 },
+                  { label: '+180 Hari', days: 180 },
+                  { label: '+1 Tahun', days: 365 },
+                ].map(item => {
+                  const isSelected = subModalDays === item.days;
+                  return (
+                    <button 
+                      key={item.days}
+                      type="button" 
+                      onClick={() => setSubModalDays(item.days)} 
+                      style={{ 
+                        padding: '10px 4px', 
+                        borderRadius: '8px', 
+                        border: isSelected ? 'none' : '1px solid rgba(255, 255, 255, 0.08)', 
+                        background: isSelected ? '#10b981' : '#151f38', 
+                        color: '#ffffff', 
+                        fontWeight: isSelected ? '800' : '600', 
+                        fontSize: '0.8rem', 
+                        cursor: 'pointer',
+                        boxShadow: isSelected ? '0 2px 8px rgba(16, 185, 129, 0.35)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <input
+                type="number"
+                value={subModalDays}
+                onChange={e => setSubModalDays(Number(e.target.value))}
+                style={{ 
+                  padding: '12px 16px', 
+                  borderRadius: '10px', 
+                  border: '1px solid rgba(255, 255, 255, 0.12)', 
+                  background: '#090e1a', 
+                  color: '#ffffff', 
+                  fontSize: '0.92rem', 
+                  fontWeight: '600',
+                  marginTop: '2px',
+                  width: '100%'
+                }}
+              />
+            </div>
+
+            {/* Akses Gratis VIP Card */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'rgba(245, 158, 11, 0.04)', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+              <div>
+                <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#f59e0b' }}>Akses Gratis (Free Access VIP)</div>
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '2px' }}>Berikan paket Pro aktif selamanya</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={subModalFreeAccess}
+                onChange={e => {
+                  setSubModalFreeAccess(e.target.checked);
+                  if (e.target.checked) setSubModalPlan('Pro');
+                }}
+                style={{ width: '20px', height: '20px', accentColor: '#10b981', cursor: 'pointer', borderRadius: '4px' }}
+              />
+            </div>
+
+            {/* Catatan Admin */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#ffffff' }}>Catatan Admin:</label>
+              <textarea
+                rows={2}
+                value={subModalNotes}
+                onChange={e => setSubModalNotes(e.target.value)}
+                placeholder="Misal: Perpanjangan transfer manual BCA #INV-882"
+                style={{ 
+                  padding: '12px 16px', 
+                  borderRadius: '10px', 
+                  border: '1px solid rgba(255, 255, 255, 0.12)', 
+                  background: '#090e1a', 
+                  color: '#ffffff', 
+                  fontSize: '0.88rem',
+                  resize: 'vertical',
+                  width: '100%'
+                }}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setShowEditSubModal(false)}
+                className="btn"
+                style={{ 
+                  background: '#151f38', 
+                  border: '1px solid rgba(255, 255, 255, 0.12)', 
+                  color: '#e2e8f0', 
+                  padding: '10px 22px', 
+                  borderRadius: '10px', 
+                  fontWeight: '700', 
+                  fontSize: '0.9rem',
+                  cursor: 'pointer' 
+                }}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveSubscription}
+                disabled={isSavingSub}
+                className="btn"
+                style={{ 
+                  background: '#10b981', 
+                  color: '#ffffff', 
+                  padding: '10px 24px', 
+                  borderRadius: '10px', 
+                  fontWeight: '700', 
+                  fontSize: '0.9rem', 
+                  border: 'none', 
+                  cursor: isSavingSub ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                  opacity: isSavingSub ? 0.8 : 1
+                }}
+              >
+                {isSavingSub ? 'Menyimpan...' : 'Simpan Perubahan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* APPLE LIQUID GLASS LIGHTBOX PROOF MODAL */}
       {selectedProofModal && (

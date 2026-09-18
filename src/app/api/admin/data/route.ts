@@ -78,12 +78,26 @@ export async function GET(request: Request) {
         telegramStatus = `Terhubung (ID: ${p.telegram_chat_id})`;
       }
 
+      let resolvedPlan = p.plan || 'Basic';
+      if (resolvedPlan === 'Starter') resolvedPlan = 'Basic';
+
+      let daysRemaining = 0;
+      if (p.is_free_access) {
+        daysRemaining = 9999;
+      } else if (p.subscription_end) {
+        daysRemaining = Math.max(0, Math.ceil((new Date(p.subscription_end).getTime() - Date.now()) / 86400000));
+      }
+
       return {
         id: p.id,
         name: p.full_name || metaMap.get(p.id)?.full_name || (userEmail !== '-' ? userEmail.split('@')[0] : 'User'),
         email: userEmail,
         phone: p.phone_number || '-',
-        plan: p.plan || 'Starter',
+        plan: resolvedPlan,
+        is_free_access: !!p.is_free_access,
+        subscription_end: p.subscription_end || null,
+        daysRemaining,
+        notes: p.notes || '',
         telegram: telegramStatus,
         telegram_link_token: p.telegram_link_token || '-',
         has_bot_token: hasBot,
@@ -107,7 +121,11 @@ export async function GET(request: Request) {
             name: u.user_metadata?.full_name || (u.email ? u.email.split('@')[0] : 'User Baru'),
             email: u.email || '-',
             phone: u.phone || '-',
-            plan: 'Starter',
+            plan: 'Basic',
+            is_free_access: false,
+            subscription_end: null,
+            daysRemaining: 0,
+            notes: '',
             telegram: 'Belum Terhubung',
             telegram_link_token: '-',
             has_bot_token: false,

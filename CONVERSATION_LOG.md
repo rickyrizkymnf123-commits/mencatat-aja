@@ -1382,3 +1382,24 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
   2. Menyelaraskan form simpan hasil scan struk di frontend (`src/app/dashboard/page.tsx`) dan simulasi admin (`src/app/admin/page.tsx`) agar mengirimkan `source: 'web'`.
   3. Menguji build produksi Next.js (`npm run build`) dengan hasil 0 error pada seluruh 29 route.
   4. Melakukan commit (`1b07082`) dan push ke branch `main` untuk deployment otomatis ke production Vercel (`https://www.mencatat.my.id`).
+
+## Sesi 89: Implementasi Modal Edit & Kelola Langganan Pengguna (Ala Mockup ProfitLab)
+- **User Request:** Menambahkan fitur untuk bisa kelola langganan users lengkap dengan modal edit langganan pengguna (tambah masa aktif hari: +30, +90, +180, +1 Tahun, akses gratis Free Access VIP selamanya, dan catatan admin).
+- **Implementasi:**
+  1. **Tampilan Modal Pixel-Perfect (`src/app/admin/page.tsx`)**:
+     - Membangun modal `👑 Edit Langganan Pengguna` dengan tema Dark Obsidian Slate (`#0d1527` & `#151f38`), rounded corners, dan border glow.
+     - Kartu identitas pengguna (Nama & Email).
+     - Tombol preset cepat tambah masa aktif: `+30 Hari` (default active emerald green `#10b981`), `+90 Hari`, `+180 Hari`, `+1 Tahun`, dan input numerik dinamis.
+     - Card `Akses Gratis (Free Access VIP)` dengan aksen border oranye dan switch/checkbox aktif selamanya.
+     - Form input `Catatan Admin` untuk mencatat riwayat perpanjangan atau transaksi manual.
+     - Tombol aksi `Batal` dan `Simpan Perubahan` (emerald green).
+  2. **Aksesibilitas Multi-Tab Admin**:
+     - Menambahkan tombol `👑 Langganan` langsung pada setiap baris di tabel **Kelola Pengguna** (`activeTab === 'users'`).
+     - Menyediakan tombol `👑 Kelola` di tabel **Kelola Langganan** (`activeTab === 'subscriptions'`).
+     - Menjadikan modal bersifat global di root Admin Dashboard agar dapat dibuka secara responsif dari tab manapun.
+  3. **Penyelarasan API & Database (`src/app/api/admin/data/route.ts`, `src/app/api/admin/subscriptions/route.ts`)**:
+     - Memastikan endpoint `/api/admin/data` dan `/api/admin/subscriptions` mengekspos properti `is_free_access`, `subscription_end`, `daysRemaining`, dan `notes`.
+  4. **Verifikasi & Build**:
+     - `npm run build` berhasil 100% (29 routes tanpa error).
+     - Sinkronisasi commit dan push ke branch `main` GitHub.
+
