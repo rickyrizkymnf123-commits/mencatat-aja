@@ -568,19 +568,35 @@ button {
     font-size: 16px !important;
   }
 
+  .dashboard-container {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    overflow-x: hidden !important;
+  }
+
   .mobile-top-bar {
     display: flex !important;
     position: sticky !important;
     top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
     z-index: 990 !important;
     height: 60px !important;
     padding: 0 16px !important;
-    background: rgba(4, 6, 13, 0.9) !important;
+    background: rgba(4, 6, 13, 0.95) !important;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     align-items: center !important;
     justify-content: space-between !important;
+    flex-shrink: 0 !important;
   }
 
   .sidebar {
@@ -614,8 +630,13 @@ button {
   }
 
   .dashboard-main, main.animate-fade-in {
-    padding: 16px 14px 96px 14px !important;
+    margin-left: 0 !important;
     width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+    padding: 16px 14px 96px 14px !important;
+    overflow-x: hidden !important;
+    flex: 1 1 auto !important;
   }
 
   .mobile-bottom-nav {
@@ -688,10 +709,18 @@ button {
 
   /* Responsive Tables on Mobile */
   .tx-table-container, .shadcn-table-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     border-radius: 14px !important;
-    margin: 0 -4px !important;
+    margin: 0 0 16px 0 !important;
+  }
+
+  .tx-table-container table, .shadcn-table-wrapper table {
+    min-width: 580px !important;
+    width: 100% !important;
   }
 
   /* Responsive Grid Cards on Mobile */

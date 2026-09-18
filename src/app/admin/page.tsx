@@ -1781,8 +1781,15 @@ export default function AdminDashboard() {
 
       {/* Mobile Top Bar */}
       <div className="mobile-top-bar">
-        <span style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--primary)' }}>👑 Mencatat Aja Admin</span>
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-main)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '1.15rem', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.3px' }}>
+            Mencatat<span style={{ color: '#10b981' }}>Aja</span>
+          </span>
+          <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '99px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#34d399', fontWeight: '800', textTransform: 'uppercase' }}>
+            Admin
+          </span>
+        </div>
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#f8fafc', padding: '4px' }}>
           ☰
         </button>
       </div>
@@ -1860,7 +1867,7 @@ export default function AdminDashboard() {
         )}
 
         {/* QUICK ADMIN METRICS STAT CARDS */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div className="stats-summary" style={{ marginBottom: '24px' }}>
           <div style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '20px', padding: '18px 22px', boxShadow: '0 10px 30px -10px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Users</span>

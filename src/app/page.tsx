@@ -431,6 +431,25 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
           .max-container {
             padding: 0 16px !important;
           }
+          .navbar-header {
+            height: 60px !important;
+          }
+          .brand-text-title {
+            font-size: 1.25rem !important;
+          }
+          .luxury-pro-badge {
+            display: none !important;
+          }
+          .auth-nav-link {
+            display: none !important;
+          }
+          .btn-dash-primary {
+            padding: 8px 14px !important;
+            font-size: 0.8rem !important;
+          }
+          .floating-dash-pill {
+            display: none !important;
+          }
           .demo-split-grid {
             grid-template-columns: 1fr !important;
           }
@@ -438,20 +457,22 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
             display: none !important;
           }
           .hero-wrap {
-            padding: 40px 0 24px 0 !important;
-            gap: 18px !important;
+            padding: 32px 0 20px 0 !important;
+            gap: 16px !important;
           }
           .hero-headline {
-            font-size: 2.1rem !important;
-            letter-spacing: -0.6px !important;
+            font-size: 1.95rem !important;
+            letter-spacing: -0.5px !important;
+            line-height: 1.25 !important;
           }
           .hero-subhead {
-            font-size: 0.95rem !important;
+            font-size: 0.9rem !important;
+            line-height: 1.5 !important;
           }
           .hero-cta-group {
             flex-direction: column !important;
             width: 100% !important;
-            gap: 12px !important;
+            gap: 10px !important;
           }
           .hero-cta-group > * {
             width: 100% !important;
@@ -479,20 +500,21 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
             grid-template-columns: 1fr !important;
             gap: 16px !important;
           }
-          .floating-dash-pill {
-            bottom: 16px !important;
-            right: 16px !important;
-            padding: 10px 18px !important;
-            font-size: 0.8rem !important;
-          }
         }
 
         @media (max-width: 480px) {
           .hero-headline {
-            font-size: 1.75rem !important;
+            font-size: 1.65rem !important;
           }
           .metrics-grid {
-            grid-template-columns: 1fr !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 8px !important;
+          }
+          .metric-cell {
+            padding: 10px 12px !important;
+          }
+          .metric-val {
+            font-size: 1.2rem !important;
           }
           .chat-stream-box {
             height: 250px !important;
@@ -641,13 +663,13 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
             </nav>
 
             {/* TEMBUS KE DASHBOARD ACTION */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Link href="/auth?mode=login" className="nav-link-item" style={{ padding: '8px 14px' }}>
-                Masuk Akun
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Link href="/auth?mode=login" className="nav-link-item auth-nav-link" style={{ padding: '8px 12px', fontSize: '0.85rem' }}>
+                Masuk
               </Link>
-              <button onClick={handleGoToDashboard} className="btn-dash-primary">
+              <button onClick={handleGoToDashboard} className="btn-dash-primary" style={{ whiteSpace: 'nowrap' }}>
                 <span>🚀</span>
-                <span>Buka Dashboard</span>
+                <span>Dashboard</span>
                 <span>➔</span>
               </button>
             </div>
