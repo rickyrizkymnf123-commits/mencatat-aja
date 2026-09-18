@@ -1434,7 +1434,7 @@ export default function AdminDashboard() {
             amount: selected.amount,
             type: 'expense',
             description: selected.description,
-            source: 'receipt'
+            source: 'web'
           })
         });
 

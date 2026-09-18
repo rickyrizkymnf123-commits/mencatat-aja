@@ -830,7 +830,7 @@ export default function DashboardPage() {
             amount: selected.amount,
             type: 'expense',
             description: selected.description,
-            source: 'receipt'
+            source: 'web'
           })
         });
 
@@ -928,7 +928,7 @@ export default function DashboardPage() {
           amount: Number(ocrTotal),
           type: 'expense',
           description: desc,
-          source: 'receipt',
+          source: 'web',
           date: ocrDate || new Date().toISOString().split('T')[0],
           notes: ocrItems && ocrItems.length > 0 ? JSON.stringify(ocrItems) : undefined
         })

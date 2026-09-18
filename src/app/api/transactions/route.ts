@@ -119,7 +119,7 @@ export async function POST(request: Request) {
         description,
         transfer_to_wallet_id: transferToWalletId || null,
         transaction_date: transactionDate || new Date().toISOString(),
-        source: source || 'web',
+        source: (source === 'telegram' ? 'telegram' : 'web'),
         wallets: { name: walletName },
         categories: { name: cat.name, emoji: cat.emoji }
       };
@@ -140,7 +140,7 @@ export async function POST(request: Request) {
         description,
         transfer_to_wallet_id: transferToWalletId || null,
         transaction_date: transactionDate || new Date().toISOString(),
-        source: source || 'web'
+        source: (source === 'telegram' ? 'telegram' : 'web')
       })
       .select(`
         *,
