@@ -1308,3 +1308,12 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
      - Saat user mengaktifkan jadwal atau menekan tombol **🔔 Tes Kirim Notifikasi Pengingat ke Telegram**, sistem langsung mengirimkan pesan pengingat nyata ke chat Telegram bot pengguna secara real-time.
      - Di menu Settings, ditambahkan tombol **💾 Simpan Jadwal Pengingat** dan tombol **🔔 Tes Kirim Notifikasi Pengingat ke Telegram** agar user dapat langsung memverifikasi notifikasi di HP-nya.
 - **Verifikasi & Build:** pm run build\ sukses terkompilasi 100% (29 routes tanpa error) dan tersinkronisasi ke branch \main\ live deployment Vercel.
+
+## Sesi 87: Perbaikan Sinkronisasi Status Pro Pengguna dan Pemindaian AI Vision OCR Struk Belanja
+- **User Request:** Pengguna sudah berstatus Pro namun tombol/fitur Scan Struk AI Vision masih belum dapat memproses foto struk.
+- **Penyebab:** Pada client-side src/app/dashboard/page.tsx, status userPlan tersimpan di localStorage sebagai Basic dan tidak disinkronkan otomatis dari endpoint /api/subscriptions. Selain itu, parsing response JSON dari Vision AI memerlukan pembersihan markdown fence yang lebih toleran.
+- **Implementasi & Solusi:**
+  1. Menambahkan pemanggilan /api/subscriptions pada fetchDashboardData untuk menyinkronkan status plan pengguna langsung dari database/server ke client state dan localStorage.
+  2. Memperbarui handler handleProcessReceiptOcr dan endpoint backend /api/ai/ocr-receipt agar verifikasi status Pro berjalan mulus dan akurat.
+  3. Memperbaiki fungsi ekstraksi JSON (extractJsonHelper) di src/lib/ai.ts agar dapat mengekstrak objek JSON struk belanja (seperti struk Nature Gemuk Badan Rp 45.000) tanpa error syntax, dilengkapi fallback cerdas jika API Vision sedang mengalami delay.
+- **Verifikasi:** Build Next.js lolos 100% tanpa error, perubahan di-commit dan di-push ke branch main live Vercel.
