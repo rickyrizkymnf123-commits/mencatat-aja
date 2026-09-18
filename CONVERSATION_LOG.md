@@ -1193,3 +1193,20 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 3. **Verifikasi & Deployment**:
    - Build Next.js lolos 100% (`npm run build` - 0 error).
    - Git commit dan push ke `main` (`2ee096c`) untuk langsung auto-deploy Vercel Pro.
+
+## Sesi 81 - Fitur Edit dan Hapus Catatan Transaksi & Auto-Sync Saldo Dompet (2026-09-18)
+
+### Permintaan Pengguna
+- Menambahkan fitur untuk menghapus dan mengedit catatan transaksi (pemasukan, pengeluaran, transfer) di dashboard agar pengguna dapat memperbaiki data yang salah input.
+
+### Tindakan & Perubahan Teknis
+1. **Backend API (`src/app/api/transactions/route.ts`)**:
+   - Menambahkan handler `DELETE` untuk menghapus transaksi dari tabel `transactions` Supabase sekaligus membalikkan/mengembalikan saldo dompet asal & tujuan secara akurat.
+   - Menambahkan handler `PUT` / `PATCH` untuk mengedit nominal, kategori, dompet, tipe, dan deskripsi transaksi dengan penyesuaian selisih saldo dompet otomatis.
+2. **Frontend Web Dashboard (`src/app/dashboard/page.tsx`)**:
+   - Menambahkan tombol aksi ✏️ **Edit** dan 🗑️ **Hapus** pada tabel Transaksi Terakhir (*Beranda*) dan tabel Riwayat Transaksi (*Laporan*).
+   - Membuat modal pop-up Dark Obsidian Glass untuk mengedit catatan transaksi secara lengkap.
+   - Menyertakan konfirmasi sebelum menghapus transaksi untuk mencegah kesalahan tidak sengaja.
+3. **Verifikasi & Deployment**:
+   - Kompilasi `npm run build` lolos 100% (0 error).
+   - Git commit dan push ke branch `main` di GitHub (`a3fe3d4`) untuk otomatisasi deploy di Vercel.
