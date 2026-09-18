@@ -1571,7 +1571,10 @@ export default function AdminDashboard() {
         /* Dark shadcn Table Design */
         .shadcn-table-wrapper {
           border-radius: 20px !important;
-          overflow: hidden !important;
+          overflow-x: auto !important;
+          overflow-y: hidden !important;
+          -webkit-overflow-scrolling: touch !important;
+          touch-action: pan-x pan-y !important;
           background: rgba(13, 20, 38, 0.75) !important;
           backdrop-filter: blur(20px) saturate(180%) !important;
           -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
@@ -2021,6 +2024,10 @@ export default function AdminDashboard() {
               </div>
             )}
 
+            <div className="mobile-table-hint">
+              <span>👈 Geser tabel untuk melihat semua kolom & tombol aksi 👉</span>
+            </div>
+
             <div className="tx-table-container animate-slide-up">
               <table className="tx-table">
                 <thead>
@@ -2304,6 +2311,9 @@ export default function AdminDashboard() {
             </div>
 
             {/* Table */}
+            <div className="mobile-table-hint">
+              <span>👈 Geser tabel untuk melihat status & tombol aksi 👉</span>
+            </div>
             <div className="shadcn-table-wrapper">
               <table className="shadcn-table">
                 <thead>
@@ -2422,6 +2432,9 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            <div className="mobile-table-hint">
+              <span>👈 Geser tabel untuk melihat bukti & tombol aksi 👉</span>
+            </div>
             <div className="shadcn-table-wrapper animate-slide-up">
               <table className="shadcn-table">
                 <thead>
@@ -2520,6 +2533,9 @@ export default function AdminDashboard() {
               </button>
             </div>
 
+            <div className="mobile-table-hint">
+              <span>👈 Geser tabel untuk melihat status & token 👉</span>
+            </div>
             <div className="tx-table-container animate-slide-up">
               <table className="tx-table">
                 <thead>
@@ -2561,6 +2577,9 @@ export default function AdminDashboard() {
               <p style={{ color: 'var(--text-muted)' }}>Merekam seluruh aktivitas administratif sensitif demi mematuhi kepatuhan privasi pengguna.</p>
             </div>
 
+            <div className="mobile-table-hint">
+              <span>👈 Geser tabel untuk melihat riwayat aktivitas 👉</span>
+            </div>
             <div className="tx-table-container animate-slide-up">
               <table className="tx-table">
                 <thead>

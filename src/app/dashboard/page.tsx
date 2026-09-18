@@ -1905,7 +1905,10 @@ export default function DashboardPage() {
           background: rgba(13, 20, 38, 0.85) !important;
           border: 1px solid rgba(255, 255, 255, 0.08) !important;
           border-radius: 20px !important;
-          overflow: hidden !important;
+          overflow-x: auto !important;
+          overflow-y: hidden !important;
+          -webkit-overflow-scrolling: touch !important;
+          touch-action: pan-x pan-y !important;
         }
 
         table {
@@ -2990,6 +2993,9 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Reports visual table */}
+                  <div className="mobile-table-hint">
+                    <span>👈 Geser tabel untuk melihat rincian lengkap 👉</span>
+                  </div>
                   <div className="tx-table-container animate-slide-up">
                     {filteredTxs.length === 0 ? (
                       <div className="empty-state">

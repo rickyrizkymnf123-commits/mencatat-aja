@@ -1498,3 +1498,38 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
   4. **Verifikasi & Deployment**:
      - `npm run build` sukses 100% tanpa error.
      - Commit & push ke GitHub `main` (commit `daecfc9`) untuk live deployment Vercel.
+
+## Sesi 95: Perbaikan Layout Beranda Mobile (Header Stacking, Filter Pill & 2x2 Stats Grid)
+- **User Feedback & Screenshot Analysis (`media_1789731489793.png`):**
+  1. Header Beranda: Judul "Ringkasan Keuangan" dan tombol filter periode (HARIAN | MINGGUAN | BULANAN | TAHUNAN) berada berdampingan dalam satu baris flex sehingga tombol terpotong di tepi kanan ("BULANAN/TAHUNAN").
+  2. Susunan Kartu Saldo: Kartu vertikal terlalu tinggi dan memotong tampilan bawah.
+- **Solusi & Implementasi:**
+  1. **Header Responsif (`.dashboard-section-header`)**:
+     - Pada layar mobile (≤ 768px), container otomatis menjadi `flex-direction: column; align-items: flex-start; gap: 12px`.
+     - Filter pill periode (`.pricing-toggle`) melebar penuh 100% dengan `flex: 1` per tombol sehingga tombol HARIAN, MINGGUAN, BULANAN, TAHUNAN terlihat utuh 100% tanpa ada yang terpotong.
+  2. **Grid Kartu Statistik 2x2 Kompak (`.stats-summary`)**:
+     - Mengubah susunan 4 kartu statistik di mobile menjadi grid 2x2 rapi dengan `padding: 14px` dan `min-height: 95px` sehingga Saldo Total, Pemasukan, Pengeluaran, dan Sisa Budget muat dalam satu layar tanpa harus scroll berlebih.
+  3. **Generous Bottom Padding (`.dashboard-main`)**:
+     - Menambah `padding-bottom: 110px !important` agar konten terbawah tidak tertutup oleh floating mobile bottom nav.
+  4. **Generative UI Artifact (`mobile_dashboard_perfected.html`)**:
+     - Dibuat showcase interaktif tampilan dashboard smartphone yang telah diperbaiki sempurna.
+## Sesi 96: Redesain Mobile Khusus Geser Horizontal (Smooth Swipe Table) & Preservasi Desktop
+- **User Feedback & Screenshot Analysis (`media_1789731672849.png`):**
+  - "jangan ada yang kepotong bisa di geser kiri kanan , untuk users maupun admin ,khusus di mobile jadi coba redesain khusus mobile /generative_ui tapi jangan merubah yang di tampilan dekstop sudah bagus"
+  - Pada tabel Admin dan User di layar mobile, kolom-kolom sebelah kanan (Status ACC, Telegram, Jml Transaksi, Tombol Aksi) terpotong karena wrapper tabel sebelumnya menggunakan `overflow: hidden !important` dan `min-width` terlalu sempit sehingga tidak dapat digeser dengan sentuhan jari.
+- **Solusi & Implementasi:**
+  1. **Smooth Horizontal Swipe (`src/app/globals.css`, `src/app/admin/page.tsx`, `src/app/dashboard/page.tsx`)**:
+     - Mengubah `overflow: hidden !important` pada container tabel `.tx-table-container`, `.table-wrapper`, `.shadcn-table-wrapper` menjadi `overflow-x: auto !important; overflow-y: hidden !important; -webkit-overflow-scrolling: touch !important; touch-action: pan-x pan-y !important;`.
+     - Memberikan `min-width: 820px !important` dan `white-space: nowrap !important` pada header & data cell tabel pada mobile (≤ 768px) agar semua email, badge, status, dan tombol aksi tampil rapi dengan proporsi sempurna saat digeser.
+     - Menambahkan custom emerald scrollbar ramping (`height: 6px`) agar indikator posisi geser terlihat jelas dan elegan.
+  2. **Indikator Geser Interaktif (`.mobile-table-hint`)**:
+     - Menambahkan badge petunjuk interaktif (`👈 Geser tabel ke samping untuk melihat semua kolom & tombol aksi 👉`) di atas setiap tabel data Admin & User yang hanya muncul di layar smartphone (hidden di desktop).
+  3. **Preservasi 100% Tampilan Desktop**:
+     - Semua aturan baru diisolasi dalam breakpoint responsif mobile sehingga tampilan desktop yang sudah rapi dan mewah tetap utuh 100%.
+  4. **Preservasi Grid 2x2 pada Semua Ukuran HP**:
+     - Menghapus override `grid-template-columns: 1fr` pada `@media (max-width: 480px)` agar kartu ringkasan metrik selalu tampil dalam format 2x2 yang kompak di setiap smartphone.
+  5. **Generative UI Artifact (`mobile_swipe_redesign_showcase.html`)**:
+     - Dibuat showcase interaktif demonstrasi geser tabel mobile untuk tabel Admin dan User dengan simulator smartphone dan toggle interaktif.
+  6. **Verifikasi & Deployment**:
+     - `npm run build` sukses 100% tanpa error (29 static & dynamic routes).
+     - Commit & push ke GitHub `main` untuk live deploy Vercel.
