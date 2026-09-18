@@ -3569,26 +3569,27 @@ export default function AdminDashboard() {
                           Jika tidak memiliki bot kustom, gunakan bot global Mencatat Aja dengan mengirimkan token pairing Anda di chat: <b>{prevTelegramToken}</b>
                         </p>
                         
-                        <div className="form-group" style={{ maxWidth: '500px' }}>
+                        <div className="form-group" style={{ maxWidth: '560px', width: '100%' }}>
                           <label htmlFor="prevBotToken" style={{ textTransform: 'none', fontSize: '0.85rem' }}>Token Bot Telegram Kustom (BYOB)</label>
-                          <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                          <div className="byob-input-container" style={{ marginTop: '8px' }}>
                             <input
                               id="prevBotToken"
                               type="password"
                               placeholder="Paste token bot dari @BotFather di sini"
                               value={prevBotTokenInput}
                               onChange={e => setPrevBotTokenInput(e.target.value)}
-                              style={{ flex: 1 }}
+                              className="byob-input"
                             />
-                            <button
-                              type="button"
-                              onClick={handleTestPreviewBotConnection}
-                              disabled={prevBotStatus === 'testing'}
-                              className="btn btn-primary"
-                              style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-                            >
-                              {prevBotStatus === 'testing' ? 'Testing...' : 'Test Koneksi'}
-                            </button>
+                            <div className="byob-btn-group">
+                              <button
+                                type="button"
+                                onClick={handleTestPreviewBotConnection}
+                                disabled={prevBotStatus === 'testing'}
+                                className="btn btn-primary byob-btn"
+                              >
+                                {prevBotStatus === 'testing' ? 'Testing...' : 'Test Koneksi'}
+                              </button>
+                            </div>
                           </div>
                           {prevBotStatusMsg && (
                             <p style={{ fontSize: '0.85rem', marginTop: '10px', color: prevBotStatus === 'connected' ? 'var(--success)' : 'var(--error)', fontWeight: '600' }}>

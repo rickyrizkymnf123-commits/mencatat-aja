@@ -1631,45 +1631,20 @@ export default function DashboardPage() {
   return (
     <>
       {isAdminMode && (
-        <div style={{
-          backgroundColor: 'var(--primary)',
-          color: '#ffffff',
-          padding: '10px 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          fontWeight: '600',
-          fontSize: '0.9rem',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '44px',
-          zIndex: 9999
-        }}>
-          <span>🕵️ <strong>Mode Intip Aktif:</strong> Anda sedang berselancar sebagai <strong>{userName}</strong>.</span>
+        <div className="impersonation-banner">
+          <div className="impersonation-info">
+            <span className="impersonation-badge">🕵️ Mode Intip:</span>
+            <span className="impersonation-text">Berselancar sebagai <strong>{userName}</strong></span>
+          </div>
           <button
             onClick={handleExitImpersonation}
-            style={{
-              background: 'rgba(13, 20, 38, 0.75)',
-              color: 'var(--primary)',
-              border: 'none',
-              borderRadius: '4px',
-              padding: '6px 16px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              fontSize: '0.8rem',
-              transition: 'opacity 0.2s'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-            onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+            className="impersonation-btn"
           >
-            🔌 Kembali ke Admin
+            🔌 Keluar ke Admin
           </button>
         </div>
       )}
-      <div className="dashboard-container" style={{ marginTop: isAdminMode ? '44px' : '0' }}>
+      <div className="dashboard-container" style={{ marginTop: isAdminMode ? '40px' : '0' }}>
       {/* Dynamic Scoped CSS */}
       <style jsx global>{`
         .loading-skeleton {
@@ -1696,6 +1671,83 @@ export default function DashboardPage() {
           100% { opacity: 0.6; }
         }
 
+        /* Impersonation Banner */
+        .impersonation-banner {
+          background: linear-gradient(90deg, #10b981 0%, #06b6d4 100%) !important;
+          color: #04060d !important;
+          padding: 0 20px !important;
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          font-weight: 600 !important;
+          font-size: 0.88rem !important;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          height: 40px !important;
+          z-index: 9999 !important;
+          box-sizing: border-box !important;
+          width: 100% !important;
+          max-width: 100vw !important;
+        }
+        .impersonation-info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .impersonation-badge {
+          font-weight: 800;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+        .impersonation-text {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-size: 0.82rem;
+        }
+        .impersonation-btn {
+          background: rgba(13, 20, 38, 0.85) !important;
+          color: #10b981 !important;
+          border: 1px solid rgba(16, 185, 129, 0.4) !important;
+          border-radius: 8px !important;
+          padding: 5px 12px !important;
+          font-weight: 700 !important;
+          cursor: pointer !important;
+          font-size: 0.75rem !important;
+          white-space: nowrap !important;
+          flex-shrink: 0 !important;
+          margin-left: 8px !important;
+          transition: all 0.2s ease !important;
+        }
+        .impersonation-btn:hover {
+          background: #0d1426 !important;
+          transform: translateY(-1px) !important;
+        }
+
+        /* BYOB Bot Integration Styling */
+        .byob-input-container {
+          display: flex;
+          gap: 12px;
+          align-items: center;
+          width: 100%;
+        }
+        .byob-input {
+          flex: 1;
+          min-width: 0;
+        }
+        .byob-btn-group {
+          display: flex;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+
         /* 4 STAT CARDS SUMMARY GRID */
         .dashboard-section-header {
           display: flex !important;
@@ -1706,7 +1758,6 @@ export default function DashboardPage() {
           width: 100% !important;
         }
 
-        /* 4 STAT CARDS SUMMARY GRID */
         .stats-summary {
           display: grid !important;
           grid-template-columns: repeat(4, 1fr) !important;
@@ -1714,71 +1765,6 @@ export default function DashboardPage() {
           margin-top: 16px !important;
           margin-bottom: 24px !important;
           width: 100% !important;
-        }
-
-        @media (max-width: 1200px) {
-          .stats-summary {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .dashboard-section-header {
-            flex-direction: column !important;
-            align-items: flex-start !important;
-            gap: 12px !important;
-          }
-          .dashboard-section-header > div:first-child {
-            width: 100% !important;
-          }
-          .dashboard-section-header .pricing-toggle {
-            width: 100% !important;
-            display: flex !important;
-            justify-content: space-between !important;
-            padding: 3px !important;
-            box-sizing: border-box !important;
-          }
-          .dashboard-section-header .pricing-toggle .toggle-btn {
-            flex: 1 1 0 !important;
-            text-align: center !important;
-            padding: 6px 2px !important;
-            font-size: 0.72rem !important;
-          }
-          .stats-summary {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 10px !important;
-            margin-top: 12px !important;
-            margin-bottom: 16px !important;
-          }
-          .stat-card {
-            padding: 14px 14px !important;
-            min-height: 95px !important;
-            border-radius: 16px !important;
-          }
-          .stat-value {
-            font-size: 1.25rem !important;
-            margin: 4px 0 !important;
-          }
-          .stat-label {
-            font-size: 0.72rem !important;
-          }
-          .stat-sub {
-            font-size: 0.68rem !important;
-          }
-        }
-
-        .chart-grid {
-          display: grid !important;
-          grid-template-columns: 2fr 1fr !important;
-          gap: 20px !important;
-          margin-bottom: 24px !important;
-          width: 100% !important;
-        }
-
-        @media (max-width: 900px) {
-          .chart-grid {
-            grid-template-columns: 1fr !important;
-          }
         }
 
         /* Stat Cards Dark Glass */
@@ -1816,6 +1802,9 @@ export default function DashboardPage() {
           color: #94a3b8 !important;
           text-transform: uppercase !important;
           letter-spacing: 0.8px !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
         }
 
         .stat-value {
@@ -1824,12 +1813,26 @@ export default function DashboardPage() {
           margin: 6px 0 !important;
           letter-spacing: -0.5px !important;
           color: #ffffff !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
         }
 
         .stat-sub {
           font-size: 0.78rem !important;
           color: #64748b !important;
           font-weight: 600 !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+        }
+
+        .chart-grid {
+          display: grid !important;
+          grid-template-columns: 2fr 1fr !important;
+          gap: 20px !important;
+          margin-bottom: 24px !important;
+          width: 100% !important;
         }
 
         /* Generic Dark Cards & Containers */
@@ -1968,6 +1971,117 @@ export default function DashboardPage() {
           color: #04060d !important;
           font-weight: 800 !important;
           box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+        }
+
+        /* RESPONSIVE MEDIA QUERIES (OVERRIDE BASE STYLES) */
+        @media (max-width: 1200px) {
+          .stats-summary {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+
+        @media (max-width: 900px) {
+          .chart-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .impersonation-banner {
+            padding: 0 10px !important;
+            height: 38px !important;
+          }
+          .impersonation-text {
+            font-size: 0.72rem !important;
+          }
+          .impersonation-btn {
+            padding: 4px 8px !important;
+            font-size: 0.68rem !important;
+            margin-left: 4px !important;
+          }
+          .byob-input-container {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+          }
+          .byob-input {
+            width: 100% !important;
+          }
+          .byob-btn-group {
+            width: 100% !important;
+            display: flex !important;
+            gap: 8px !important;
+          }
+          .byob-btn {
+            flex: 1 1 0 !important;
+            justify-content: center !important;
+            text-align: center !important;
+            padding: 9px 12px !important;
+            font-size: 0.82rem !important;
+          }
+          .dashboard-section-header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+          .dashboard-section-header > div:first-child {
+            width: 100% !important;
+          }
+          .dashboard-section-header .pricing-toggle {
+            width: 100% !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            padding: 3px !important;
+            box-sizing: border-box !important;
+          }
+          .dashboard-section-header .pricing-toggle .toggle-btn {
+            flex: 1 1 0 !important;
+            text-align: center !important;
+            padding: 6px 2px !important;
+            font-size: 0.72rem !important;
+          }
+          .stats-summary {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+            margin-top: 12px !important;
+            margin-bottom: 16px !important;
+          }
+          .stat-card {
+            padding: 12px 10px !important;
+            min-height: 85px !important;
+            border-radius: 14px !important;
+          }
+          .stat-value {
+            font-size: clamp(0.85rem, 3.8vw, 1.15rem) !important;
+            font-weight: 800 !important;
+            margin: 3px 0 !important;
+            line-height: 1.2 !important;
+          }
+          .stat-label {
+            font-size: 0.68rem !important;
+            letter-spacing: 0.4px !important;
+          }
+          .stat-sub {
+            font-size: 0.65rem !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .stats-summary {
+            gap: 8px !important;
+          }
+          .stat-card {
+            padding: 10px 8px !important;
+            min-height: 80px !important;
+            border-radius: 12px !important;
+          }
+          .stat-value {
+            font-size: clamp(0.8rem, 3.6vw, 1.05rem) !important;
+          }
+          .card, .glass-card {
+            padding: 14px !important;
+            border-radius: 14px !important;
+          }
         }
       `}</style>
 
@@ -3515,35 +3629,37 @@ export default function DashboardPage() {
                       Jika tidak memiliki bot kustom, gunakan bot global Mencatat Aja dengan mengirimkan token pairing Anda di chat: <b>{telegramToken}</b>
                     </p>
                     
-                    <div className="form-group" style={{ maxWidth: '500px' }}>
+                    <div className="form-group" style={{ maxWidth: '560px', width: '100%' }}>
                       <label htmlFor="botToken">Token Bot Telegram Kustom (BYOB)</label>
-                      <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                      <div className="byob-input-container" style={{ marginTop: '8px' }}>
                         <input
                           id="botToken"
                           type="password"
                           placeholder="Paste token bot dari @BotFather di sini"
                           value={botTokenInput}
                           onChange={e => setBotTokenInput(e.target.value)}
-                          style={{ flex: 1 }}
+                          className="byob-input"
                         />
-                        <button
-                          type="button"
-                          onClick={handleTestBotConnection}
-                          disabled={botStatus === 'testing'}
-                          className="btn btn-primary"
-                        >
-                          {botStatus === 'testing' ? 'Testing...' : 'Test Koneksi'}
-                        </button>
-                        {botStatus === 'connected' && (
+                        <div className="byob-btn-group">
                           <button
                             type="button"
-                            onClick={handleDisconnectBot}
-                            className="btn btn-outline"
-                            style={{ color: 'var(--error)', borderColor: 'var(--error)', fontWeight: '700' }}
+                            onClick={handleTestBotConnection}
+                            disabled={botStatus === 'testing'}
+                            className="btn btn-primary byob-btn"
                           >
-                            🔌 Putuskan
+                            {botStatus === 'testing' ? 'Testing...' : 'Test Koneksi'}
                           </button>
-                        )}
+                          {botStatus === 'connected' && (
+                            <button
+                              type="button"
+                              onClick={handleDisconnectBot}
+                              className="btn btn-outline byob-btn"
+                              style={{ color: 'var(--error)', borderColor: 'var(--error)', fontWeight: '700' }}
+                            >
+                              🔌 Putuskan
+                            </button>
+                          )}
+                        </div>
                       </div>
                       {botStatusMsg && (
                         <p style={{ fontSize: '0.85rem', marginTop: '10px', color: botStatus === 'connected' ? 'var(--success)' : 'var(--error)', fontWeight: '600' }}>
