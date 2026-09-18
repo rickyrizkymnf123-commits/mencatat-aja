@@ -1281,3 +1281,14 @@ gba(255, 255, 255, 0.08)) sehingga seluruh teks putih dan tombol aksi terlihat j
      - Menjalankan 
 pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurna).
      - Commit dan push ke branch main repositori GitHub untuk sinkronisasi live Vercel.
+
+## Sesi 85: Perbaikan Bug Duplikasi Notifikasi Ucapan Selamat Datang di Bot Telegram
+- **User Request:** Ucapan selamat datang hanya boleh dikirim sekali saat pertama kali konek Telegram. Saat bot sudah terhubung dan user mengetik perintah seperti \/saldo\ atau \/hari_ini\, bot tidak boleh lagi mengirimkan pesan selamat datang berulang.
+- **Penyebab Bug:** Di \src/app/api/telegram/webhook/route.ts\, terdapat pengecekan auto-pairing yang selalu mengirimkan \welcomeMsg\ sebelum mengeksekusi perintah berikutnya jika status pairing diperbarui di webhook.
+- **Solusi & Implementasi:**
+  1. Memodifikasi \src/app/api/telegram/webhook/route.ts\ sehingga update pairing chat ID dilakukan secara *silent* di background tanpa mengirim teks selamat datang.
+  2. Pesan selamat datang kini **HANYA** dikirim dalam 2 skenario:
+     - Saat user pertama kali menghubungkan bot dari web dashboard (\src/app/api/telegram/setup/route.ts\).
+     - Saat user secara eksplisit mengetik perintah \/start\ di Telegram chat.
+  3. Saat user mengirim perintah seperti \/saldo\, \/hari_ini\, \/budget\, \/sheet\, \/hapus\, atau teks pencatatan transaksi biasa, bot langsung merespons dengan hasil data transaksi tanpa menyertakan teks ucapan selamat datang.
+- **Verifikasi:** pm run build\ lolos 100% tanpa error, perubahan di-commit dan di-push ke \main\.
