@@ -1304,12 +1304,68 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
      - Kartu Paket **Pro** (Unggulan) dengan badge *Paling Populer*, rincian seluruh keunggulan eksklusif (Scan Struk AI OCR, Bot Telegram Pribadi, AI Advisor 24/7, Ekspor Laporan Bebas, dsb.), dan tombol upgrade interaktif.
      - Tabel perbandingan komparasi fitur mendalam antara paket Basic vs Pro.
   2. **Fitur Pengingat Harian Nyata ke Bot Telegram (\src/app/api/telegram/reminders/route.ts\, \src/app/dashboard/page.tsx\)**:
+   - Git commit dan push ke branch `main` di GitHub (`1940099`) untuk trigger auto-deploy Vercel Pro.
+
+## Sesi 84: Sistem Langganan 2-Tier (Basic & Pro), Dynamic Pricing Manager Admin, Pro-Gating Telegram & Struk OCR, Pemisahan Fitur Scan Struk, dan Perbaikan Dark Obsidian Glass Settings
+- **User Request:**
+  1. Kelola langganan dibuat 2 tier: Basic dan Pro, dengan harga yang bisa diubah sesuka admin.
+  2. Fitur koneksi bot Telegram (BYOB/pairing) hanya ada di tier Pro saja (Basic terkunci).
+  3. Perbaiki UI di menu setting yang berantakan putih polos sehingga teks tidak terbaca.
+  4. Perbaiki deteksi unggah struk belanja (AI Vision OCR) agar bisa mendeteksi rincian belanjaan dan hanya tersedia di tier Pro.
+  5. Pisahkan fitur Unggah Struk ke dalam menu/fitur tersendiri dan jangan disatukan dengan form input transaksi biasa.
+- **Implementasi:**
+  1. **Dynamic 2-Tier Pricing Manager (src/lib/pricing.ts, /api/subscriptions/pricing)**:
+     - Membangun modul konfigurasi harga dinamis untuk tier **Basic** dan **Pro** dengan penyimpanan fallback persist & integrasi Supabase.
+     - Menyediakan API endpoint GET & POST /api/subscriptions/pricing untuk membaca dan mengubah harga paket secara instan.
+  2. **Admin Dynamic Pricing Card (src/app/admin/page.tsx)**:
+     - Menambahkan kartu *Atur Harga Paket Langganan (Basic & Pro)* di tab Kelola Langganan admin dengan form pengubahan harga, periode, dan deskripsi secara dinamis.
+     - Mengubah seluruh label *Starter* menjadi *Basic*.
+     - Memperbaiki seluruh background putih menjadi Dark Obsidian Glass (rgba(13, 20, 38, 0.75)).
+  3. **Dedicated OCR Receipt Route (src/app/api/ai/ocr-receipt/route.ts)**:
+     - Membuat route khusus untuk menangani OCR foto struk dengan multimodal AI Vision (Gemini Flash / OpenAI Vision / LiteLLM) dengan fallback cerdas.
+     - Menerapkan Pro-gating verifikasi di backend (hanya akun Pro yang dapat mengekstrak struk).
+  4. **Pemisahan Menu 📸 Scan Struk di User Dashboard (src/app/dashboard/page.tsx)**:
+     - Menambahkan tab khusus 📸 Scan Struk di sidebar dan bottom nav.
+     - Menghapus scanner struk yang menumpuk di tab Transaksi dan menggantikannya dengan banner pengarah ke menu Scan Struk.
+     - Untuk user **Basic**: Menampilkan layar kunci Pro eksklusif dengan showcase keunggulan AI Vision dan tombol upgrade.
+     - Untuk user **Pro**: Menyediakan area unggah/kamera HP, pratinjau gambar, tombol deteksi AI Vision, kartu hasil ekstraksi (merchant, tanggal, total bayar, pemilihan dompet, dan tabel rincian barang) serta tombol simpan ke database transaksi.
+  5. **Pro-Gating Koneksi Bot Telegram (src/app/dashboard/page.tsx, src/app/api/telegram/setup/route.ts)**:
+     - Mengunci formulir input token bot Telegram di tab Settings untuk pengguna Basic dengan banner *Fitur Khusus Pengguna Pro* dan tombol *Upgrade ke Pro*.
+  6. **Perbaikan Tampilan Dark Obsidian Glass di Settings (src/app/dashboard/page.tsx)**:
+     - Menghapus semua hardcoded background #ffffff pada kartu Kelola Kategori Kustom, daftar dompet, input batas anggaran, dan paket kredit.
+     - Menerapkan tema Dark Obsidian Glass (rgba(13, 20, 38, 0.75) dengan border halus rgba(255, 255, 255, 0.08)) sehingga seluruh teks putih dan tombol aksi terlihat jelas, elegan, dan kontras.
+  7. **Kompilasi & Deployment**:
+     - Menjalankan npm run build dengan hasil 0 error (seluruh 29 route Next.js terkompilasi sempurna).
+     - Commit dan push ke branch main repositori GitHub untuk sinkronisasi live Vercel.
+
+## Sesi 85: Perbaikan Bug Duplikasi Notifikasi Ucapan Selamat Datang di Bot Telegram
+- **User Request:** Ucapan selamat datang hanya boleh dikirim sekali saat pertama kali konek Telegram. Saat bot sudah terhubung dan user mengetik perintah seperti \/saldo\ atau \/hari_ini\, bot tidak boleh lagi mengirimkan pesan selamat datang berulang.
+- **Penyebab Bug:** Di \src/app/api/telegram/webhook/route.ts\, terdapat pengecekan auto-pairing yang selalu mengirimkan \welcomeMsg\ sebelum mengeksekusi perintah berikutnya jika status pairing diperbarui di webhook.
+- **Solusi & Implementasi:**
+  1. Memodifikasi \src/app/api/telegram/webhook/route.ts\ sehingga update pairing chat ID dilakukan secara *silent* di background tanpa mengirim teks selamat datang.
+  2. Pesan selamat datang kini **HANYA** dikirim dalam 2 skenario:
+     - Saat user pertama kali menghubungkan bot dari web dashboard (\src/app/api/telegram/setup/route.ts\).
+     - Saat user secara eksplisit mengetik perintah \/start\ di Telegram chat.
+  3. Saat user mengirim perintah seperti \/saldo\, \/hari_ini\, \/budget\, \/sheet\, \/hapus\, atau teks pencatatan transaksi biasa, bot langsung merespons dengan hasil data transaksi tanpa menyertakan teks ucapan selamat datang.
+- **Verifikasi:** pm run build\ lolos 100% tanpa error, perubahan di-commit dan di-push ke \main\.
+
+## Sesi 86: Pembuatan Tampilan Lengkap Kelola Langganan (Basic & Pro) dan Notifikasi Pengingat Telegram Nyata (Real Daily Reminders)
+- **User Request:**
+  1. Halaman Kelola Langganan di dashboard sebelumnya kosong saat diklik di sidebar. Minta dibuatkan tampilan lengkapnya.
+  2. Fitur pengingat di Telegram harus benar-benar aktif (nyata/real, bukan dummy/fake) dan mengirimkan notifikasi ke Telegram saat dijadwalkan atau diuji.
+- **Implementasi:**
+  1. **Tampilan Lengkap Halaman \💎 Kelola Langganan\ (\src/app/dashboard/page.tsx\)**:
+     - Status paket langganan aktif saat ini dengan badge status.
+     - Kartu Paket **Basic** (Gratis/Dasar) dengan rincian fitur lengkap dan harga dinamis yang sinkron dengan pengaturan admin.
+     - Kartu Paket **Pro** (Unggulan) dengan badge *Paling Populer*, rincian seluruh keunggulan eksklusif (Scan Struk AI OCR, Bot Telegram Pribadi, AI Advisor 24/7, Ekspor Laporan Bebas, dsb.), dan tombol upgrade interaktif.
+     - Tabel perbandingan komparasi fitur mendalam antara paket Basic vs Pro.
+  2. **Fitur Pengingat Harian Nyata ke Bot Telegram (\src/app/api/telegram/reminders/route.ts\, \src/app/dashboard/page.tsx\)**:
      - Membangun endpoint backend \/api/telegram/reminders\ untuk menyimpan status pengingat, frekuensi (1x atau 2x sehari), serta jam notifikasi (WIB) ke database.
      - Saat user mengaktifkan jadwal atau menekan tombol **🔔 Tes Kirim Notifikasi Pengingat ke Telegram**, sistem langsung mengirimkan pesan pengingat nyata ke chat Telegram bot pengguna secara real-time.
      - Di menu Settings, ditambahkan tombol **💾 Simpan Jadwal Pengingat** dan tombol **🔔 Tes Kirim Notifikasi Pengingat ke Telegram** agar user dapat langsung memverifikasi notifikasi di HP-nya.
 - **Verifikasi & Build:** pm run build\ sukses terkompilasi 100% (29 routes tanpa error) dan tersinkronisasi ke branch \main\ live deployment Vercel.
 
-## Sesi 87: Perbaikan Sinkronisasi Status Pro Pengguna dan Pemindaian AI Vision OCR Struk Belanja
+### Sesi 87: Perbaikan Sinkronisasi Status Pro Pengguna dan Pemindaian AI Vision OCR Struk Belanja
 - **User Request:** Pengguna sudah berstatus Pro namun tombol/fitur Scan Struk AI Vision masih belum dapat memproses foto struk.
 - **Penyebab:** Pada client-side src/app/dashboard/page.tsx, status userPlan tersimpan di localStorage sebagai Basic dan tidak disinkronkan otomatis dari endpoint /api/subscriptions. Selain itu, parsing response JSON dari Vision AI memerlukan pembersihan markdown fence yang lebih toleran.
 - **Implementasi & Solusi:**
@@ -1317,3 +1373,12 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
   2. Memperbarui handler handleProcessReceiptOcr dan endpoint backend /api/ai/ocr-receipt agar verifikasi status Pro berjalan mulus dan akurat.
   3. Memperbaiki fungsi ekstraksi JSON (extractJsonHelper) di src/lib/ai.ts agar dapat mengekstrak objek JSON struk belanja (seperti struk Nature Gemuk Badan Rp 45.000) tanpa error syntax, dilengkapi fallback cerdas jika API Vision sedang mengalami delay.
 - **Verifikasi:** Build Next.js lolos 100% tanpa error, perubahan di-commit dan di-push ke branch main live Vercel.
+
+## Sesi 88: Perbaikan Error Simpan Hasil Scan Struk ke Catatan Transaksi (Database Constraint Fix)
+- **User Request:** Mengatasi error "gagal menyimpan" saat menekan tombol *Simpan ke Catatan Transaksi* pada fitur Scan Struk AI dengan pesan kesalahan: `new row for relation "transactions" violates check constraint "transactions_source_check"`.
+- **Penyebab:** Pada skema database Supabase PostgreSQL (`supabase/migrations/20260802000000_schema.sql`), kolom `source` pada tabel `transactions` memiliki batasan `CHECK (source IN ('web', 'telegram'))`. Pengiriman nilai `source: 'receipt'` oleh client menyebabkan database menolak penyimpanan baris transaksi baru.
+- **Implementasi & Solusi:**
+  1. Melakukan normalisasi nilai `source` di API backend (`src/app/api/transactions/route.ts`) menjadi `source === 'telegram' ? 'telegram' : 'web'`.
+  2. Menyelaraskan form simpan hasil scan struk di frontend (`src/app/dashboard/page.tsx`) dan simulasi admin (`src/app/admin/page.tsx`) agar mengirimkan `source: 'web'`.
+  3. Menguji build produksi Next.js (`npm run build`) dengan hasil 0 error pada seluruh 29 route.
+  4. Melakukan commit (`1b07082`) dan push ke branch `main` untuk deployment otomatis ke production Vercel (`https://www.mencatat.my.id`).
