@@ -1697,11 +1697,21 @@ export default function DashboardPage() {
         }
 
         /* 4 STAT CARDS SUMMARY GRID */
+        .dashboard-section-header {
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          gap: 16px !important;
+          margin-bottom: 20px !important;
+          width: 100% !important;
+        }
+
+        /* 4 STAT CARDS SUMMARY GRID */
         .stats-summary {
           display: grid !important;
           grid-template-columns: repeat(4, 1fr) !important;
-          gap: 18px !important;
-          margin-top: 20px !important;
+          gap: 16px !important;
+          margin-top: 16px !important;
           margin-bottom: 24px !important;
           width: 100% !important;
         }
@@ -1712,16 +1722,55 @@ export default function DashboardPage() {
           }
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
+          .dashboard-section-header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+          .dashboard-section-header > div:first-child {
+            width: 100% !important;
+          }
+          .dashboard-section-header .pricing-toggle {
+            width: 100% !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            padding: 3px !important;
+            box-sizing: border-box !important;
+          }
+          .dashboard-section-header .pricing-toggle .toggle-btn {
+            flex: 1 1 0 !important;
+            text-align: center !important;
+            padding: 6px 2px !important;
+            font-size: 0.72rem !important;
+          }
           .stats-summary {
-            grid-template-columns: 1fr !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+            margin-top: 12px !important;
+            margin-bottom: 16px !important;
+          }
+          .stat-card {
+            padding: 14px 14px !important;
+            min-height: 95px !important;
+            border-radius: 16px !important;
+          }
+          .stat-value {
+            font-size: 1.25rem !important;
+            margin: 4px 0 !important;
+          }
+          .stat-label {
+            font-size: 0.72rem !important;
+          }
+          .stat-sub {
+            font-size: 0.68rem !important;
           }
         }
 
         .chart-grid {
           display: grid !important;
           grid-template-columns: 2fr 1fr !important;
-          gap: 24px !important;
+          gap: 20px !important;
           margin-bottom: 24px !important;
           width: 100% !important;
         }
@@ -2048,10 +2097,10 @@ export default function DashboardPage() {
             {/* 1. BERANDA (OVERVIEW) */}
             {activeTab === 'beranda' && (
               <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="dashboard-section-header">
                   <div>
-                    <h2>Ringkasan Keuangan</h2>
-                    <p style={{ color: 'var(--text-muted)' }}>Melihat status cashflow, dompet, dan budget bulanan Anda.</p>
+                    <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: '800', letterSpacing: '-0.3px' }}>Ringkasan Keuangan</h2>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px', margin: 0 }}>Melihat status cashflow, dompet, dan budget bulanan Anda.</p>
                   </div>
                   
                   {/* Period selection filters */}
@@ -2061,7 +2110,6 @@ export default function DashboardPage() {
                         key={p}
                         onClick={() => setPeriodFilter(p)}
                         className={`toggle-btn ${periodFilter === p ? 'active' : ''}`}
-                        style={{ padding: '6px 14px', fontSize: '0.8rem' }}
                       >
                         {p.toUpperCase()}
                       </button>
@@ -2788,27 +2836,29 @@ export default function DashboardPage() {
 
               return (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div className="dashboard-section-header">
                     <div>
-                      <h2>Laporan Transaksi Lengkap</h2>
-                      <p style={{ color: 'var(--text-muted)' }}>Cari, filter, dan ekspor seluruh transaksi keuangan Anda.</p>
+                      <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: '800', letterSpacing: '-0.3px' }}>Laporan Transaksi Lengkap</h2>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px', margin: 0 }}>Cari, filter, dan ekspor seluruh transaksi keuangan Anda.</p>
                     </div>
                     
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', width: '100%', maxWidth: '340px' }}>
                       <button
                         onClick={() => handleTriggerExport('xlsx')}
                         disabled={isExporting}
                         className="btn btn-secondary"
+                        style={{ flex: 1, padding: '8px 12px', fontSize: '0.82rem', justifyContent: 'center' }}
                       >
-                        {isExporting ? 'Mengekspor...' : '📥 Ekspor Excel'}
+                        {isExporting ? 'Mengekspor...' : '📥 Excel'}
                         {userPlan === 'Basic' && <span className="badge-pro-only">PRO</span>}
                       </button>
                       <button
                         onClick={() => handleTriggerExport('pdf')}
                         disabled={isExporting}
                         className="btn btn-outline"
+                        style={{ flex: 1, padding: '8px 12px', fontSize: '0.82rem', justifyContent: 'center' }}
                       >
-                        {isExporting ? 'Mengekspor...' : '📄 Ekspor PDF'}
+                        {isExporting ? 'Mengekspor...' : '📄 PDF'}
                         {userPlan === 'Basic' && <span className="badge-pro-only">PRO</span>}
                       </button>
                     </div>
