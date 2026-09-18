@@ -58,6 +58,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    if (categories && Array.isArray(categories)) {
+      const seen = new Map<string, any>();
+      for (const cat of categories) {
+        const key = `${cat.name?.trim().toLowerCase()}_${cat.type || 'expense'}`;
+        if (!seen.has(key) || (cat.user_id === targetUserId)) {
+          seen.set(key, cat);
+        }
+      }
+      return NextResponse.json(Array.from(seen.values()));
+    }
+
     return NextResponse.json(categories || []);
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
@@ -203,18 +214,39 @@ export async function DELETE(request: Request) {
           all = JSON.parse(fs.readFileSync(MOCK_CATEGORIES_PATH, 'utf-8'));
         } catch (e) {}
       }
-      all = all.filter((c: any) => !(c.user_id === targetUserId && c.id === categoryId));
+      all = all.filter((c: any) => !(c.id === categoryId));
       fs.writeFileSync(MOCK_CATEGORIES_PATH, JSON.stringify(all, null, 2));
       return NextResponse.json({ success: true });
     }
 
+    // 1. Unlink referencing transactions to prevent FK constraint error
+    try {
+      await supabaseAdmin
+        .from('transactions')
+        .update({ category_id: null })
+        .eq('category_id', categoryId);
+    } catch (txErr) {
+      console.warn('Warning unlinking transactions for deleted category:', txErr);
+    }
+
+    // 2. Delete referencing budgets
+    try {
+      await supabaseAdmin
+        .from('budgets')
+        .delete()
+        .eq('category_id', categoryId);
+    } catch (bgErr) {
+      console.warn('Warning deleting budgets for deleted category:', bgErr);
+    }
+
+    // 3. Delete the category record
     const { error } = await supabaseAdmin
       .from('categories')
       .delete()
-      .eq('user_id', targetUserId)
       .eq('id', categoryId);
 
     if (error) {
+      console.error('Delete category Supabase error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     return NextResponse.json({ success: true });

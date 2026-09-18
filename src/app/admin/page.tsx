@@ -11,12 +11,24 @@ import { supabase, supabaseUrl } from '@/lib/supabase';
 export default function AdminDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    'users' | 'subscriptions' | 'ai_logs' | 'payments' | 'audit_logs' | 'user_preview' | 'ai_config' |
+    'users' | 'subscriptions' | 'tutorials' | 'ai_logs' | 'payments' | 'audit_logs' | 'user_preview' | 'ai_config' |
     'admin_beranda' | 'admin_transaksi' | 'admin_laporan' | 'admin_budget' | 'admin_wallet' | 'admin_settings'
   >('users');
   const [isLoading, setIsLoading] = useState(true);
   const [adminUserId, setAdminUserId] = useState('usr_admin');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // VIDEO TUTORIALS MANAGEMENT STATES
+  const [tutorialsList, setTutorialsList] = useState<any[]>([]);
+  const [isFetchingTutorials, setIsFetchingTutorials] = useState(false);
+  const [showAddTutorialModal, setShowAddTutorialModal] = useState(false);
+  const [editingTutorialId, setEditingTutorialId] = useState<string | null>(null);
+  const [tutorialTitleInput, setTutorialTitleInput] = useState('');
+  const [tutorialDescInput, setTutorialDescInput] = useState('');
+  const [tutorialYoutubeUrlInput, setTutorialYoutubeUrlInput] = useState('');
+  const [tutorialCategoryInput, setTutorialCategoryInput] = useState('Bot Telegram');
+  const [isSavingTutorial, setIsSavingTutorial] = useState(false);
+  const [tutorialSearchQuery, setTutorialSearchQuery] = useState('');
 
   // CENTRAL AI CONFIG STATES
   const [aiBaseUrl, setAiBaseUrl] = useState('https://api.koboillm.com/v1');
@@ -127,7 +139,88 @@ export default function AdminDashboard() {
     }
   };
 
-  
+  // TUTORIAL HANDLERS
+  const fetchTutorials = async () => {
+    setIsFetchingTutorials(true);
+    try {
+      const res = await fetch('/api/tutorials');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.tutorials) {
+          setTutorialsList(data.tutorials);
+        }
+      }
+    } catch (e) {
+      console.warn('Admin fetch tutorials error:', e);
+    } finally {
+      setIsFetchingTutorials(false);
+    }
+  };
+
+  const handleOpenAddTutorial = () => {
+    setEditingTutorialId(null);
+    setTutorialTitleInput('');
+    setTutorialDescInput('');
+    setTutorialYoutubeUrlInput('');
+    setTutorialCategoryInput('Bot Telegram');
+    setShowAddTutorialModal(true);
+  };
+
+  const handleOpenEditTutorial = (tut: any) => {
+    setEditingTutorialId(tut.id);
+    setTutorialTitleInput(tut.title || '');
+    setTutorialDescInput(tut.description || '');
+    setTutorialYoutubeUrlInput(tut.youtube_url || '');
+    setTutorialCategoryInput(tut.category || 'Bot Telegram');
+    setShowAddTutorialModal(true);
+  };
+
+  const handleSaveTutorial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tutorialTitleInput.trim() || !tutorialYoutubeUrlInput.trim()) {
+      alert('Judul dan Link YouTube wajib diisi!');
+      return;
+    }
+    setIsSavingTutorial(true);
+    try {
+      const method = editingTutorialId ? 'PUT' : 'POST';
+      const bodyPayload = {
+        id: editingTutorialId,
+        title: tutorialTitleInput,
+        description: tutorialDescInput,
+        youtube_url: tutorialYoutubeUrlInput,
+        category: tutorialCategoryInput
+      };
+      const res = await fetch('/api/tutorials', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyPayload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal menyimpan tutorial');
+      alert(`🟢 Video tutorial berhasil ${editingTutorialId ? 'diperbarui' : 'ditambahkan'}!`);
+      setShowAddTutorialModal(false);
+      await fetchTutorials();
+    } catch (err: any) {
+      alert(`❌ Gagal: ${err.message}`);
+    } finally {
+      setIsSavingTutorial(false);
+    }
+  };
+
+  const handleDeleteTutorial = async (id: string, title: string) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus video tutorial "${title}"?`)) return;
+    try {
+      const res = await fetch(`/api/tutorials?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal menghapus video tutorial');
+      alert('🟢 Video tutorial berhasil dihapus!');
+      await fetchTutorials();
+    } catch (err: any) {
+      alert(`❌ Gagal: ${err.message}`);
+    }
+  };
+
   const handleSavePricingConfig = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingPricing(true);
@@ -1824,6 +1917,9 @@ export default function AdminDashboard() {
             <li onClick={() => { setActiveTab('payments'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'payments' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span>💰</span> <span>Approval Pembayaran</span>
             </li>
+            <li onClick={() => { setActiveTab('tutorials'); setSidebarOpen(false); fetchTutorials(); }} className={`menu-item ${activeTab === 'tutorials' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span>🎬</span> <span>Video Tutorial</span>
+            </li>
             <li onClick={() => { setActiveTab('ai_config'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'ai_config' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span>🤖</span> <span>AI Configuration</span>
             </li>
@@ -2886,6 +2982,262 @@ export default function AdminDashboard() {
               ))}
             </div>
           </>
+        )}
+
+        {/* 5.5 KELOLA VIDEO TUTORIAL PENGGUNAAN */}
+        {activeTab === 'tutorials' && (
+          <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
+                  🎬 Kelola Video Tutorial Penggunaan
+                </h2>
+                <p style={{ color: 'var(--text-muted)', margin: '4px 0 0 0', fontSize: '0.9rem' }}>
+                  Tambahkan dan kelola link video YouTube panduan penggunaan aplikasi untuk memandu seluruh pengguna.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => fetchTutorials()}
+                  className="btn btn-outline"
+                  style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                >
+                  🔄 Refresh
+                </button>
+                <button
+                  onClick={handleOpenAddTutorial}
+                  className="btn btn-primary"
+                  style={{ padding: '8px 18px', fontWeight: '700', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  ➕ Tambah Video Tutorial
+                </button>
+              </div>
+            </div>
+
+            {/* MODAL FORM TAMBAH / EDIT VIDEO TUTORIAL */}
+            {showAddTutorialModal && (
+              <div className="card animate-slide-up" style={{ padding: '24px 28px', border: '2px solid var(--primary)', background: 'rgba(13, 20, 38, 0.92)', borderRadius: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {editingTutorialId ? '✏️ Edit Video Tutorial' : '➕ Tambah Video Tutorial Baru'}
+                  </h3>
+                  <button 
+                    onClick={() => setShowAddTutorialModal(false)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.2rem', cursor: 'pointer' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveTutorial} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div className="grid-2" style={{ gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: '700', color: '#cbd5e1' }}>
+                        Judul Video Tutorial <span style={{ color: 'var(--error)' }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Contoh: Tutorial Menghubungkan Bot Telegram & Catat Transaksi"
+                        value={tutorialTitleInput}
+                        onChange={e => setTutorialTitleInput(e.target.value)}
+                        required
+                        style={{ width: '100%', padding: '10px 14px', fontSize: '0.9rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: '700', color: '#cbd5e1' }}>
+                        Kategori / Tag Panduan
+                      </label>
+                      <select
+                        value={tutorialCategoryInput}
+                        onChange={e => setTutorialCategoryInput(e.target.value)}
+                        style={{ width: '100%', padding: '10px 14px', fontSize: '0.9rem' }}
+                      >
+                        <option value="Bot Telegram">🤖 Bot Telegram</option>
+                        <option value="Scan AI Struk">📸 Scan AI Struk</option>
+                        <option value="Dompet & Budget">👛 Dompet & Budget</option>
+                        <option value="Dasar">🔰 Dasar & Onboarding</option>
+                        <option value="Laporan & Ekspor">📊 Laporan & Ekspor</option>
+                        <option value="Umum">💡 Tips & Trik Umum</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: '700', color: '#cbd5e1' }}>
+                      Link Video YouTube (Bisa masukkan URL apa saja) <span style={{ color: 'var(--error)' }}>*</span>
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://www.youtube.com/watch?v=... atau https://youtu.be/..."
+                      value={tutorialYoutubeUrlInput}
+                      onChange={e => setTutorialYoutubeUrlInput(e.target.value)}
+                      required
+                      style={{ width: '100%', padding: '10px 14px', fontSize: '0.9rem' }}
+                    />
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                      Mendukung semua format link YouTube (youtube.com/watch?v=, youtu.be/, shorts/, embed/).
+                    </span>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: '700', color: '#cbd5e1' }}>
+                      Deskripsi Panduan
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Jelaskan langkah-langkah atau intisari video tutorial ini untuk pengguna..."
+                      value={tutorialDescInput}
+                      onChange={e => setTutorialDescInput(e.target.value)}
+                      style={{ width: '100%', padding: '10px 14px', fontSize: '0.9rem', resize: 'vertical' }}
+                    />
+                  </div>
+
+                  {/* LIVE PREVIEW IFRAME */}
+                  {tutorialYoutubeUrlInput.trim() && (
+                    <div style={{ marginTop: '8px', padding: '14px', background: 'rgba(0, 0, 0, 0.4)', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#34d399', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>▶️</span> Preview Player YouTube:
+                      </div>
+                      <div style={{ position: 'relative', width: '100%', maxWidth: '420px', paddingBottom: '56.25%', height: 0, borderRadius: '10px', overflow: 'hidden', background: '#000' }}>
+                        <iframe
+                          src={`https://www.youtube-nocookie.com/embed/${tutorialYoutubeUrlInput.includes('v=') ? tutorialYoutubeUrlInput.split('v=')[1]?.split('&')[0] : tutorialYoutubeUrlInput.includes('youtu.be/') ? tutorialYoutubeUrlInput.split('youtu.be/')[1]?.split('?')[0] : tutorialYoutubeUrlInput}`}
+                          title="YouTube video preview"
+                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddTutorialModal(false)}
+                      className="btn btn-outline"
+                      style={{ padding: '9px 18px', fontSize: '0.85rem' }}
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingTutorial}
+                      className="btn btn-primary"
+                      style={{ padding: '9px 24px', fontWeight: '700', fontSize: '0.85rem' }}
+                    >
+                      {isSavingTutorial ? 'Menyimpan...' : (editingTutorialId ? '💾 Simpan Perubahan' : '➕ Tambahkan Video')}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* SEARCH & FILTER BAR */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <input
+                type="text"
+                placeholder="🔍 Cari video tutorial..."
+                value={tutorialSearchQuery}
+                onChange={e => setTutorialSearchQuery(e.target.value)}
+                style={{ maxWidth: '360px', width: '100%', padding: '8px 14px', fontSize: '0.85rem' }}
+              />
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                Total Video: <b style={{ color: '#ffffff' }}>{tutorialsList.length}</b> tutorial aktif
+              </div>
+            </div>
+
+            {/* LIST OF TUTORIAL CARDS */}
+            {isFetchingTutorials ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                Memuat daftar video tutorial...
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                {tutorialsList
+                  .filter(t => {
+                    if (!tutorialSearchQuery) return true;
+                    const q = tutorialSearchQuery.toLowerCase();
+                    return t.title?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q) || t.category?.toLowerCase().includes(q);
+                  })
+                  .map(tut => {
+                    const ytId = tut.youtube_id || (tut.youtube_url?.includes('v=') ? tut.youtube_url.split('v=')[1]?.split('&')[0] : tut.youtube_url?.includes('youtu.be/') ? tut.youtube_url.split('youtu.be/')[1]?.split('?')[0] : '');
+                    return (
+                      <div key={tut.id} className="card animate-slide-up" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '16px', background: 'rgba(13, 20, 38, 0.75)', borderRadius: '18px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <div>
+                          {/* 16:9 Embedded YouTube Video */}
+                          <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0, borderRadius: '12px', overflow: 'hidden', background: '#000', marginBottom: '14px' }}>
+                            <iframe
+                              src={`https://www.youtube-nocookie.com/embed/${ytId}`}
+                              title={tut.title}
+                              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              loading="lazy"
+                            />
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '2px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                              {tut.category || 'Umum'}
+                            </span>
+                            {tut.created_at && (
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                {new Date(tut.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 style={{ fontSize: '1rem', fontWeight: '800', color: '#ffffff', marginBottom: '8px', lineHeight: '1.4' }}>
+                            {tut.title}
+                          </h4>
+
+                          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: '1.5', margin: 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {tut.description || 'Tidak ada deskripsi.'}
+                          </p>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                          <button
+                            onClick={() => handleOpenEditTutorial(tut)}
+                            className="btn btn-outline"
+                            style={{ flex: 1, padding: '6px 12px', fontSize: '0.78rem', justifyContent: 'center' }}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTutorial(tut.id, tut.title)}
+                            className="btn btn-outline"
+                            style={{ flex: 1, padding: '6px 12px', fontSize: '0.78rem', color: 'var(--error)', borderColor: 'var(--error)', justifyContent: 'center' }}
+                          >
+                            🗑️ Hapus
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+
+            {tutorialsList.length === 0 && !isFetchingTutorials && (
+              <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '12px' }}>🎬</span>
+                <h3 style={{ marginBottom: '8px' }}>Belum Ada Video Tutorial</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '18px' }}>
+                  Tambahkan video tutorial YouTube pertama Anda untuk membantu pengguna memahami fitur aplikasi.
+                </p>
+                <button
+                  onClick={handleOpenAddTutorial}
+                  className="btn btn-primary"
+                  style={{ padding: '8px 20px', fontWeight: '700' }}
+                >
+                  ➕ Tambah Video Sekarang
+                </button>
+              </div>
+            )}
+          </div>
         )}
 
         {/* 6. USER DASHBOARD PREVIEW & SIMULATOR */}

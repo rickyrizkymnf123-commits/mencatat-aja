@@ -17,7 +17,7 @@ function generateProgressBar(percentage: number) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'beranda' | 'transaksi' | 'scan_struk' | 'laporan' | 'budget' | 'wallet' | 'settings' | 'profile' | 'langganan'>('beranda');
+  const [activeTab, setActiveTab] = useState<'beranda' | 'transaksi' | 'scan_struk' | 'laporan' | 'budget' | 'wallet' | 'settings' | 'profile' | 'langganan' | 'tutorials'>('beranda');
   const [isLoading, setIsLoading] = useState(true);
   
   // User info
@@ -36,6 +36,20 @@ export default function DashboardPage() {
   const [budgets, setBudgets] = useState<any[]>([]);
   const [exports, setExports] = useState<any[]>([]);
   
+  // TUTORIALS STATES
+  const [tutorialsList, setTutorialsList] = useState<any[]>([]);
+  const [isFetchingTutorials, setIsFetchingTutorials] = useState(false);
+  const [tutorialSearchQuery, setTutorialSearchQuery] = useState('');
+  const [tutorialCategoryFilter, setTutorialCategoryFilter] = useState('Semua');
+
+  // ADD CATEGORY MODAL STATES
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryEmoji, setNewCategoryEmoji] = useState('🏷️');
+  const [newCategoryType, setNewCategoryType] = useState('expense');
+  const [newCategoryColor, setNewCategoryColor] = useState('#10b981');
+  const [isSavingNewCategory, setIsSavingNewCategory] = useState(false);
+
   // Onboarding Checklist state
   const [checklist, setChecklist] = useState({
     connectTelegram: false,
@@ -442,6 +456,7 @@ export default function DashboardPage() {
 
       // Initial load - guaranteed to be called
       await fetchDashboardData(storedId, storedToken);
+      fetchTutorials();
 
       // Fetch live pricing configuration
       try {
@@ -1243,6 +1258,56 @@ export default function DashboardPage() {
       alert(`❌ Gagal menghapus kategori: ${err.message}`);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryName.trim() || !newCategoryEmoji.trim()) {
+      alert('Nama dan emoji kategori tidak boleh kosong!');
+      return;
+    }
+    setIsSavingNewCategory(true);
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId,
+          name: newCategoryName.trim(),
+          emoji: newCategoryEmoji.trim(),
+          color: newCategoryColor || '#10b981',
+          type: newCategoryType || 'expense'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal menambahkan kategori');
+      alert('🟢 Kategori baru berhasil ditambahkan!');
+      setShowAddCategoryModal(false);
+      setNewCategoryName('');
+      setNewCategoryEmoji('🏷️');
+      await fetchDashboardData(userId, telegramToken);
+    } catch (err: any) {
+      alert(`❌ Gagal: ${err.message}`);
+    } finally {
+      setIsSavingNewCategory(false);
+    }
+  };
+
+  const fetchTutorials = async () => {
+    setIsFetchingTutorials(true);
+    try {
+      const res = await fetch('/api/tutorials');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.tutorials) {
+          setTutorialsList(data.tutorials);
+        }
+      }
+    } catch (e) {
+      console.warn('Dashboard fetch tutorials error:', e);
+    } finally {
+      setIsFetchingTutorials(false);
     }
   };
 
@@ -2132,6 +2197,10 @@ export default function DashboardPage() {
             </li>
             <li onClick={() => { setActiveTab('settings'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'settings' ? 'active' : ''}`}>
               ⚙️ Settings
+            </li>
+            <li onClick={() => { setActiveTab('tutorials'); setSidebarOpen(false); fetchTutorials(); }} className={`menu-item ${activeTab === 'tutorials' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>🎓 Tutorial Penggunaan</span>
+              <span style={{ fontSize: '0.62rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', fontWeight: '800' }}>VIDEO</span>
             </li>
             <li onClick={() => { setActiveTab('langganan'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'langganan' ? 'active' : ''}`}>
               💎 Kelola Langganan
@@ -3764,50 +3833,151 @@ export default function DashboardPage() {
                   
                   {/* Category Settings tab */}
                   <div>
-                    <h3 style={{ marginBottom: '16px' }}>🏷️ Kelola Kategori Kustom</h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '20px' }}>Kelola daftar kategori transaksi beserta warna dan emoji pilihan Anda.</p>
-                    <div className="wallet-select-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                      <div>
+                        <h3 style={{ margin: 0 }}>🏷️ Kelola Kategori Transaksi</h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: '4px 0 0 0' }}>
+                          Kelola daftar kategori pemasukan & pengeluaran Anda.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddCategoryModal(true)}
+                        className="btn btn-primary"
+                        style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        ➕ Tambah Kategori Baru
+                      </button>
+                    </div>
+
+                    {/* MODAL TAMBAH KATEGORI BARU */}
+                    {showAddCategoryModal && (
+                      <div className="card animate-slide-up" style={{ marginBottom: '20px', padding: '20px', border: '1px solid var(--primary)', background: 'rgba(13, 20, 38, 0.95)', borderRadius: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                          <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#ffffff' }}>➕ Tambah Kategori Baru</h4>
+                          <button
+                            type="button"
+                            onClick={() => setShowAddCategoryModal(false)}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '1.1rem', cursor: 'pointer' }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        <form onSubmit={handleCreateCategory} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.8rem', fontWeight: '700', color: '#cbd5e1' }}>Emoji Icon</label>
+                              <input
+                                type="text"
+                                placeholder="Contoh: 🍜"
+                                value={newCategoryEmoji}
+                                onChange={e => setNewCategoryEmoji(e.target.value)}
+                                required
+                                style={{ width: '100%', padding: '8px 12px', fontSize: '1.1rem', textAlign: 'center' }}
+                              />
+                            </div>
+
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.8rem', fontWeight: '700', color: '#cbd5e1' }}>Nama Kategori</label>
+                              <input
+                                type="text"
+                                placeholder="Contoh: Makanan & Minuman"
+                                value={newCategoryName}
+                                onChange={e => setNewCategoryName(e.target.value)}
+                                required
+                                style={{ width: '100%', padding: '8px 12px', fontSize: '0.88rem' }}
+                              />
+                            </div>
+
+                            <div>
+                              <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.8rem', fontWeight: '700', color: '#cbd5e1' }}>Jenis Transaksi</label>
+                              <select
+                                value={newCategoryType}
+                                onChange={e => setNewCategoryType(e.target.value)}
+                                style={{ width: '100%', padding: '8px 12px', fontSize: '0.88rem' }}
+                              >
+                                <option value="expense">💸 Pengeluaran</option>
+                                <option value="income">💰 Pemasukan</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+                            <button
+                              type="button"
+                              onClick={() => setShowAddCategoryModal(false)}
+                              className="btn btn-outline"
+                              style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                            >
+                              Batal
+                            </button>
+                            <button
+                              type="submit"
+                              disabled={isSavingNewCategory}
+                              className="btn btn-primary"
+                              style={{ padding: '8px 20px', fontWeight: '700', fontSize: '0.85rem' }}
+                            >
+                              {isSavingNewCategory ? 'Menyimpan...' : '💾 Simpan Kategori'}
+                            </button>
+                          </div>
+                        </form>
+                      </div>
+                    )}
+
+                    {/* RESPONSIVE CATEGORY CARDS GRID */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
                       {categories.map(c => {
-                        const isDefault = c.id.startsWith('c') && !c.id.includes('_');
                         return (
                           <div key={c.id}>
                             {editingCategoryId === c.id ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 16px', border: '2px solid var(--primary)', borderRadius: '12px', background: 'rgba(13, 20, 38, 0.75)' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', border: '2px solid var(--primary)', borderRadius: '14px', background: 'rgba(13, 20, 38, 0.95)' }}>
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                   <input 
                                     type="text" 
                                     value={editingCategoryEmoji} 
                                     onChange={e => setEditingCategoryEmoji(e.target.value)} 
                                     placeholder="Emoji" 
-                                    style={{ width: '45px', padding: '4px', textAlign: 'center', fontSize: '1rem', border: '1px solid var(--border)', borderRadius: '6px', background: 'rgba(13, 20, 38, 0.75)', color: 'var(--text-main)' }} 
+                                    style={{ width: '45px', padding: '6px', textAlign: 'center', fontSize: '1rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'rgba(10, 15, 30, 0.85)', color: '#ffffff' }} 
                                   />
                                   <input 
                                     type="text" 
                                     value={editingCategoryName} 
                                     onChange={e => setEditingCategoryName(e.target.value)} 
                                     placeholder="Nama Kategori" 
-                                    style={{ flex: 1, padding: '4px 8px', fontSize: '0.9rem', border: '1px solid var(--border)', borderRadius: '6px', background: 'rgba(13, 20, 38, 0.75)', color: 'var(--text-main)' }} 
+                                    style={{ flex: 1, padding: '6px 10px', fontSize: '0.85rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'rgba(10, 15, 30, 0.85)', color: '#ffffff' }} 
                                   />
                                 </div>
-                                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                                  <button onClick={() => handleSaveCategoryEdit(c.id)} className="btn btn-primary" style={{ padding: '2px 6px', fontSize: '0.75rem', flex: 1 }}>Simpan</button>
-                                  <button onClick={() => handleDeleteCategory(c.id)} className="btn btn-outline" style={{ padding: '2px 6px', fontSize: '0.75rem', color: 'var(--error)', borderColor: 'var(--error)' }}>Hapus</button>
-                                  <button onClick={() => setEditingCategoryId(null)} className="btn btn-outline" style={{ padding: '2px 6px', fontSize: '0.75rem' }}>Batal</button>
+                                <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                                  <button onClick={() => handleSaveCategoryEdit(c.id)} className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '0.75rem', flex: 1, justifyContent: 'center' }}>Simpan</button>
+                                  <button onClick={() => handleDeleteCategory(c.id)} className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '0.75rem', color: 'var(--error)', borderColor: 'var(--error)', justifyContent: 'center' }}>Hapus</button>
+                                  <button onClick={() => setEditingCategoryId(null)} className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '0.75rem', justifyContent: 'center' }}>Batal</button>
                                 </div>
                               </div>
                             ) : (
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', border: '1px solid var(--border)', borderRadius: '12px', background: 'rgba(13, 20, 38, 0.75)', height: '100%' }}>
-                                <span style={{ fontSize: '1.2rem', marginRight: '8px' }}>{c.emoji}</span>
-                                <span style={{ fontWeight: '600', flex: 1, color: 'var(--text-main)' }}>{c.name}</span>
-                                {!isDefault && (
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', border: '1px solid var(--border)', borderRadius: '14px', background: 'rgba(13, 20, 38, 0.75)', minHeight: '52px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                                  <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{c.emoji}</span>
+                                  <span style={{ fontWeight: '700', color: 'var(--text-main)', fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {c.name}
+                                  </span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                                   <span 
                                     onClick={() => { setEditingCategoryId(c.id); setEditingCategoryName(c.name); setEditingCategoryEmoji(c.emoji); }} 
-                                    style={{ color: 'var(--text-light)', cursor: 'pointer' }}
+                                    style={{ color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.9rem', padding: '2px' }}
                                     title="Edit Kategori"
                                   >
                                     ✏️
                                   </span>
-                                )}
+                                  <span 
+                                    onClick={() => handleDeleteCategory(c.id)} 
+                                    style={{ color: 'var(--error)', cursor: 'pointer', fontSize: '0.9rem', padding: '2px' }}
+                                    title="Hapus Kategori"
+                                  >
+                                    🗑️
+                                  </span>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -3816,6 +3986,132 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* 6.5 TUTORIAL PENGGUNAAN (VIDEO TUTORIALS) */}
+            {activeTab === 'tutorials' && (
+              <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                  <div>
+                    <h2 style={{ fontSize: '1.45rem', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '10px', margin: 0 }}>
+                      🎓 Tutorial Penggunaan & Panduan Video
+                    </h2>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px', margin: 0 }}>
+                      Pelajari langkah mudah memaksimalkan seluruh fitur pintar Mencatat Aja mulai dari bot Telegram hingga scan struk AI.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => fetchTutorials()}
+                    className="btn btn-outline"
+                    style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                  >
+                    🔄 Refresh Video
+                  </button>
+                </div>
+
+                {/* FILTER CATEGORY PILLS & SEARCH */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+                  <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', maxWidth: '100%' }}>
+                    {['Semua', 'Bot Telegram', 'Scan AI Struk', 'Dompet & Budget', 'Dasar', 'Laporan & Ekspor', 'Umum'].map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setTutorialCategoryFilter(cat)}
+                        className={`toggle-btn ${tutorialCategoryFilter === cat ? 'active' : ''}`}
+                        style={{ padding: '6px 14px', borderRadius: '10px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder="🔍 Cari topik tutorial..."
+                    value={tutorialSearchQuery}
+                    onChange={e => setTutorialSearchQuery(e.target.value)}
+                    style={{ maxWidth: '300px', width: '100%', padding: '8px 14px', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                {/* GRID OF TUTORIAL CARDS */}
+                {isFetchingTutorials ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                    Memuat video tutorial...
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '22px' }}>
+                    {tutorialsList
+                      .filter(t => {
+                        const matchCat = tutorialCategoryFilter === 'Semua' || t.category === tutorialCategoryFilter;
+                        if (!matchCat) return false;
+                        if (!tutorialSearchQuery) return true;
+                        const q = tutorialSearchQuery.toLowerCase();
+                        return t.title?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q);
+                      })
+                      .map(tut => {
+                        const ytId = tut.youtube_id || (tut.youtube_url?.includes('v=') ? tut.youtube_url.split('v=')[1]?.split('&')[0] : tut.youtube_url?.includes('youtu.be/') ? tut.youtube_url.split('youtu.be/')[1]?.split('?')[0] : '');
+                        return (
+                          <div key={tut.id} className="card animate-slide-up" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '16px', background: 'rgba(13, 20, 38, 0.75)', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                            <div>
+                              {/* 16:9 YouTube Player */}
+                              <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0, borderRadius: '14px', overflow: 'hidden', background: '#000', marginBottom: '14px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
+                                <iframe
+                                  src={`https://www.youtube-nocookie.com/embed/${ytId}`}
+                                  title={tut.title}
+                                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  loading="lazy"
+                                />
+                              </div>
+
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <span style={{ fontSize: '0.72rem', fontWeight: '800', padding: '2px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                                  {tut.category || 'Tutorial'}
+                                </span>
+                                {tut.duration && (
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: '600' }}>
+                                    ⏱️ {tut.duration}
+                                  </span>
+                                )}
+                              </div>
+
+                              <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#ffffff', marginBottom: '8px', lineHeight: '1.4' }}>
+                                {tut.title}
+                              </h3>
+
+                              <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: '1.5', margin: 0 }}>
+                                {tut.description}
+                              </p>
+                            </div>
+
+                            <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <a
+                                href={tut.youtube_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ fontSize: '0.8rem', color: '#38bdf8', textDecoration: 'none', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                Tonton di YouTube ↗
+                              </a>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+
+                {tutorialsList.length === 0 && !isFetchingTutorials && (
+                  <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
+                    <span style={{ fontSize: '2.8rem', display: 'block', marginBottom: '12px' }}>🎬</span>
+                    <h3 style={{ marginBottom: '8px' }}>Video Tutorial Sedang Disiapkan</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '450px', margin: '0 auto' }}>
+                      Admin belum mengunggah video tutorial. Video panduan akan otomatis muncul di sini setelah ditambahkan oleh Admin.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

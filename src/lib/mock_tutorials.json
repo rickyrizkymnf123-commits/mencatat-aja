@@ -1,0 +1,42 @@
+[
+  {
+    "id": "tut_1",
+    "title": "Tutorial Lengkap: Menghubungkan Bot Telegram & Catat Otomatis via AI Chat",
+    "description": "Pelajari langkah mudah menghubungkan akun Anda dengan bot Telegram (@MencatatKeuanganBot atau Bot pribadi Anda via token BotFather). Cukup kirim chat 'Beli kopi 25rb pakai GoPay' dan transaksi langsung tercatat rapi.",
+    "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "youtube_id": "dQw4w9WgXcQ",
+    "category": "Bot Telegram",
+    "duration": "04:20",
+    "created_at": "2026-09-18T10:00:00.000Z"
+  },
+  {
+    "id": "tut_2",
+    "title": "Panduan Scan Struk Belanja dengan Vision AI (OCR Multi-Item)",
+    "description": "Hemat waktu tanpa input manual! Foto struk belanjaan Anda dari minimarket/restoran, dan AI kami akan mendeteksi setiap item belanjaan, nominal diskon, pajak, dan total secara otomatis.",
+    "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "youtube_id": "dQw4w9WgXcQ",
+    "category": "Scan AI Struk",
+    "duration": "03:45",
+    "created_at": "2026-09-18T11:00:00.000Z"
+  },
+  {
+    "id": "tut_3",
+    "title": "Cara Mengatur Multi-Dompet (BCA, Mandiri, E-Wallet) & Alokasi Budget Bulanan",
+    "description": "Ketahui cara memisahkan saldo rekening bank, dompet digital, dan kas tunai. Atur limit pengeluaran per kategori agar tidak boros dan dapatkan peringatan sebelum anggaran habis.",
+    "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "youtube_id": "dQw4w9WgXcQ",
+    "category": "Dompet & Budget",
+    "duration": "05:10",
+    "created_at": "2026-09-18T12:00:00.000Z"
+  },
+  {
+    "id": "tut_4",
+    "title": "Pengenalan Dashboard & Ekspor Laporan Keuangan ke Excel / PDF",
+    "description": "Tur lengkap fitur dashboard personal, analisis grafik cashflow, dan cara mengunduh laporan keuangan berformat Excel/CSV/PDF untuk kebutuhan audit atau pembukuan usaha.",
+    "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "youtube_id": "dQw4w9WgXcQ",
+    "category": "Dasar",
+    "duration": "02:50",
+    "created_at": "2026-09-18T13:00:00.000Z"
+  }
+]
