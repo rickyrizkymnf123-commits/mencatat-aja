@@ -1227,3 +1227,21 @@ User provided GitHub token `ghp_xxxx` and noted that the previous GitHub reposit
 3. **Verifikasi & Deployment**:
    - Kompilasi `npm run build` lolos 100% (0 error) dan menghasilkan rute favicon `/icon`, `/apple-icon`, dan `/icon.svg`.
    - Git commit dan push ke `main` (`67a9b8e`) untuk langsung auto-deploy Vercel Pro.
+
+## Sesi 83 - Integrasi Penuh Antarmuka Kelola Transaksi (Edit & Hapus) di Web & Telegram Bot (2026-09-18)
+
+### Permintaan Pengguna
+- Menyempurnakan fitur hapus dan edit transaksi agar mudah diakses dan langsung terlihat di tab Transaksi web maupun perintah Telegram bot.
+
+### Tindakan & Perubahan Teknis
+1. **Redesain Tab Transaksi (`src/app/dashboard/page.tsx`)**:
+   - Menambahkan switch sub-tab di tab **💳 Transaksi**:
+     - **📋 Daftar Transaksi**: Menampilkan seluruh catatan transaksi lengkap dengan bilah pencarian (*search bar*), filter tipe, dan tombol ✏️ **Edit** serta 🗑️ **Hapus** yang sangat jelas di setiap baris.
+     - **➕ Catat Baru**: Menyediakan opsi input instan AI, upload foto struk belanja, dan form manual.
+2. **Tombol Edit & Hapus di Tabel Beranda**:
+   - Menambahkan tombol aksi ✏️ **Edit** dan 🗑️ **Hapus** langsung pada daftar Transaksi Terakhir di tab *Beranda*.
+3. **Perintah Hapus di Telegram Bot (`src/app/api/telegram/webhook/route.ts`)**:
+   - Menambahkan perintah `/hapus` atau `/batal` pada bot Telegram agar pengguna yang salah ketik dapat langsung membatalkan dan menghapus transaksi terakhir serta mengembalikan saldo dompet secara otomatis.
+4. **Verifikasi & Deployment**:
+   - Kompilasi `npm run build` lolos 100% (0 error).
+   - Git commit dan push ke branch `main` (`1940099`) untuk trigger auto-deploy Vercel Pro.
