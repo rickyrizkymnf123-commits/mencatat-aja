@@ -1481,3 +1481,20 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
      - `npm run build` berhasil 100% tanpa error.
      - Commit & push ke branch `main` (commit `d3d1a0a`) untuk live deployment Vercel.
 
+## Sesi 94: Perbaikan Penyimpanan Harga Paket Langganan (Basic & Pro) di Database Supabase
+- **User Feedback:** Pengaturan harga paket Basic & Pro di Kelola Langganan Admin tidak tersimpan ke database, saat halaman di-refresh harga kembali menjadi nol.
+- **Penyebab:**
+  1. `src/lib/pricing.ts` sebelumnya mencoba menyimpan konfigurasi ke tabel `system_settings` yang tidak ada di skema database Supabase sehingga query insert/update gagal secara diam-diam.
+  2. Fallback file lokal di serverless Vercel tidak persisten antar-request/lambda.
+  3. Dashboard user (`/dashboard`) tidak memuat konfigurasi harga dinamis dari `/api/subscriptions/pricing`.
+- **Solusi & Implementasi:**
+  1. **Persistensi Database Andal (`src/lib/pricing.ts`)**:
+     - Mengalihkan penyimpanan pricing config ke tabel `ai_providers` Supabase dengan `name = 'pricing_config'` yang sudah ada dan teruji di database.
+     - Ditambahkan in-memory caching untuk mempercepat response API.
+  2. **Admin Dashboard (`src/app/admin/page.tsx`)**:
+     - Dibuat fungsi terpusat `fetchPricingConfig()` untuk memuat harga secara konsisten saat inisialisasi, setelah menyimpan perubahan, dan saat membuka tab langganan.
+  3. **User Dashboard (`src/app/dashboard/page.tsx`)**:
+     - Menghubungkan pembacaan konfigurasi harga live dari `/api/subscriptions/pricing` pada tab "Kelola Langganan" agar otomatis mengikuti harga yang diatur Superadmin.
+  4. **Verifikasi & Deployment**:
+     - `npm run build` sukses 100% tanpa error.
+     - Commit & push ke GitHub `main` (commit `daecfc9`) untuk live deployment Vercel.
