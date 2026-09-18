@@ -150,7 +150,7 @@ export async function POST(request: Request) {
         monthly_transaction_limit: 1000
       };
     } else {
-      const targetUserId = (queryUserId && isUUID(queryUserId)) ? queryUserId : SUPERADMIN_ID;
+      const targetUserId = queryUserId || SUPERADMIN_ID;
       if (queryUserId) {
         // BYOB: private bot config (lookup by query param user_id)
         const { data } = await supabaseAdmin
@@ -235,7 +235,7 @@ export async function POST(request: Request) {
     }
     
     if (!isPlaceholder) {
-      const targetUserId = (queryUserId && isUUID(queryUserId)) ? queryUserId : SUPERADMIN_ID;
+      const targetUserId = queryUserId || SUPERADMIN_ID;
       if (queryUserId) {
         let activeBotToken: string | null = null;
         if (userProfile && userProfile.telegram_bot_token) {
@@ -261,13 +261,17 @@ export async function POST(request: Request) {
           } catch (e) {}
         }
         
-        // If telegram_chat_id is missing or updated, pair it automatically now
+        // If telegram_chat_id is missing or updated, pair it silently in background
         if (!userProfile?.telegram_chat_id || String(userProfile.telegram_chat_id) !== String(chatId)) {
           console.log(`Pairing telegram_chat_id ${chatId} to profile ${targetUserId}...`);
-          await supabaseAdmin
-            .from('profiles')
-            .update({ telegram_chat_id: String(chatId) })
-            .eq('id', targetUserId);
+          try {
+            await supabaseAdmin
+              .from('profiles')
+              .update({ telegram_chat_id: String(chatId) })
+              .eq('id', targetUserId);
+          } catch (e) {
+            console.warn('Silent pairing update failed:', e);
+          }
           if (userProfile) {
             userProfile.telegram_chat_id = String(chatId);
           } else {
@@ -280,23 +284,22 @@ export async function POST(request: Request) {
             };
           }
 
-          // Send Welcome Notification message to Telegram chat
-          const welcomeMsg = `🚀 <b>Selamat Datang di Mencatat Aja Bot!</b> 🚀\n\n` +
-            `Halo <b>${userProfile.full_name || message.from?.first_name || 'Nasabah'}</b>, koneksi bot kustom Anda telah berhasil diaktifkan! Asisten keuangan AI Anda kini aktif 24/7.\n\n` +
-            `📖 <b>Panduan Singkat Penggunaan:</b>\n` +
-            `• <code>beli bakso 15rb</code> (Mencatat pengeluaran)\n` +
-            `• <code>gaji freelance 2.5jt</code> (Mencatat pemasukan)\n` +
-            `• <code>transfer dari BCA ke Gopay 500rb</code> (Mencatat transfer)\n\n` +
-            `Ketik /bantuan di chat ini kapan saja untuk melihat panduan lengkap.\n` +
-            `Gunakan tombol menu di bawah ini untuk pintasan cepat navigasi Anda! 👇`;
-          
-          await telegram.sendMessage(botToken, chatId, welcomeMsg, keyboardMarkup);
-
-          if (textContent === '/start') {
+          // ONLY send welcome message if user explicitly typed /start
+          if (textContent.startsWith('/start')) {
+            const welcomeMsg = `🚀 <b>Selamat Datang di Mencatat Aja Bot!</b> 🚀\n\n` +
+              `Halo <b>${userProfile.full_name || message.from?.first_name || 'Nasabah'}</b>, koneksi bot kustom Anda telah aktif! Asisten keuangan AI Anda siap membantu 24/7.\n\n` +
+              `📖 <b>Panduan Singkat Penggunaan:</b>\n` +
+              `• <code>beli bakso 15rb</code> (Mencatat pengeluaran)\n` +
+              `• <code>gaji freelance 2.5jt</code> (Mencatat pemasukan)\n` +
+              `• <code>transfer dari BCA ke Gopay 500rb</code> (Mencatat transfer)\n\n` +
+              `Ketik /bantuan di chat ini kapan saja untuk melihat panduan lengkap.\n` +
+              `Gunakan tombol menu di bawah ini untuk pintasan cepat navigasi Anda! 👇`;
+            
+            await telegram.sendMessage(botToken, chatId, welcomeMsg, keyboardMarkup);
             return NextResponse.json({ ok: true });
           }
         } else if (textContent === '/start') {
-          // If already paired and user types /start
+          // If already paired and user explicitly sends /start
           const welcomeMsg = `🚀 <b>Selamat Datang Kembali di Mencatat Aja Bot!</b> 🚀\n\n` +
             `Halo <b>${userProfile.full_name || message.from?.first_name || 'Nasabah'}</b>, bot keuangan AI Anda aktif 24/7!\n\n` +
             `📖 <b>Panduan Singkat Penggunaan:</b>\n` +
