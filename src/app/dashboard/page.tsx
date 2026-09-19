@@ -355,6 +355,7 @@ export default function DashboardPage() {
       let storedPhone = localStorage.getItem('Mencatat Aja_user_phone') || '';
       let storedToken = localStorage.getItem('Mencatat Aja_telegram_token') || '';
       let storedPlan = localStorage.getItem('Mencatat Aja_plan') || 'Basic';
+      let isUserApproved = false;
 
       try {
         const { data } = await supabase.auth.getSession();
@@ -375,7 +376,7 @@ export default function DashboardPage() {
           localStorage.setItem('Mencatat Aja_role', storedRole);
 
           try {
-            // Fetch latest profile status
+            // Fetch latest profile status & approval status
             const { data: profile } = await supabase
               .from('profiles')
               .select('*')
@@ -386,6 +387,9 @@ export default function DashboardPage() {
               storedPlan = profile.plan || 'Basic';
               storedToken = profile.telegram_link_token || '';
               if (profile.full_name) storedName = profile.full_name;
+              if (profile.is_approved !== undefined && profile.is_approved !== null) {
+                isUserApproved = profile.is_approved;
+              }
               localStorage.setItem('Mencatat Aja_plan', storedPlan);
               localStorage.setItem('Mencatat Aja_telegram_token', storedToken);
               localStorage.setItem('Mencatat Aja_user_name', storedName);
@@ -394,58 +398,54 @@ export default function DashboardPage() {
             console.warn('Profiles fetch error:', profileErr);
           }
         } else if (!storedId || !isUUID(storedId)) {
-          // Seamless visitor bridge: initialize demo user session so LP can land directly on dashboard
-          storedId = '58c09700-965d-4104-a344-6e599c46deff';
-          storedEmail = 'budi@demo.com';
-          storedName = 'Budi Santoso';
-          storedRole = 'user';
-          storedPlan = 'Pro';
-          storedToken = 'TD-112233';
-          localStorage.setItem('Mencatat Aja_user_id', storedId);
-          localStorage.setItem('Mencatat Aja_user_email', storedEmail);
-          localStorage.setItem('Mencatat Aja_user_name', storedName);
-          localStorage.setItem('Mencatat Aja_role', storedRole);
-          localStorage.setItem('Mencatat Aja_plan', storedPlan);
-          localStorage.setItem('Mencatat Aja_telegram_token', storedToken);
+          // Unauthenticated visitor -> redirect to login page immediately!
+          localStorage.removeItem('Mencatat Aja_user_id');
+          localStorage.removeItem('Mencatat Aja_user_email');
+          localStorage.removeItem('Mencatat Aja_user_name');
+          localStorage.removeItem('Mencatat Aja_role');
+          localStorage.removeItem('Mencatat Aja_plan');
+          localStorage.removeItem('Mencatat Aja_admin_mode');
+          setIsLoading(false);
+          router.replace('/auth?mode=login');
+          return;
         }
       } catch (authErr) {
         console.warn('Supabase auth session fetch error, continuing with stored session:', authErr);
         if (!storedId || !isUUID(storedId)) {
-          storedId = '58c09700-965d-4104-a344-6e599c46deff';
-          storedEmail = 'budi@demo.com';
-          storedName = 'Budi Santoso';
-          storedRole = 'user';
-          storedPlan = 'Pro';
-          storedToken = 'TD-112233';
+          setIsLoading(false);
+          router.replace('/auth?mode=login');
+          return;
         }
       }
 
-      setUserEmail(storedEmail);
-      setUserRole(storedRole);
+      const isSuperadminUser = storedRole === 'superadmin' || storedEmail.toLowerCase() === 'rickyrizkymnf123@gmail.com';
+      if (isSuperadminUser) {
+        isUserApproved = true;
+      }
 
-      // Check if user is approved from the mock users list
-      let isUserApproved = true;
-      if (typeof window !== 'undefined') {
+      // Check if user is approved from the mock users list or DB
+      if (!isSuperadminUser && typeof window !== 'undefined') {
         const storedMockUsers = localStorage.getItem('Mencatat_Aja_mock_users');
         if (storedMockUsers) {
           try {
             const list = JSON.parse(storedMockUsers);
             const foundUser = list.find((u: any) => u.id === storedId);
-            if (foundUser && foundUser.is_approved === false) {
-              isUserApproved = false;
+            if (foundUser && foundUser.is_approved !== undefined) {
+              isUserApproved = foundUser.is_approved;
             }
           } catch (e) {}
         }
       }
-      setIsApproved(isUserApproved);
 
+      setIsApproved(isUserApproved);
+      setUserEmail(storedEmail);
+      setUserRole(storedRole);
       setUserId(storedId);
       setUserName(storedName);
       setUserPhone(storedPhone);
       setTelegramToken(storedToken);
       setUserPlan(storedPlan);
       
-      const isSuperadminUser = storedRole === 'superadmin' || storedEmail.toLowerCase() === 'rickyrizkymnf123@gmail.com';
       if (!isSuperadminUser) {
         localStorage.removeItem('Mencatat Aja_admin_mode');
         localStorage.removeItem('tatadana_admin_mode');
@@ -454,7 +454,12 @@ export default function DashboardPage() {
         setIsAdminMode(localStorage.getItem('Mencatat Aja_admin_mode') === 'true');
       }
 
-      // Initial load - guaranteed to be called
+      if (!isUserApproved) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Initial load - guaranteed to be called for approved users
       await fetchDashboardData(storedId, storedToken);
       fetchTutorials();
 
@@ -2271,6 +2276,45 @@ export default function DashboardPage() {
               <div className="skeleton-block"></div>
             </div>
             <div className="skeleton-block" style={{ height: '400px' }}></div>
+          </div>
+        ) : !isApproved ? (
+          /* PENDING APPROVAL BLOCK SCREEN */
+          <div className="card animate-fade-in" style={{ maxWidth: '580px', margin: '40px auto', textAlign: 'center', padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+            <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.35)', color: '#fbbf24', fontSize: '2.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              ⏳
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ffffff', marginBottom: '8px' }}>
+                Akun Anda Menunggu Persetujuan (ACC)
+              </h2>
+              <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, maxWidth: '460px', margin: '0 auto' }}>
+                Pendaftaran Anda telah tercatat dengan aman. Akun Anda saat ini sedang dalam proses verifikasi oleh Admin sebelum data transaksi & fitur dapat diakses.
+              </p>
+            </div>
+            <div style={{ width: '100%', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '16px', textAlign: 'left' }}>
+              <div style={{ fontWeight: 700, color: '#ffffff', marginBottom: '4px', fontSize: '0.88rem' }}>💬 Mau aktivasi akun lebih cepat?</div>
+              <div style={{ color: '#94a3b8', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                Kirim pesan ke Admin via WhatsApp untuk meminta konfirmasi aktivasi akun Anda secara instan.
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '340px' }}>
+              <a 
+                href={`https://wa.me/6281234567890?text=${encodeURIComponent(`Halo Admin MencatatAja, akun saya (${userEmail || userName}) sedang menunggu persetujuan (ACC). Mohon bantu diaktifkan ya, terima kasih!`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '12px', textDecoration: 'none' }}
+              >
+                <span>📱</span> Hubungi Admin di WhatsApp
+              </a>
+              <button 
+                onClick={handleLogout} 
+                className="btn btn-secondary" 
+                style={{ width: '100%', padding: '12px' }}
+              >
+                <span>🚪</span> Keluar / Log Out
+              </button>
+            </div>
           </div>
         ) : (
           /* MAIN CONTENT (SWITCH TABS) */

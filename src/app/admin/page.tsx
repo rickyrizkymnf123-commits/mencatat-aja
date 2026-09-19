@@ -429,13 +429,15 @@ export default function AdminDashboard() {
         const storedEmail = localStorage.getItem('Mencatat Aja_user_email');
         const storedId = localStorage.getItem('Mencatat Aja_user_id');
 
-        const isSuperadmin = storedRole === 'superadmin' || 
-                             storedEmail === 'rickyrizkymnf123@gmail.com' ||
-                             storedId === '58c09700-965d-4104-a344-6e599c46deff';
+        const isSuperadmin = (storedRole === 'superadmin' || storedEmail?.toLowerCase() === 'rickyrizkymnf123@gmail.com');
 
         if (!isSuperadmin) {
-          alert('⛔ Akses Ditolak: Panel Admin hanya dapat diakses oleh Superadmin.');
-          router.push('/dashboard');
+          if (!storedId) {
+            router.replace('/auth?mode=login');
+          } else {
+            alert('⛔ Akses Ditolak: Panel Admin hanya dapat diakses oleh Superadmin.');
+            router.replace('/dashboard');
+          }
           return;
         }
 

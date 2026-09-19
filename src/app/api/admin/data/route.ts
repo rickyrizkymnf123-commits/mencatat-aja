@@ -104,7 +104,7 @@ export async function GET(request: Request) {
         txCount,
         wallets: userWallets,
         totalBalance,
-        is_approved: true,
+        is_approved: p.is_approved !== undefined && p.is_approved !== null ? p.is_approved : false,
         created_at: p.created_at
       };
     });
@@ -132,7 +132,7 @@ export async function GET(request: Request) {
             txCount: txCountMap.get(u.id) || 0,
             wallets: userWallets,
             totalBalance,
-            is_approved: true,
+            is_approved: u.user_metadata?.is_approved !== undefined ? u.user_metadata?.is_approved : false,
             created_at: u.created_at
           });
         }

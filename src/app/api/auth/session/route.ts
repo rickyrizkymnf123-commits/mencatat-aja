@@ -150,7 +150,7 @@ export async function POST(request: Request) {
         // Fetch user profile name, role, and approval status
         let userName = data.user.user_metadata?.full_name || email.split('@')[0];
         let userRole = data.user.user_metadata?.role || (isSuperadminEmail ? 'superadmin' : 'user');
-        let isApproved = isSuperadminEmail ? true : true;
+        let isApproved = isSuperadminEmail ? true : false;
 
         try {
           const { data: prof } = await supabaseAdmin
@@ -168,7 +168,7 @@ export async function POST(request: Request) {
           // ignore
         }
 
-        if (!isSuperadminEmail && isApproved === false) {
+        if (!isSuperadminEmail && !isApproved) {
           return NextResponse.json({ 
             error: '⏳ Akun Anda masih menunggu persetujuan (ACC) dari Admin. Silakan hubungi admin di WhatsApp untuk konfirmasi aktivasi akun Anda.' 
           }, { status: 403 });

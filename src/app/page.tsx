@@ -27,20 +27,40 @@ export default function LandingPage() {
   const [simBudgetSpent, setSimBudgetSpent] = useState(450000);
   const simBudgetLimit = 1500000;
 
-  // Direct Seamless Bridge to Dashboard
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedId = localStorage.getItem('Mencatat Aja_user_id');
+      if (storedId && storedId !== '58c09700-965d-4104-a344-6e599c46deff') {
+        setIsLoggedIn(true);
+      } else {
+        setIsLoggedIn(false);
+      }
+    }
+  }, []);
+
+  // Safe Navigation Handler
   const handleGoToDashboard = () => {
     if (typeof window !== 'undefined') {
       const storedId = localStorage.getItem('Mencatat Aja_user_id');
-      if (!storedId) {
-        // Set up guest / demo session so user can immediately experience dashboard
-        localStorage.setItem('Mencatat Aja_user_id', '58c09700-965d-4104-a344-6e599c46deff');
-        localStorage.setItem('Mencatat Aja_user_name', 'Budi Santoso');
-        localStorage.setItem('Mencatat Aja_user_email', 'budi@demo.com');
-        localStorage.setItem('Mencatat Aja_plan', 'Pro');
-        localStorage.setItem('Mencatat Aja_telegram_token', 'TD-112233');
+      if (storedId && storedId !== '58c09700-965d-4104-a344-6e599c46deff') {
+        router.push('/dashboard');
+        return;
       }
     }
-    router.push('/dashboard');
+    router.push('/auth?mode=login');
+  };
+
+  const handleGoToRegister = () => {
+    if (typeof window !== 'undefined') {
+      const storedId = localStorage.getItem('Mencatat Aja_user_id');
+      if (storedId && storedId !== '58c09700-965d-4104-a344-6e599c46deff') {
+        router.push('/dashboard');
+        return;
+      }
+    }
+    router.push('/auth?mode=register');
   };
 
   const handleSimulateChat = (userText: string) => {
@@ -662,16 +682,25 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
               <a href="#faq" className="nav-link-item">FAQ</a>
             </nav>
 
-            {/* TEMBUS KE DASHBOARD ACTION */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Link href="/auth?mode=login" className="nav-link-item auth-nav-link" style={{ padding: '8px 12px', fontSize: '0.85rem' }}>
-                Masuk
-              </Link>
-              <button onClick={handleGoToDashboard} className="btn-dash-primary" style={{ whiteSpace: 'nowrap' }}>
-                <span>🚀</span>
-                <span>Dashboard</span>
-                <span>➔</span>
-              </button>
+            {/* AUTH & DASHBOARD NAVIGATION */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {isLoggedIn ? (
+                <button onClick={handleGoToDashboard} className="btn-dash-primary" style={{ whiteSpace: 'nowrap' }}>
+                  <span>🚀</span>
+                  <span>Buka Dashboard</span>
+                  <span>➔</span>
+                </button>
+              ) : (
+                <>
+                  <Link href="/auth?mode=login" className="nav-link-item auth-nav-link" style={{ padding: '8px 14px', fontSize: '0.88rem', fontWeight: '700' }}>
+                    Masuk
+                  </Link>
+                  <Link href="/auth?mode=register" className="btn-dash-primary" style={{ whiteSpace: 'nowrap', padding: '9px 18px' }}>
+                    <span>Daftar Gratis</span>
+                    <span>➔</span>
+                  </Link>
+                </>
+              )}
             </div>
 
           </div>
@@ -696,13 +725,22 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
           </p>
 
           <div className="hero-cta-group">
-            <button onClick={handleGoToDashboard} className="btn-dash-primary btn-dash-large">
-              <span>🚀 Masuk ke Dashboard Langsung</span>
-              <span>➔</span>
-            </button>
-            <a href="#demo" className="btn-dash-secondary">
-              <span>⚡ Coba Simulator Telegram</span>
-            </a>
+            {isLoggedIn ? (
+              <button onClick={handleGoToDashboard} className="btn-dash-primary btn-dash-large">
+                <span>🚀 Buka Dashboard Saya</span>
+                <span>➔</span>
+              </button>
+            ) : (
+              <>
+                <button onClick={handleGoToRegister} className="btn-dash-primary btn-dash-large">
+                  <span>🚀 Mulai Sekarang (Daftar Gratis)</span>
+                  <span>➔</span>
+                </button>
+                <Link href="/auth?mode=login" className="btn-dash-secondary">
+                  <span>🔑 Masuk ke Akun</span>
+                </Link>
+              </>
+            )}
           </div>
 
           <div className="metrics-grid">
@@ -957,8 +995,8 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
                   Kelola Rekening Bank, E-Wallet (GoPay, OVO), dan Uang Tunai dengan mutasi transfer instan.
                 </p>
               </div>
-              <button onClick={handleGoToDashboard} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
-                Coba di Dashboard ➔
+              <button onClick={handleGoToRegister} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
+                {isLoggedIn ? 'Buka di Dashboard ➔' : 'Coba Sekarang ➔'}
               </button>
             </div>
 
@@ -970,8 +1008,8 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
                   Tetapkan batas pengeluaran bulanan dan dapatkan peringatan proaktif saat mendekati batas.
                 </p>
               </div>
-              <button onClick={handleGoToDashboard} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
-                Coba di Dashboard ➔
+              <button onClick={handleGoToRegister} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
+                {isLoggedIn ? 'Buka di Dashboard ➔' : 'Coba Sekarang ➔'}
               </button>
             </div>
 
@@ -983,8 +1021,8 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
                   Unduh rekapitulasi keuangan bulanan berformat PDF elegan atau spreadsheet Excel lengkap.
                 </p>
               </div>
-              <button onClick={handleGoToDashboard} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
-                Coba di Dashboard ➔
+              <button onClick={handleGoToRegister} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
+                {isLoggedIn ? 'Buka di Dashboard ➔' : 'Coba Sekarang ➔'}
               </button>
             </div>
 
@@ -996,8 +1034,8 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
                   Gunakan token bot Telegram pribadi Anda sendiri dari @BotFather untuk keamanan penuh.
                 </p>
               </div>
-              <button onClick={handleGoToDashboard} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
-                Coba di Dashboard ➔
+              <button onClick={handleGoToRegister} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
+                {isLoggedIn ? 'Buka di Dashboard ➔' : 'Coba Sekarang ➔'}
               </button>
             </div>
           </div>
@@ -1027,8 +1065,8 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
                   <li>✓ Web Dashboard & Ringkasan Saldo</li>
                 </ul>
               </div>
-              <button onClick={handleGoToDashboard} className="btn-dash-secondary" style={{ width: '100%', justifyContent: 'center' }}>
-                Mulai Gratis
+              <button onClick={handleGoToRegister} className="btn-dash-secondary" style={{ width: '100%', justifyContent: 'center' }}>
+                {isLoggedIn ? 'Buka Dashboard' : 'Daftar Gratis Sekarang'}
               </button>
             </div>
 
@@ -1053,8 +1091,8 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
                   <li>✓ Modul <b>Kelola Langganan</b> Lengkap</li>
                 </ul>
               </div>
-              <button onClick={handleGoToDashboard} className="btn-dash-primary" style={{ width: '100%', justifyContent: 'center', padding: '14px' }}>
-                🚀 Buka Dashboard & Upgrade Pro
+              <button onClick={handleGoToRegister} className="btn-dash-primary" style={{ width: '100%', justifyContent: 'center', padding: '14px' }}>
+                {isLoggedIn ? '🚀 Buka Dashboard & Upgrade Pro' : '🚀 Daftar & Akses Pro'}
               </button>
             </div>
           </div>
@@ -1088,9 +1126,9 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
       </main>
 
       {/* FLOATING QUICK BRIDGE BUTTON */}
-      <button onClick={handleGoToDashboard} className="floating-dash-pill">
+      <button onClick={handleGoToRegister} className="floating-dash-pill">
         <span>✨</span>
-        <span>Buka Dashboard</span>
+        <span>{isLoggedIn ? 'Buka Dashboard' : 'Daftar Sekarang'}</span>
         <span>➔</span>
       </button>
 
@@ -1104,7 +1142,11 @@ ${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocal
           <div style={{ display: 'flex', gap: '20px' }}>
             <a href="#fitur" style={{ color: '#94a3b8', textDecoration: 'none' }}>Fitur</a>
             <a href="#pricing" style={{ color: '#94a3b8', textDecoration: 'none' }}>Langganan</a>
-            <button onClick={handleGoToDashboard} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '700', cursor: 'pointer' }}>Buka Dashboard</button>
+            {isLoggedIn ? (
+              <button onClick={handleGoToDashboard} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '700', cursor: 'pointer' }}>Buka Dashboard</button>
+            ) : (
+              <Link href="/auth?mode=login" style={{ color: '#34d399', fontWeight: '700', textDecoration: 'none' }}>Masuk Akun</Link>
+            )}
           </div>
         </div>
       </footer>

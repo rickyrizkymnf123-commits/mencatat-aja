@@ -442,8 +442,42 @@ function AuthContent() {
               </div>
 
               {errorMessage && (
-                <div style={{ background: 'rgba(244, 63, 94, 0.12)', border: '1px solid rgba(244, 63, 94, 0.3)', color: '#fb7185', padding: '12px 14px', borderRadius: '10px', fontSize: '0.85rem', fontWeight: 600 }}>
-                  {errorMessage}
+                <div style={{ 
+                  background: errorMessage.includes('ACC') || errorMessage.includes('menunggu') ? 'rgba(245, 158, 11, 0.12)' : 'rgba(244, 63, 94, 0.12)', 
+                  border: errorMessage.includes('ACC') || errorMessage.includes('menunggu') ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(244, 63, 94, 0.3)', 
+                  color: errorMessage.includes('ACC') || errorMessage.includes('menunggu') ? '#fbbf24' : '#fb7185', 
+                  padding: '14px 16px', 
+                  borderRadius: '12px', 
+                  fontSize: '0.88rem', 
+                  fontWeight: 600,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px'
+                }}>
+                  <div>{errorMessage}</div>
+                  {(errorMessage.includes('ACC') || errorMessage.includes('menunggu')) && (
+                    <a 
+                      href={`https://wa.me/6281234567890?text=${encodeURIComponent(`Halo Admin MencatatAja, akun saya (${email}) belum di-ACC. Mohon bantu aktivasi ya, terima kasih!`)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        padding: '8px 14px',
+                        background: '#25d366',
+                        color: '#ffffff',
+                        borderRadius: '8px',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        textDecoration: 'none',
+                        width: 'fit-content'
+                      }}
+                    >
+                      <span>💬</span> Chat Admin WhatsApp
+                    </a>
+                  )}
                 </div>
               )}
 
