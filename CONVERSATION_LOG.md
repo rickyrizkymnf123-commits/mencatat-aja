@@ -1626,6 +1626,32 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
      - Setiap pendaftaran baru otomatis berstatus `is_approved: false`.
      - Setelah mengisi onboarding, user baru TIDAK dibawa ke dashboard, melainkan melihat layar konfirmasi pendaftaran berstatus Menunggu ACC Admin dengan tautan WhatsApp admin.
      - Saat login, jika user belum di-ACC oleh admin, sistem menolak dengan kode 403 dan menampilkan peringatan jelas beserta tombol WhatsApp admin.
+## Sesi 103: Perbaikan Tuntas Sinkronisasi Real-Time Video Tutorial Admin-User & Retensi Penghapusan Video
+- **User Request & Feedback:**
+  - "di dashboard admin , saya udah tambah video , tapi tidak update di users , dan ketika admin hapus video pas di refresh videonya malah muncul lagi yang sudah di hapus ini"
+- **Penyebab Masalah (Root Causes):**
+  1. **Kegagalan Persistensi Supabase Database (`src/lib/tutorials.ts`)**:
+     - Pada fungsi `saveAllVideoTutorials()`, query Supabase ke tabel `ai_providers` menyertakan kolom yang tidak ada di skema tabel (`base_url` dan `model`), menyebabkan error dari Supabase dan sistem hanya menyimpan sementara ke memory serverless lokal yang hilang begitu instance serverless berganti / di-refresh.
+  2. **Kurang Fungsi `fetchTutorials` di Dashboard User (`src/app/dashboard/page.tsx`)**:
+     - Dashboard user memanggil `fetchTutorials()` saat tab aktif berubah ke `'tutorials'`, namun fungsi tersebut sempat belum terdefinisi secara tepat di level atas komponen dan tidak menggunakan header anti-cache `{ cache: 'no-store' }`.
+  3. **Video yang Dihapus Muncul Kembali Saat Refresh (`src/lib/tutorials.ts`)**:
+     - Pada fungsi `getVideoTutorials()`, terdapat pengecekan `if (Array.isArray(parsed) && parsed.length > 0)`. Jika Admin menghapus semua video (sehingga array menjadi kosong `[]`) atau jika koneksi Supabase mengembalikan list kosong, sistem secara keliru menganggapnya error dan mengembalikan video bawaan hardcoded (*fallback demo video* `tut_1`).
+  4. **Penyimpanan Cache di Next.js API Route (`src/app/api/tutorials/route.ts`)**:
+     - Endpoint API belum diproteksi dengan `export const dynamic = 'force-dynamic'`, `export const revalidate = 0`, dan header `Cache-Control: 'no-store, no-cache, must-revalidate'`, sehingga Next.js dan browser sempat menyajikan respon cache lama.
+- **Solusi & Implementasi:**
+  1. **Perbaikan Persistensi Supabase (`src/lib/tutorials.ts`)**:
+     - Memperbaiki query Supabase `saveAllVideoTutorials()` agar hanya menulis kolom yang valid: `name: 'video_tutorials'`, `api_key: jsonPayload`, `is_active: true`, `mode: 'single'`.
+     - Memperbaiki `getVideoTutorials()`: Ketika database mengembalikan array kosong `[]`, sistem secara benar mengembalikan `[]` (bukan me-resurrect video demo bawaan).
+     - Menghapus in-memory TTL caching di serverless agar seluruh create, update, dan delete langsung tersinkronisasi 100% real-time ke database.
+  2. **Proteksi Anti-Cache API (`src/app/api/tutorials/route.ts`)**:
+     - Menambahkan konfigurasi `export const dynamic = 'force-dynamic';` dan `export const revalidate = 0;`.
+     - Menambahkan header HTTP `Cache-Control: 'no-store, no-cache, must-revalidate, proxy-revalidate'`.
+  3. **Sinkronisasi Sempurna di Dashboard User (`src/app/dashboard/page.tsx`)**:
+     - Memastikan `fetchTutorials()` dipanggil saat inisialisasi awal dashboard dan saat user mengklik tab 🎓 **Tutorial Penggunaan**.
+     - Menggunakan `fetch('/api/tutorials', { cache: 'no-store' })` agar data selalu segar langsung dari server.
+  4. **Inisialisasi Cepat di Admin Dashboard (`src/app/admin/page.tsx`)**:
+     - Menambahkan `await fetchTutorials();` ke dalam `initAdmin()`.
+     - Menggunakan `fetch('/api/tutorials', { cache: 'no-store' })` pada seluruh operasi fetch, create, edit, dan delete.
   5. **Verifikasi & Deployment**:
-     - `npm run build` sukses 100% (30 route terkompilasi bersih tanpa error).
-     - Commit dan push ke GitHub `main` (commit `1f4ee21`) untuk update live Vercel.
+     - Menjalankan `npm run build` dan berhasil lulus 100% tanpa error di seluruh 29 route.
+     - Commit dan push ke GitHub `main` (commit `accff19`) untuk live deployment instan di Vercel.
