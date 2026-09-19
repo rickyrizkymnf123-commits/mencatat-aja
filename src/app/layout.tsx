@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -15,6 +15,15 @@ export const metadata: Metadata = {
   }
 };
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#04060d',
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -23,8 +32,25 @@ export default function RootLayout({
   return (
     <html lang="id">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                if (typeof window !== 'undefined') {
+                  document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+                  document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+                  document.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false });
+                  document.addEventListener('touchmove', function(e) {
+                    if (e.touches && e.touches.length > 1) {
+                      e.preventDefault();
+                    }
+                  }, { passive: false });
+                }
+              })();
+            `,
+          }}
+        />
       </head>
       <body>{children}</body>
     </html>
