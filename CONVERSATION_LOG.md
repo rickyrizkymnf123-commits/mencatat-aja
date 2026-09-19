@@ -1586,4 +1586,19 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
      - `npm run build` sukses 100% (30 routes terkompilasi bersih tanpa error).
      - Commit & push ke GitHub `main` (commit `09ea099`) untuk update otomatis live Vercel.
 
-
+## Sesi 101: Penguncian Skala Viewport & Pencegahan Bug Cubit Dua Jari (Pinch-to-Zoom / Pinch-to-Shrink) di Mobile
+- **User Request & Feedback:**
+  - "tolong optimalkan lagi untuk tampilan HP karena masih bisa bug , kalo saya perkecil di cubit dua jari , tampilanya juga malah jadi berubah"
+- **Penyebab Masalah:**
+  - Pada smartphone (terutama iOS Safari dan Android Chrome), gestur mencubit layar dengan 2 jari (*pinch-to-zoom* / *pinch-to-shrink*) mengubah ukuran viewport dinamis browser sehingga CSS media query membaca lebar layar lebih kecil/besar dari ukuran fisik perangkat, menyebabkan tata letak (*layout*) bergeser atau rusak.
+  - Di Next.js 14/15/16 App Router, tag `<meta name="viewport">` manual di dalam `<head>` pada `RootLayout` diabaikan/ditimpa oleh mekanisme Viewport generator bawaan Next.js.
+- **Solusi & Implementasi:**
+  1. **Next.js App Router Viewport API (`src/app/layout.tsx`)**:
+     - Mengimpor `type Viewport` dari `next` dan mengekspor konfigurasi resmi `export const viewport: Viewport = { width: 'device-width', initialScale: 1, maximumScale: 1, userScalable: false, viewportFit: 'cover', themeColor: '#04060d' }`.
+     - Menambahkan script pencegah event gestur multi-touch iOS (`gesturestart`, `gesturechange`, `gestureend`) dan interceptor `touchmove` jika `e.touches.length > 1` agar gestur pinch 2 jari tidak merusak rasio skala tampilan.
+  2. **Touch Action & Text Size Protection (`src/app/globals.css`)**:
+     - Menambahkan aturan global `html, body { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; width: 100%; max-width: 100vw; overflow-x: hidden; overscroll-behavior-x: none; }`.
+     - Memastikan seluruh elemen di smartphone terkunci secara absolut pada lebar layar 100% tanpa risiko zoom in/out yang tidak disengaja.
+  3. **Verifikasi & Deployment**:
+     - Menjalankan `npm run build` dan berhasil lulus 100% (30 route terkompilasi bersih).
+     - Commit dan push ke GitHub `main` (commit `e252246`) untuk sinkronisasi live deployment Vercel.
