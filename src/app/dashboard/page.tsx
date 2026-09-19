@@ -42,6 +42,23 @@ export default function DashboardPage() {
   const [tutorialSearchQuery, setTutorialSearchQuery] = useState('');
   const [tutorialCategoryFilter, setTutorialCategoryFilter] = useState('Semua');
 
+  const fetchTutorials = async () => {
+    setIsFetchingTutorials(true);
+    try {
+      const res = await fetch('/api/tutorials', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.tutorials)) {
+          setTutorialsList(data.tutorials);
+        }
+      }
+    } catch (e) {
+      console.warn('Dashboard fetch tutorials error:', e);
+    } finally {
+      setIsFetchingTutorials(false);
+    }
+  };
+
   // ADD CATEGORY MODAL STATES
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -1296,23 +1313,6 @@ export default function DashboardPage() {
       alert(`❌ Gagal: ${err.message}`);
     } finally {
       setIsSavingNewCategory(false);
-    }
-  };
-
-  const fetchTutorials = async () => {
-    setIsFetchingTutorials(true);
-    try {
-      const res = await fetch('/api/tutorials');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.tutorials) {
-          setTutorialsList(data.tutorials);
-        }
-      }
-    } catch (e) {
-      console.warn('Dashboard fetch tutorials error:', e);
-    } finally {
-      setIsFetchingTutorials(false);
     }
   };
 

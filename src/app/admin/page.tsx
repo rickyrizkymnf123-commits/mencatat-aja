@@ -143,10 +143,10 @@ export default function AdminDashboard() {
   const fetchTutorials = async () => {
     setIsFetchingTutorials(true);
     try {
-      const res = await fetch('/api/tutorials');
+      const res = await fetch('/api/tutorials', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        if (data.tutorials) {
+        if (Array.isArray(data.tutorials)) {
           setTutorialsList(data.tutorials);
         }
       }
@@ -448,6 +448,7 @@ export default function AdminDashboard() {
 
       await fetchAdminData();
       await fetchPricingConfig();
+      await fetchTutorials();
     };
     initAdmin();
   }, []);

@@ -7,12 +7,21 @@ import {
   extractYouTubeId 
 } from '@/lib/tutorials';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   try {
     const tutorials = await getVideoTutorials();
     return NextResponse.json({
       success: true,
       tutorials: tutorials || []
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
     });
   } catch (err: any) {
     console.error('Error fetching tutorials API:', err);

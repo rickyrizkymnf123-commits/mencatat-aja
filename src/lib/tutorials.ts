@@ -76,36 +76,26 @@ function getFallbackTutorials(): TutorialVideo[] {
  * Fetches all tutorial videos (Supabase -> File Fallback)
  */
 export async function getVideoTutorials(): Promise<TutorialVideo[]> {
-  const now = Date.now();
-  if (cachedTutorials && (now - cacheTime < CACHE_TTL)) {
-    return cachedTutorials;
-  }
-
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const isPlaceholder = !supabaseUrl || 
     supabaseUrl.includes('your-supabase-project-id') || 
     supabaseUrl.includes('placeholder-project');
 
   if (isPlaceholder) {
-    const fallback = getFallbackTutorials();
-    cachedTutorials = fallback;
-    cacheTime = now;
-    return fallback;
+    return getFallbackTutorials();
   }
 
   try {
     const { data, error } = await supabaseAdmin
       .from('ai_providers')
-      .select('*')
+      .select('api_key')
       .eq('name', 'video_tutorials')
       .maybeSingle();
 
     if (!error && data && data.api_key) {
       try {
         const parsed = JSON.parse(data.api_key);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          cachedTutorials = parsed;
-          cacheTime = now;
+        if (Array.isArray(parsed)) {
           return parsed;
         }
       } catch (jsonErr) {
@@ -116,19 +106,13 @@ export async function getVideoTutorials(): Promise<TutorialVideo[]> {
     console.warn('Failed to fetch tutorials from ai_providers table:', dbErr);
   }
 
-  const fallback = getFallbackTutorials();
-  cachedTutorials = fallback;
-  cacheTime = now;
-  return fallback;
+  return getFallbackTutorials();
 }
 
 /**
  * Saves all tutorial videos to Supabase & local file
  */
 export async function saveAllVideoTutorials(tutorials: TutorialVideo[]): Promise<boolean> {
-  cachedTutorials = tutorials;
-  cacheTime = Date.now();
-
   // 1. Save to local fallback file if possible
   try {
     fs.writeFileSync(MOCK_TUTORIALS_PATH, JSON.stringify(tutorials, null, 2));
@@ -136,7 +120,7 @@ export async function saveAllVideoTutorials(tutorials: TutorialVideo[]): Promise
     console.warn('Could not write to local mock tutorials file (likely read-only serverless):', fsErr);
   }
 
-  // 2. Save to Supabase ai_providers table
+  // 2. Save to Supabase ai_providers table (using compatible schema fields)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const isPlaceholder = !supabaseUrl || 
     supabaseUrl.includes('your-supabase-project-id') || 
@@ -152,25 +136,30 @@ export async function saveAllVideoTutorials(tutorials: TutorialVideo[]): Promise
         .maybeSingle();
 
       if (existing?.id) {
-        await supabaseAdmin
+        const { error: updateErr } = await supabaseAdmin
           .from('ai_providers')
           .update({
             api_key: jsonPayload,
-            base_url: 'https://youtube.com',
-            model: 'tutorials_v1',
             is_active: true
           })
           .eq('id', existing.id);
+
+        if (updateErr) {
+          console.error('Supabase update video_tutorials error:', updateErr);
+        }
       } else {
-        await supabaseAdmin
+        const { error: insertErr } = await supabaseAdmin
           .from('ai_providers')
           .insert({
             name: 'video_tutorials',
             api_key: jsonPayload,
-            base_url: 'https://youtube.com',
-            model: 'tutorials_v1',
-            is_active: true
+            is_active: true,
+            mode: 'single'
           });
+
+        if (insertErr) {
+          console.error('Supabase insert video_tutorials error:', insertErr);
+        }
       }
       return true;
     } catch (dbErr) {
