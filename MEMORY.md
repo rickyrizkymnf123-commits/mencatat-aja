@@ -33,9 +33,8 @@
 - **Explicit Foreign Key Relationship Embedding:** Query transaksi menggunakan `wallets:wallets!transactions_wallet_id_fkey (name)` untuk mencegah error PostgREST `PGRST201`.
 - **Live Real-Time Dashboard Sync:** Dashboard web dilengkapi background polling 3 detik dan listener Supabase Realtime sehingga dompet baru, transaksi Telegram, dan grafik visual selalu tersinkronisasi secara langsung.## Kebijakan Pendaftaran & Mobile Experience (Update Sesi 92)
 - **Wajib ACC Admin untuk Pendaftaran Baru:** Tidak ada registrasi langsung aktif. Setiap akun baru yang mendaftar melalui `/auth` otomatis berstatus `is_approved: false` dan harus disetujui manual oleh Superadmin di `/admin` sebelum dapat login.
-- **Mobile Horizontal Swipe Tables & Desktop Layout Integrity (Update Sesi 96):**
-  - Seluruh tabel data (Admin: Kelola Users, Subscriptions, Payments, AI Logs, Audit Logs; User: Laporan Transaksi) menggunakan container dengan `overflow-x: auto !important`, `-webkit-overflow-scrolling: touch !important`, `touch-action: pan-x pan-y !important`, `min-width: 820px !important`, dan `white-space: nowrap !important` pada mobile viewports (≤ 768px).
-  - Dilengkapi scrollbar ramping bernuansa emerald dan badge petunjuk geser interaktif `.mobile-table-hint` (`👈 Geser tabel ke samping 👉`) khusus smartphone.
-  - Tampilan Desktop tetap 100% utuh tanpa perubahan layout atau kompresi kolom.
-  - Ringkasan metrik statistik 4 kartu dipertahankan dalam format Grid 2x2 kompak pada semua ukuran smartphone.
+- **Mobile Native Architecture & Touch Protection (Update Sesi 101):**
+  - **Pinch-to-Zoom Lock**: Menggunakan konfigurasi resmi Next.js `export const viewport: Viewport` (`userScalable: false`, `maximumScale: 1`) dan script interceptor gestur multi-touch (`gesturestart`, `touchmove > 1`) pada `RootLayout` (`src/app/layout.tsx`) serta `touch-action: manipulation; text-size-adjust: 100%;` pada `src/app/globals.css` untuk mencegah layout HP rusak saat dicubit 2 jari.
+  - **Dual View Layout**: Desktop menampilkan tabel analitik lengkap, sementara Mobile menggunakan kartu vertikal interaktif (`.mobile-data-card`) untuk transaksi terakhir dan perbandingan langganan.
+  - **Video Tutorial Management**: Admin dapat mengelola video tutorial YouTube di menu 🎬 **Video Tutorial** (`/api/tutorials`, `src/lib/tutorials.ts`), dan otomatis tersinkronisasi di dashboard user pada tab 🎓 **Tutorial Penggunaan**.
 
