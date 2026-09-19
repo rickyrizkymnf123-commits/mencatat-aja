@@ -1602,3 +1602,30 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
   3. **Verifikasi & Deployment**:
      - Menjalankan `npm run build` dan berhasil lulus 100% (30 route terkompilasi bersih).
      - Commit dan push ke GitHub `main` (commit `e252246`) untuk sinkronisasi live deployment Vercel.
+
+## Sesi 102: Perbaikan Tuntas Bug Urgent Autentikasi, Route Protection Dashboard/Admin, & Kebijakan Wajib ACC Admin
+- **User Request & Feedback:**
+  - "ada bug yang urgent banget dan harus di fiks , untuk sistem login dan daftar masih error ketika saya masuk ke tools ini , di lp klik dashboard langsung di bawa ke tampilan admin , harus nya ga boleh , kalo users yang sudah punya akun di suruh untuk login dulu , kalo users yang belum punya akun di suruh daftar dulu , dan nanti yang daftar juga jangan langsung di bawa ke dashboard , mereka harus di acc dulu sama admin"
+  - "https://www.mencatat.my.id/dashboard link ini konyol sekali langsung di bawa ke admin funnel"
+- **Penyebab Masalah:**
+  1. Di Landing Page (`src/app/page.tsx`), fungsi `handleGoToDashboard` sebelumnya membuat sesi demo otomatis dengan user ID mock hardcoded (`58c09700-965d-4104-a344-6e599c46deff`) ke dalam `localStorage`.
+  2. Di Admin Dashboard (`src/app/admin/page.tsx`), ID mock tersebut sempat terdaftar sebagai syarat superadmin (`storedId === '58c09700...'`), sehingga pengunjung umum yang mengklik "Dashboard" di LP langsung diidentifikasi sebagai superadmin dan diredirect ke panel admin (`/admin`).
+  3. Di User Dashboard (`src/app/dashboard/page.tsx`), jika pengunjung belum login, sistem sebelumnya meng-inject sesi dummy `budi@demo.com` daripada melempar user ke halaman login `/auth?mode=login`.
+  4. Pengecekan status persetujuan (`is_approved`) pada API `/api/auth/session` dan `/api/admin/data` sempat mengalami default ke `true`.
+- **Solusi & Implementasi:**
+  1. **Pembersihan Total Sesi Mock & Hardcoded Bypass**:
+     - Menghapus seluruh logika pembuatan sesi tamu / dummy otomatis di `src/app/page.tsx`, `src/app/dashboard/page.tsx`, dan `src/app/admin/page.tsx`.
+     - Superadmin di `src/app/admin/page.tsx` sekarang secara ketat HANYA mengizinkan akun resmi `rickyrizkymnf123@gmail.com` atau role `superadmin`.
+  2. **Landing Page Navigasi Bersih (`src/app/page.tsx`)**:
+     - Navbar: Menampilkan tombol **Masuk** (`/auth?mode=login`) dan **Daftar Gratis** (`/auth?mode=register`) bagi pengunjung umum. Tombol "Buka Dashboard" hanya muncul jika user sudah benar-benar login.
+     - Hero & Pricing CTA: Mengarahkan pengunjung belum login ke pendaftaran `/auth?mode=register` atau login `/auth?mode=login`.
+  3. **Proteksi Ketat Dashboard (`src/app/dashboard/page.tsx`)**:
+     - Setiap pengunjung yang membuka `/dashboard` tanpa sesi aktif akan langsung diredirect ke `/auth?mode=login` (`router.replace('/auth?mode=login')`).
+     - Jika user telah login tetapi berstatus `is_approved: false`, dashboard secara tegas memblokir akses finansial dan menampilkan **Layar Menunggu Persetujuan (ACC) Admin** dengan tombol langsung hubungi Admin via WhatsApp dan tombol Logout.
+  4. **Pendaftaran & Alur Persetujuan Admin (`src/app/auth/page.tsx`, `src/app/api/auth/session/route.ts`)**:
+     - Setiap pendaftaran baru otomatis berstatus `is_approved: false`.
+     - Setelah mengisi onboarding, user baru TIDAK dibawa ke dashboard, melainkan melihat layar konfirmasi pendaftaran berstatus Menunggu ACC Admin dengan tautan WhatsApp admin.
+     - Saat login, jika user belum di-ACC oleh admin, sistem menolak dengan kode 403 dan menampilkan peringatan jelas beserta tombol WhatsApp admin.
+  5. **Verifikasi & Deployment**:
+     - `npm run build` sukses 100% (30 route terkompilasi bersih tanpa error).
+     - Commit dan push ke GitHub `main` (commit `1f4ee21`) untuk update live Vercel.
