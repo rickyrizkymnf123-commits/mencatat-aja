@@ -975,13 +975,22 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load AI config');
       
+      const localSavedUrl = typeof window !== 'undefined' ? localStorage.getItem('Mencatat_Aja_saved_ai_base_url') : null;
+      const localSavedModel = typeof window !== 'undefined' ? localStorage.getItem('Mencatat_Aja_saved_ai_model') : null;
+
       let loadedBaseUrl = data.baseUrl || data.nineRouterBaseUrl || 'http://100.80.46.70:20128/v1';
+      if (localSavedUrl && (loadedBaseUrl === 'http://100.80.46.70:20128/v1' || !data.baseUrl)) {
+        loadedBaseUrl = localSavedUrl;
+      }
       if (loadedBaseUrl.includes('koboillm.com')) {
         loadedBaseUrl = 'http://100.80.46.70:20128/v1';
       }
       
       const loadedApiKey = data.apiKey || data.geminiApiKey || '';
-      const loadedModel = data.defaultModel || data.modelName || 'combo';
+      let loadedModel = data.defaultModel || data.modelName || 'combo';
+      if (localSavedModel && (loadedModel === 'combo' || !data.defaultModel)) {
+        loadedModel = localSavedModel;
+      }
 
       setAiBaseUrl(loadedBaseUrl);
       setAiApiKey(loadedApiKey);
