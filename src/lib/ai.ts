@@ -830,6 +830,7 @@ export async function callCustomLLMAPI(baseUrl: string, apiKey: string, model: s
     body: JSON.stringify({
       model: model || DEFAULT_9ROUTER_MODEL,
       messages: [{ role: 'user', content: prompt }],
+      stream: false,
       temperature: 0.1
     })
   });
@@ -839,9 +840,35 @@ export async function callCustomLLMAPI(baseUrl: string, apiKey: string, model: s
     throw new Error(`Custom LLM API returned status ${response.status}: ${errText}`);
   }
 
-  const data = await response.json();
-  const text = data.choices?.[0]?.message?.content || '';
-  const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 };
+  const rawText = await response.text();
+  let text = '';
+  let usage = { prompt_tokens: 0, completion_tokens: 0 };
+
+  try {
+    const data = JSON.parse(rawText);
+    text = data.choices?.[0]?.message?.content || '';
+    usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 };
+  } catch (e) {
+    // Parse SSE streaming chunks if 9Router responded in SSE stream mode
+    const lines = rawText.split('\n');
+    let accumulatedContent = '';
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('data:') && !trimmed.includes('[DONE]')) {
+        try {
+          const jsonStr = trimmed.replace(/^data:\s*/, '');
+          const parsedChunk = JSON.parse(jsonStr);
+          const chunkText = parsedChunk.choices?.[0]?.delta?.content || parsedChunk.choices?.[0]?.message?.content || '';
+          accumulatedContent += chunkText;
+          if (parsedChunk.usage) {
+            usage = parsedChunk.usage;
+          }
+        } catch (err) {}
+      }
+    }
+    text = accumulatedContent || rawText;
+  }
+
   return { text, usage };
 }
 

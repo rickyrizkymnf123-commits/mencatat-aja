@@ -1,5 +1,5 @@
 {
-  "baseUrl": "http://100.80.46.70:20128/v1",
-  "apiKey": "",
+  "baseUrl": "https://management-teacher-manufacturers-waiver.trycloudflare.com/v1",
+  "apiKey": "sk-2d54ec0087b1195e-6evagc-48cf2764",
   "defaultModel": "combo"
 }
