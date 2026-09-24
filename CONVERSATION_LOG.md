@@ -1678,5 +1678,29 @@ pm run build 100% dan ter-push ke GitHub repository main.
 
 - **Katalog Lengkap Model 9Router & Panduan Tunnel IP Private:**
   - Mengintegrasikan seluruh katalog model resmi 9Router (Combos, Claude Code, Codex, GitHub Copilot, Cursor, GLM, MiniMax, Kimi, Kiro, Vertex AI).
-  - Menjelaskan akar masalah etch failed pada IP Tailscale 100.80.46.70 (IP mesh private yang tidak dapat diakses langsung oleh server cloud publik Vercel tanpa Tunnel).
+  - Menjelaskan akar masalah fetch failed pada IP Tailscale 100.80.46.70 (IP mesh private yang tidak dapat diakses langsung oleh server cloud publik Vercel tanpa Tunnel).
   - Menambahkan panduan Cloudflare Tunnel / Tailscale Funnel / ngrok langsung di kotak diagnostik admin.
+
+## Sesi 105: Integrasi Penuh Zero-Bug 9Router AI Gateway (Dual Response Parser & Strict No-Fallback)
+- **User Request:**
+  - Target Base URL & Endpoint: `http://localhost:20128/v1` (atau VPS Tailscale `http://100.80.46.70:20128/v1` / Cloudflare Tunnel) ke `/chat/completions`.
+  - Request Payload: POST dengan `Authorization: Bearer <API_KEY>`, `x-api-key: <API_KEY>`, dan `stream: false`.
+  - Dual Response Parser: Coba `JSON.parse(rawText)` pertama kali; jika gagal/berupa SSE stream, parse baris per baris `data:` dan gabungkan `delta.content`.
+  - Strict No-Fallback for Model Aliases: Jangan pernah fallback model yang mengandung `/` (misal `ag/gemini-3.7-flash-high`, `cc/claude-opus-4-7`), `bebas`, atau `combo` ke SDK bawaan Google. Seluruh modul wajib menggunakan modul terpusat `generateAiCompletion`.
+  - Persistensi Settings: Simpan `nineRouterBaseUrl`, `geminiApiKey`, dan `modelName` / `defaultModel` ke database dan settings file agar tidak hilang saat di-refresh.
+- **Solusi & Implementasi:**
+  1. **Modul Terpusat `generateAiCompletion` (`src/lib/ai.ts`)**:
+     - Mengimplementasikan fungsi tunggal terstandar `generateAiCompletion` dengan endpoint `/chat/completions`.
+     - Menyertakan header `Authorization: Bearer <API_KEY>`, `x-api-key: <API_KEY>`, serta body `stream: false`.
+     - Menerapkan arsitektur Dual Parser (JSON.parse + SSE `data:` stream chunk merger).
+     - Menghubungkan seluruh fungsi parsing transaksi, OCR vision, audio transcribe, dan financial advice ke `generateAiCompletion`.
+  2. **Strict No-Fallback for Model Aliases**:
+     - Mencegah rute fallback ke endpoint SDK Google bawaan untuk model alias (`/`, `bebas`, `combo`, `cc/`, `cx/`, `gh/`, `cu/`, `glm/`, `minimax/`, `kimi/`, `kr/`, `vertex/`, `ag/`).
+  3. **Persistensi Pengaturan Ganda (`/api/admin/ai-config`)**:
+     - Mendukung dan mengembalikan kunci `nineRouterBaseUrl`, `geminiApiKey`, `modelName` serta `baseUrl`, `apiKey`, `defaultModel`.
+     - Menghapus override model otomatis pada `src/app/admin/page.tsx` sehingga model yang dipilih pengguna (misal `bebas`) tetap tersimpan permanen saat halaman direfresh.
+  4. **Pengujian & Verifikasi**:
+     - Menguji panggilan live 9Router ke model `bebas` dan `ag/gemini-3.7-flash-high` melalui Cloudflare Tunnel (HTTP 200 OK).
+     - Kompilasi `npm run build` sukses 100% tanpa error di 29 route.
+     - Commit dan push ke repository GitHub `main`.
+
