@@ -1675,3 +1675,8 @@ pm run build 100% dan ter-push ke GitHub repository main.
   - Mengubah penyimpanan dan pengambilan di /api/admin/ai-config agar nama provider 9router di-upsert dengan aman dan data lama otomatis disanitasi.
   - Memperbaiki handleFetchModels dengan arsitektur dual server + client-side direct fetch (agar IP mesh/Tailscale 100.x.x.x dapat diakses langsung oleh browser).
   - Menambahkan input kustom + pill preset cepat 🔥 combo (Auto-Switch) sehingga admin dapat mengetikkan atau memilih combo secara instan tanpa terikat daftar model fallback lama.
+
+- **Katalog Lengkap Model 9Router & Panduan Tunnel IP Private:**
+  - Mengintegrasikan seluruh katalog model resmi 9Router (Combos, Claude Code, Codex, GitHub Copilot, Cursor, GLM, MiniMax, Kimi, Kiro, Vertex AI).
+  - Menjelaskan akar masalah etch failed pada IP Tailscale 100.80.46.70 (IP mesh private yang tidak dapat diakses langsung oleh server cloud publik Vercel tanpa Tunnel).
+  - Menambahkan panduan Cloudflare Tunnel / Tailscale Funnel / ngrok langsung di kotak diagnostik admin.

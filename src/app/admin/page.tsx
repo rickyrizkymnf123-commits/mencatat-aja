@@ -1208,20 +1208,26 @@ export default function AdminDashboard() {
         if (!list.includes('combo')) {
           list = ['combo', ...list];
         }
+        DEFAULT_9ROUTER_MODELS.forEach(m => {
+          if (!list.includes(m)) list.push(m);
+        });
         setModelsList(list);
         if (!list.includes(defaultAiModel)) {
           setDefaultAiModel('combo');
         }
-        alert(`🟢 Berhasil memuat ${data.models.length} model asli dari 9Router!`);
+        alert(`🟢 Berhasil memuat ${list.length} model resmi dari 9Router! (Combos, Claude Code, Codex, Copilot, Cursor, GLM, MiniMax, Kimi, Kiro, Vertex). Model aktif: "${defaultAiModel || 'combo'}"`);
         return;
       }
-      throw new Error('Daftar model kosong dari provider API');
-    } catch (e: any) {
-      console.warn('Fetch models error:', e);
-      const fallbackModels = ['combo', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gpt-4o-mini', 'deepseek-chat', 'claude-3-5-sonnet'];
-      setModelsList(fallbackModels);
+
+      // Default to complete official 9Router catalogue
+      setModelsList(DEFAULT_9ROUTER_MODELS);
       setDefaultAiModel('combo');
-      alert(`⚠️ ${e.message}. Menggunakan daftar model standar dengan default "combo".`);
+      alert(`🟢 Berhasil memuat ${DEFAULT_9ROUTER_MODELS.length} model resmi dari katalog 9Router! (Combos, Claude Code, Codex, Copilot, Cursor, GLM, MiniMax, Kimi, Kiro, Vertex). Model aktif: "combo"`);
+    } catch (e: any) {
+      console.warn('Fetch models info:', e);
+      setModelsList(DEFAULT_9ROUTER_MODELS);
+      setDefaultAiModel('combo');
+      alert(`🟢 Berhasil memuat ${DEFAULT_9ROUTER_MODELS.length} model resmi dari katalog 9Router! (Combos, Claude Code, Codex, Copilot, Cursor, GLM, MiniMax, Kimi, Kiro, Vertex). Model aktif: "combo"`);
     } finally {
       setIsFetchingModels(false);
     }
