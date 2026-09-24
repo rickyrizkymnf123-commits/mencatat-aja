@@ -904,9 +904,17 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/ai-config');
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load AI config');
-      const loadedBaseUrl = data.baseUrl || 'http://100.80.46.70:20128/v1';
+      
+      let loadedBaseUrl = data.baseUrl || 'http://100.80.46.70:20128/v1';
+      if (loadedBaseUrl.includes('koboillm.com')) {
+        loadedBaseUrl = 'http://100.80.46.70:20128/v1';
+      }
+      
       const loadedApiKey = data.apiKey || '';
-      const loadedModel = savedLocalModel || data.defaultModel || 'combo';
+      let loadedModel = data.defaultModel || 'combo';
+      if (loadedModel.includes('gemini-') || loadedModel.includes('kobo')) {
+        loadedModel = 'combo';
+      }
 
       setAiBaseUrl(loadedBaseUrl);
       setAiApiKey(loadedApiKey);
