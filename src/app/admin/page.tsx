@@ -30,12 +30,26 @@ export default function AdminDashboard() {
   const [isSavingTutorial, setIsSavingTutorial] = useState(false);
   const [tutorialSearchQuery, setTutorialSearchQuery] = useState('');
 
-  // CENTRAL AI CONFIG STATES
+  // CENTRAL AI CONFIG STATES (9Router Universal Gateway)
+  const DEFAULT_9ROUTER_MODELS = [
+    'combo',
+    'free-combo',
+    'premium-coding',
+    'cc/claude-opus-4-7',
+    'cc/claude-sonnet-4-5',
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
+    'gpt-4o',
+    'gpt-4o-mini',
+    'deepseek-chat',
+    'claude-3-5-sonnet'
+  ];
+
   const [aiBaseUrl, setAiBaseUrl] = useState('http://100.80.46.70:20128/v1');
   const [aiApiKey, setAiApiKey] = useState('');
   const [showAiApiKey, setShowAiApiKey] = useState(false);
   const [defaultAiModel, setDefaultAiModel] = useState('combo');
-  const [modelsList, setModelsList] = useState<string[]>(['combo', 'gemini-1.5-flash', 'gpt-4o-mini', 'deepseek-chat', 'claude-3-5-sonnet']);
+  const [modelsList, setModelsList] = useState<string[]>(DEFAULT_9ROUTER_MODELS);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [isSavingAiConfig, setIsSavingAiConfig] = useState(false);
 
@@ -912,7 +926,7 @@ export default function AdminDashboard() {
       
       const loadedApiKey = data.apiKey || '';
       let loadedModel = data.defaultModel || 'combo';
-      if (loadedModel.includes('gemini-') || loadedModel.includes('kobo')) {
+      if (loadedModel.includes('gemini-') || loadedModel.includes('kobo') || loadedModel.includes('ag/')) {
         loadedModel = 'combo';
       }
 
@@ -920,7 +934,7 @@ export default function AdminDashboard() {
       setAiApiKey(loadedApiKey);
       setDefaultAiModel(loadedModel);
 
-      // Auto-fetch real models list from provider API via server route
+      // Auto-fetch real models list from 9Router API
       try {
         const fetchRes = await fetch('/api/admin/fetch-models', {
           method: 'POST',
@@ -930,19 +944,23 @@ export default function AdminDashboard() {
         const fetchData = await fetchRes.json();
         if (fetchRes.ok && fetchData.models && Array.isArray(fetchData.models) && fetchData.models.length > 0) {
           let mergedList = [...fetchData.models];
-          if (!mergedList.includes(loadedModel)) {
-            mergedList = [loadedModel, ...mergedList];
+          if (!mergedList.includes('combo')) {
+            mergedList = ['combo', ...mergedList];
           }
+          DEFAULT_9ROUTER_MODELS.forEach(m => {
+            if (!mergedList.includes(m)) mergedList.push(m);
+          });
           setModelsList(mergedList);
-          setDefaultAiModel(loadedModel);
+          setDefaultAiModel(loadedModel || 'combo');
         } else {
-          setModelsList(prev => prev.includes(loadedModel) ? prev : [loadedModel, ...prev]);
+          setModelsList(DEFAULT_9ROUTER_MODELS);
         }
       } catch (e) {
-        console.warn('Auto fetch models error:', e);
+        setModelsList(DEFAULT_9ROUTER_MODELS);
       }
     } catch (e: any) {
       console.error('Failed to load AI config:', e);
+      setModelsList(DEFAULT_9ROUTER_MODELS);
     }
   };
 
@@ -1004,7 +1022,8 @@ export default function AdminDashboard() {
     e.preventDefault();
     setIsSavingAiConfig(true);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('Mencatat_Aja_saved_ai_model', defaultAiModel);
+      localStorage.setItem('Mencatat_Aja_saved_ai_model', defaultAiModel || 'combo');
+      localStorage.setItem('Mencatat_Aja_saved_ai_base_url', aiBaseUrl);
     }
     try {
       const res = await fetch('/api/admin/ai-config', {
@@ -1013,12 +1032,12 @@ export default function AdminDashboard() {
         body: JSON.stringify({
           baseUrl: aiBaseUrl,
           apiKey: aiApiKey,
-          defaultModel: defaultAiModel
+          defaultModel: defaultAiModel || 'combo'
         })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to save config');
-      alert(`🟢 Pengaturan AI Central berhasil disimpan! Default model: "${defaultAiModel}"`);
+      alert(`🟢 Pengaturan 9Router Universal Gateway berhasil disimpan! Model: "${defaultAiModel || 'combo'}"`);
     } catch (e: any) {
       alert(`⚠️ Gagal menyimpan pengaturan: ${e.message}`);
     } finally {
@@ -1032,21 +1051,62 @@ export default function AdminDashboard() {
     setTestReply('');
     setTestError('');
     try {
-      const response = await fetch('/api/ai/parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: testPrompt,
-          baseUrl: aiBaseUrl,
-          apiKey: aiApiKey,
-          model: defaultAiModel
-        })
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Gagal menghubungi API 9Router Gateway');
-      setTestReply(data.reply || 'API terhubung, namun respon kosong.');
+      let reply = '';
+      let testSuccess = false;
+      // 1. Try server-side proxy first
+      try {
+        const response = await fetch('/api/ai/parse', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: testPrompt,
+            baseUrl: aiBaseUrl,
+            apiKey: aiApiKey,
+            model: defaultAiModel || 'combo'
+          })
+        });
+        const data = await response.json();
+        if (response.ok && data.reply) {
+          reply = data.reply;
+          testSuccess = true;
+        } else if (!response.ok) {
+          throw new Error(data.error || 'Server proxy returned error');
+        }
+      } catch (serverErr: any) {
+        console.warn('Server proxy failed, trying direct browser-to-9Router call...', serverErr);
+        // 2. Direct browser fetch fallback (useful when 9Router is on private/Tailscale IP 100.x.x.x)
+        const cleanBaseUrl = aiBaseUrl.endsWith('/') ? aiBaseUrl.slice(0, -1) : aiBaseUrl;
+        const targetUrl = cleanBaseUrl.endsWith('/chat/completions') ? cleanBaseUrl : `${cleanBaseUrl}/chat/completions`;
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (aiApiKey) headers['Authorization'] = `Bearer ${aiApiKey}`;
+
+        const directRes = await fetch(targetUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            model: defaultAiModel || 'combo',
+            messages: [{ role: 'user', content: testPrompt }],
+            temperature: 0.1
+          })
+        });
+
+        if (!directRes.ok) {
+          const directErrText = await directRes.text().catch(() => '');
+          throw new Error(`9Router Gateway Error (${directRes.status}): ${directErrText || serverErr.message}`);
+        }
+
+        const directData = await directRes.json();
+        reply = directData.choices?.[0]?.message?.content || 'API terhubung, respon kosong.';
+        testSuccess = true;
+      }
+
+      if (testSuccess) {
+        setTestReply(reply);
+      } else {
+        throw new Error('Gagal mendapatkan respon dari 9Router Gateway.');
+      }
     } catch (err: any) {
-      setTestError(err.message || 'Koneksi gagal.');
+      setTestError(err.message || 'Koneksi ke 9Router gagal.');
     } finally {
       setIsTestingAi(false);
     }

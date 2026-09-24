@@ -1670,3 +1670,8 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
   2. **Integrasi 9Router Gateway**: Menghubungkan seluruh AI pipeline (teks, audio, vision OCR struk, advisor) ke Universal Gateway http://100.80.46.70:20128/v1 dengan model combo.
   3. **Build & Deploy**: Lulus kompilasi 
 pm run build 100% dan ter-push ke GitHub repository main.
+
+- **Fix Persistensi 9Router & Default Model:**
+  - Mengubah penyimpanan dan pengambilan di /api/admin/ai-config agar nama provider 9router di-upsert dengan aman dan data lama otomatis disanitasi.
+  - Memperbaiki handleFetchModels dengan arsitektur dual server + client-side direct fetch (agar IP mesh/Tailscale 100.x.x.x dapat diakses langsung oleh browser).
+  - Menambahkan input kustom + pill preset cepat 🔥 combo (Auto-Switch) sehingga admin dapat mengetikkan atau memilih combo secara instan tanpa terikat daftar model fallback lama.
