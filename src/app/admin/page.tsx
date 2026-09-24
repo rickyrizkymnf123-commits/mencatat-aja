@@ -4829,39 +4829,17 @@ export default function AdminDashboard() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <input
-                      id="defaultAiModel"
-                      type="text"
-                      list="models-datalist"
-                      style={{
-                        flex: 1,
-                        backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '8px',
-                        padding: '12px 16px',
-                        color: 'var(--text-main)',
-                        fontSize: '0.95rem'
-                      }}
-                      placeholder="Ketik nama model (contoh: combo)"
-                      value={defaultAiModel}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setDefaultAiModel(val);
-                        if (typeof window !== 'undefined') {
-                          localStorage.setItem('Mencatat_Aja_saved_ai_model', val);
-                        }
-                      }}
-                    />
                     <select
+                      id="defaultAiModel"
                       style={{
-                        backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)',
-                        border: '1px solid var(--border)',
+                        width: '100%',
+                        backgroundColor: 'rgba(10, 15, 30, 0.85)',
+                        color: '#ffffff',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
                         borderRadius: '8px',
                         padding: '12px 16px',
-                        color: 'var(--text-main)',
                         fontSize: '0.95rem',
-                        cursor: 'pointer',
-                        maxWidth: '200px'
+                        cursor: 'pointer'
                       }}
                       value={defaultAiModel}
                       onChange={(e) => {
@@ -4872,8 +4850,7 @@ export default function AdminDashboard() {
                         }
                       }}
                     >
-                      <option value="">Pilih Model...</option>
-                      {modelsList.map(model => (
+                      {Array.from(new Set([defaultAiModel, ...modelsList].filter(Boolean))).map(model => (
                         <option key={model} value={model}>
                           {model}
                         </option>
