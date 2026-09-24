@@ -1,5 +1,8 @@
 {
   "baseUrl": "https://management-teacher-manufacturers-waiver.trycloudflare.com/v1",
+  "nineRouterBaseUrl": "https://management-teacher-manufacturers-waiver.trycloudflare.com/v1",
   "apiKey": "sk-2d54ec0087b1195e-6evagc-48cf2764",
-  "defaultModel": "combo"
+  "geminiApiKey": "sk-2d54ec0087b1195e-6evagc-48cf2764",
+  "defaultModel": "bebas",
+  "modelName": "bebas"
 }

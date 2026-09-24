@@ -178,6 +178,136 @@ async function logAIUsage(userId: string | null, provider: string, action: strin
   }
 }
 
+export interface GenerateAiCompletionOptions {
+  prompt?: string;
+  messages?: Array<{ role: string; content: any }>;
+  baseUrl?: string;
+  nineRouterBaseUrl?: string;
+  apiKey?: string;
+  geminiApiKey?: string;
+  model?: string;
+  modelName?: string;
+  temperature?: number;
+  max_tokens?: number;
+  response_format?: any;
+}
+
+/**
+ * Universal 9Router AI Gateway Completion (OpenAI-compatible)
+ * Zero-Bug Rule Implementation:
+ * 1. Target Base URL & Endpoint: http://localhost:20128/v1 or http://100.80.46.70:20128/v1 -> /chat/completions
+ * 2. Request Payload: POST with Authorization: Bearer <API_KEY>, x-api-key: <API_KEY>, stream: false
+ * 3. Dual Response Parser: Try JSON.parse first, fallback to line-by-line SSE data: chunk parsing
+ * 4. Strict No-Fallback for Model Aliases: Never fallback model aliases (containing '/', 'bebas', etc.) to Google SDK
+ */
+export async function generateAiCompletion(
+  options: GenerateAiCompletionOptions | string
+): Promise<{ text: string; usage: { prompt_tokens: number; completion_tokens: number } }> {
+  let promptStr = typeof options === 'string' ? options : options.prompt || '';
+  let messages = typeof options === 'object' && options.messages 
+    ? options.messages 
+    : [{ role: 'user', content: promptStr }];
+  
+  let baseUrl = (typeof options === 'object' && (options.baseUrl || options.nineRouterBaseUrl)) || process.env.AI_BASE_URL || 'http://localhost:20128/v1';
+  let apiKey = (typeof options === 'object' && (options.apiKey || options.geminiApiKey)) || process.env.AI_API_KEY || '';
+  let model = (typeof options === 'object' && (options.model || options.modelName)) || process.env.AI_MODEL || 'combo';
+  let temperature = typeof options === 'object' && options.temperature !== undefined ? options.temperature : 0.1;
+
+  // Resolve config from active providers or local fallback if not explicitly provided
+  if (!apiKey || !baseUrl) {
+    try {
+      const providers = await getActiveProviders();
+      const primary = providers.find(p => p.name === '9router' || (p as any).baseUrl) || providers[0];
+      if (primary) {
+        if (!apiKey) apiKey = primary.api_key || '';
+        if (!baseUrl) baseUrl = (primary as any).baseUrl || baseUrl;
+        if (!model || model === 'combo') model = (primary as any).defaultModel || model;
+      }
+    } catch (e) {
+      console.warn('Failed to resolve primary 9router provider config:', e);
+    }
+  }
+
+  // 1. Resolve Target Base URL & Endpoint
+  const cleanBase = baseUrl.trim().replace(/\/+$/, '');
+  let endpoint = cleanBase;
+  if (cleanBase.endsWith('/chat/completions')) {
+    endpoint = cleanBase;
+  } else if (cleanBase.endsWith('/v1')) {
+    endpoint = `${cleanBase}/chat/completions`;
+  } else {
+    endpoint = `${cleanBase}/v1/chat/completions`;
+  }
+
+  // 2. Request Headers & Payload
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+    headers['x-api-key'] = apiKey;
+  }
+
+  const payload: any = {
+    model: model || 'combo',
+    messages,
+    stream: false,
+    temperature
+  };
+
+  if (typeof options === 'object' && options.response_format) {
+    payload.response_format = options.response_format;
+  }
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '');
+    throw new Error(`9Router Gateway Error (${response.status}): ${errText || response.statusText}`);
+  }
+
+  const rawText = await response.text();
+  let text = '';
+  let usage = { prompt_tokens: 0, completion_tokens: 0 };
+
+  // 3. DUAL RESPONSE PARSER (PARSER GANDA)
+  try {
+    // Step 1: Standard JSON parse
+    const data = JSON.parse(rawText);
+    text = data.choices?.[0]?.message?.content ?? data.choices?.[0]?.delta?.content ?? (typeof data.content === 'string' ? data.content : '');
+    if (data.usage) {
+      usage = data.usage;
+    }
+  } catch (parseErr) {
+    // Step 2: Fallback SSE line-by-line stream chunk parser
+    const lines = rawText.split('\n');
+    let accumulatedContent = '';
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('data:') && !trimmed.includes('[DONE]')) {
+        try {
+          const jsonStr = trimmed.replace(/^data:\s*/, '');
+          const parsedChunk = JSON.parse(jsonStr);
+          const chunkText = parsedChunk.choices?.[0]?.delta?.content ?? parsedChunk.choices?.[0]?.message?.content ?? '';
+          accumulatedContent += chunkText;
+          if (parsedChunk.usage) {
+            usage = parsedChunk.usage;
+          }
+        } catch (err) {
+          // ignore invalid chunk
+        }
+      }
+    }
+    text = accumulatedContent || rawText;
+  }
+
+  return { text, usage };
+}
+
 // 1. TEXT PARSING PIPELINE
 export async function parseTransactionText(
   text: string,
@@ -191,10 +321,32 @@ export async function parseTransactionText(
   description: string;
   transfer_to_wallet?: string | null;
 }> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const isPlaceholder = !supabaseUrl || 
-    supabaseUrl.includes('your-supabase-project-id') || 
-    supabaseUrl.includes('placeholder-project');
+  const prompt = `
+  Anda adalah AI finansial yang bertugas mengekstrak detail transaksi dari teks bahasa natural bahasa Indonesia.
+  
+  Kategori yang tersedia: ${categoriesList.map(c => `${c.emoji} ${c.name}`).join(', ')}
+  Dompet yang tersedia: ${walletsList.join(', ')}
+  
+  Teks transaksi: "${text}"
+  
+  Format nominal Indonesia yang harus dipahami:
+  - "15rb" / "15ribu" / "15 k" = 15000
+  - "1.5jt" / "1,5jt" = 1500000
+  - "500k" = 500000
+  - "setengah juta" = 500000
+  - "1 juta" = 1000000
+  - "dua ratus lima puluh ribu" = 250000
+  - dst.
+  
+  Kembalikan JSON dengan format persis berikut (tanpa tambahan teks lain):
+  {
+    "type": "expense" | "income" | "transfer",
+    "amount": number (integer nominal transaksi),
+    "category": "nama kategori yang paling sesuai dari daftar di atas" (jika transfer atau kategori tidak ditemukan, isi null),
+    "description": "keterangan/catatan singkat transaksi (misal: Beli Bakso)",
+    "transfer_to_wallet": "nama dompet tujuan jika tipe transaksi adalah transfer, selain itu null"
+  }
+  `;
 
   let providers: any[] = [];
   try {
@@ -203,62 +355,42 @@ export async function parseTransactionText(
     console.warn('Failed to load active providers for parsing:', e);
   }
 
-  // Try real AI providers first if they are configured in settings (ensures high accuracy!)
-  if (providers.length > 0) {
-    const prompt = `
-    Anda adalah AI finansial yang bertugas mengekstrak detail transaksi dari teks bahasa natural bahasa Indonesia.
-    
-    Kategori yang tersedia: ${categoriesList.map(c => `${c.emoji} ${c.name}`).join(', ')}
-    Dompet yang tersedia: ${walletsList.join(', ')}
-    
-    Teks transaksi: "${text}"
-    
-    Format nominal Indonesia yang harus dipahami:
-    - "15rb" / "15ribu" / "15 k" = 15000
-    - "1.5jt" / "1,5jt" = 1500000
-    - "500k" = 500000
-    - "setengah juta" = 500000
-    - "1 juta" = 1000000
-    - "dua ratus lima puluh ribu" = 250000
-    - dst.
-    
-    Kembalikan JSON dengan format persis berikut (tanpa tambahan teks lain):
-    {
-      "type": "expense" | "income" | "transfer",
-      "amount": number (integer nominal transaksi),
-      "category": "nama kategori yang paling sesuai dari daftar di atas" (jika transfer atau kategori tidak ditemukan, isi null),
-      "description": "keterangan/catatan singkat transaksi (misal: Beli Bakso)",
-      "transfer_to_wallet": "nama dompet tujuan jika tipe transaksi adalah transfer, selain itu null"
-    }
-    `;
+  for (const provider of providers) {
+    try {
+      const model = (provider as any).defaultModel || DEFAULT_9ROUTER_MODEL;
+      const is9Router = provider.name === '9router' || provider.name === 'litellm' || !!(provider as any).baseUrl;
+      const isCustomAlias = model.includes('/') || model === 'combo' || model === 'bebas' || model.startsWith('cc/') || model.startsWith('cx/') || model.startsWith('gh/') || model.startsWith('cu/') || model.startsWith('glm/') || model.startsWith('minimax/') || model.startsWith('kimi/') || model.startsWith('kr/') || model.startsWith('vertex/');
 
-    for (const provider of providers) {
-      try {
-        if (provider.name === 'gemini') {
-          const result = await callGeminiAPI(provider.api_key, prompt, 'text');
-          await logAIUsage(userId, 'gemini', 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
-          return extractJsonHelper(result.text);
-        } else if (provider.name === 'openai') {
-          const result = await callOpenAIAPI(provider.api_key, prompt, 'text');
-          await logAIUsage(userId, 'openai', 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
-          return extractJsonHelper(result.text);
-        } else if (provider.name === 'deepseek') {
-          const result = await callDeepSeekAPI(provider.api_key, prompt, 'text');
-          await logAIUsage(userId, 'deepseek', 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
-          return extractJsonHelper(result.text);
-        } else if (provider.name === 'litellm' || provider.name === '9router') {
-          const result = await callCustomLLMAPI((provider as any).baseUrl || DEFAULT_9ROUTER_BASE_URL, provider.api_key, (provider as any).defaultModel || DEFAULT_9ROUTER_MODEL, prompt);
-          await logAIUsage(userId, provider.name, 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
-          let cleanText = result.text.trim();
-          if (cleanText.startsWith('```')) {
-            cleanText = cleanText.replace(/^```json\s*/, '').replace(/```$/, '').trim();
-          }
-          return extractJsonHelper(cleanText);
+      // Rule 4: STRICT NO-FALLBACK FOR MODEL ALIASES - route directly through 9Router gateway
+      if (is9Router || isCustomAlias) {
+        const result = await generateAiCompletion({
+          baseUrl: (provider as any).baseUrl || DEFAULT_9ROUTER_BASE_URL,
+          apiKey: provider.api_key,
+          model,
+          prompt
+        });
+        await logAIUsage(userId, '9router', 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
+        let cleanText = result.text.trim();
+        if (cleanText.startsWith('```')) {
+          cleanText = cleanText.replace(/^```json\s*/, '').replace(/```$/, '').trim();
         }
-      } catch (err) {
-        console.error(`AI Provider ${provider.name} failed during text parsing, trying next...`, err);
-        await logAIUsage(userId, provider.name, 'parsing_text', 0, 0, 'failed');
+        return extractJsonHelper(cleanText);
+      } else if (provider.name === 'openai') {
+        const result = await callOpenAIAPI(provider.api_key, prompt, 'text');
+        await logAIUsage(userId, 'openai', 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
+        return extractJsonHelper(result.text);
+      } else if (provider.name === 'deepseek') {
+        const result = await callDeepSeekAPI(provider.api_key, prompt, 'text');
+        await logAIUsage(userId, 'deepseek', 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
+        return extractJsonHelper(result.text);
+      } else if (provider.name === 'gemini') {
+        const result = await callGeminiAPI(provider.api_key, prompt, 'text');
+        await logAIUsage(userId, 'gemini', 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
+        return extractJsonHelper(result.text);
       }
+    } catch (err) {
+      console.error(`AI Provider ${provider.name} failed during text parsing, trying next...`, err);
+      await logAIUsage(userId, provider.name, 'parsing_text', 0, 0, 'failed');
     }
   }
 
@@ -447,11 +579,6 @@ export async function generateFinancialAdvice(
   triggerReason: string,
   userId: string | null = null
 ): Promise<string> {
-  const providers = await getActiveProviders();
-  if (providers.length === 0) {
-    return 'Gagal memanggil AI Advisor. Silakan cek konfigurasi API key.';
-  }
-
   const prompt = `
   Anda adalah "Financial Advisor" personal yang ramah, sopan, dan ahli keuangan dalam bahasa Indonesia.
   Berdasarkan data keuangan berikut, berikan saran spesifik, taktis, dan mudah dilakukan (actionable).
@@ -467,11 +594,27 @@ export async function generateFinancialAdvice(
   💡 Saran: [saran spesifik yang bisa dilakukan secara langsung]
   `;
 
+  let providers: any[] = [];
+  try {
+    providers = await getActiveProviders();
+  } catch (e) {
+    console.warn('Failed to load active providers for advice:', e);
+  }
+
   for (const provider of providers) {
     try {
-      if (provider.name === 'gemini') {
-        const result = await callGeminiAPI(provider.api_key, prompt, 'advisor');
-        await logAIUsage(userId, 'gemini', 'advisor', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
+      const model = (provider as any).defaultModel || DEFAULT_9ROUTER_MODEL;
+      const is9Router = provider.name === '9router' || provider.name === 'litellm' || !!(provider as any).baseUrl;
+      const isCustomAlias = model.includes('/') || model === 'combo' || model === 'bebas' || model.startsWith('cc/') || model.startsWith('cx/') || model.startsWith('gh/') || model.startsWith('cu/') || model.startsWith('glm/') || model.startsWith('minimax/') || model.startsWith('kimi/') || model.startsWith('kr/') || model.startsWith('vertex/');
+
+      if (is9Router || isCustomAlias) {
+        const result = await generateAiCompletion({
+          baseUrl: (provider as any).baseUrl || DEFAULT_9ROUTER_BASE_URL,
+          apiKey: provider.api_key,
+          model,
+          prompt
+        });
+        await logAIUsage(userId, '9router', 'advisor', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
         return result.text;
       } else if (provider.name === 'openai') {
         const result = await callOpenAIAPI(provider.api_key, prompt, 'advisor');
@@ -481,9 +624,9 @@ export async function generateFinancialAdvice(
         const result = await callDeepSeekAPI(provider.api_key, prompt, 'advisor');
         await logAIUsage(userId, 'deepseek', 'advisor', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
         return result.text;
-      } else if (provider.name === 'litellm' || provider.name === '9router') {
-        const result = await callCustomLLMAPI((provider as any).baseUrl || DEFAULT_9ROUTER_BASE_URL, provider.api_key, (provider as any).defaultModel || DEFAULT_9ROUTER_MODEL, prompt);
-        await logAIUsage(userId, provider.name, 'advisor', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
+      } else if (provider.name === 'gemini') {
+        const result = await callGeminiAPI(provider.api_key, prompt, 'advisor');
+        await logAIUsage(userId, 'gemini', 'advisor', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
         return result.text;
       }
     } catch (err) {
@@ -589,7 +732,6 @@ async function callDeepSeekAPI(apiKey: string, prompt: string, actionType: strin
 }
 
 async function callGeminiAudioAPI(apiKey: string, audioBuffer: Buffer, mimeType: string) {
-  // Strip any codec parameters from the mimeType (e.g. 'audio/ogg; codecs=opus' -> 'audio/ogg')
   const cleanMimeType = mimeType.split(';')[0].trim();
   const base64Audio = audioBuffer.toString('base64');
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
@@ -667,20 +809,31 @@ async function callProxyAudioTranscription(
   
   // Try 1: OpenAI-compatible input_audio format inside chat completions (multimodal)
   try {
-    const url = baseUrl.endsWith('/') ? `${baseUrl}chat/completions` : `${baseUrl}/chat/completions`;
+    const cleanBase = baseUrl.trim().replace(/\/+$/, '');
+    const url = cleanBase.endsWith('/chat/completions') 
+      ? cleanBase 
+      : cleanBase.endsWith('/v1') 
+        ? `${cleanBase}/chat/completions` 
+        : `${cleanBase}/v1/chat/completions`;
+
     let audioFormat = 'ogg';
     if (cleanMimeType.includes('mp3')) audioFormat = 'mp3';
     else if (cleanMimeType.includes('wav')) audioFormat = 'wav';
     else if (cleanMimeType.includes('m4a')) audioFormat = 'm4a';
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+      headers['x-api-key'] = apiKey;
+    }
+
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
+      headers,
       body: JSON.stringify({
-        model: model || 'gemini-1.5-flash',
+        model: model || 'combo',
         messages: [
           {
             role: 'user',
@@ -696,14 +849,29 @@ async function callProxyAudioTranscription(
             ]
           }
         ],
+        stream: false,
         temperature: 0.1
       }),
-      signal: AbortSignal.timeout(2500) // Timeout after 2.5 seconds to prevent hangs
+      signal: AbortSignal.timeout(3000)
     });
 
     if (response.ok) {
-      const data = await response.json();
-      const text = data.choices?.[0]?.message?.content || '';
+      const rawText = await response.text();
+      let text = '';
+      try {
+        const data = JSON.parse(rawText);
+        text = data.choices?.[0]?.message?.content ?? data.choices?.[0]?.delta?.content ?? '';
+      } catch (e) {
+        const lines = rawText.split('\n');
+        for (const line of lines) {
+          if (line.trim().startsWith('data:') && !line.includes('[DONE]')) {
+            try {
+              const chunk = JSON.parse(line.trim().replace(/^data:\s*/, ''));
+              text += chunk.choices?.[0]?.delta?.content ?? chunk.choices?.[0]?.message?.content ?? '';
+            } catch (err) {}
+          }
+        }
+      }
       if (text.trim().length > 0) return text.trim();
     }
   } catch (e) {
@@ -712,7 +880,8 @@ async function callProxyAudioTranscription(
 
   // Try 2: Whisper-compatible transcribe endpoint
   try {
-    const endpoint = baseUrl.endsWith('/') ? `${baseUrl}audio/transcriptions` : `${baseUrl}/audio/transcriptions`;
+    const cleanBase = baseUrl.trim().replace(/\/+$/, '');
+    const endpoint = cleanBase.endsWith('/v1') ? `${cleanBase}/audio/transcriptions` : `${cleanBase}/v1/audio/transcriptions`;
     const formData = new FormData();
     let extension = 'ogg';
     if (cleanMimeType.includes('mp3')) extension = 'mp3';
@@ -723,11 +892,17 @@ async function callProxyAudioTranscription(
     formData.append('model', 'whisper-1');
     formData.append('language', 'id');
 
+    const headers: Record<string, string> = {};
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+      headers['x-api-key'] = apiKey;
+    }
+
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}` },
+      headers,
       body: formData,
-      signal: AbortSignal.timeout(2500) // Timeout after 2.5 seconds to prevent hangs
+      signal: AbortSignal.timeout(3000)
     });
 
     if (response.ok) {
@@ -819,96 +994,49 @@ async function callOpenAIVisionAPI(apiKey: string, imageBuffer: Buffer, mimeType
   };
 }
 
-export async function callCustomLLMAPI(baseUrl: string, apiKey: string, model: string, prompt: string): Promise<{ text: string; usage: { prompt_tokens: number; completion_tokens: number } }> {
-  const url = baseUrl.endsWith('/') ? `${baseUrl}chat/completions` : `${baseUrl}/chat/completions`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: model || DEFAULT_9ROUTER_MODEL,
-      messages: [{ role: 'user', content: prompt }],
-      stream: false,
-      temperature: 0.1
-    })
+/**
+ * Universal 9Router Gateway LLM Caller (OpenAI-compatible)
+ */
+export async function callCustomLLMAPI(
+  baseUrl: string,
+  apiKey: string,
+  model: string,
+  prompt: string
+): Promise<{ text: string; usage: { prompt_tokens: number; completion_tokens: number } }> {
+  return generateAiCompletion({
+    baseUrl,
+    apiKey,
+    model,
+    prompt
   });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Custom LLM API returned status ${response.status}: ${errText}`);
-  }
-
-  const rawText = await response.text();
-  let text = '';
-  let usage = { prompt_tokens: 0, completion_tokens: 0 };
-
-  try {
-    const data = JSON.parse(rawText);
-    text = data.choices?.[0]?.message?.content || '';
-    usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 };
-  } catch (e) {
-    // Parse SSE streaming chunks if 9Router responded in SSE stream mode
-    const lines = rawText.split('\n');
-    let accumulatedContent = '';
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith('data:') && !trimmed.includes('[DONE]')) {
-        try {
-          const jsonStr = trimmed.replace(/^data:\s*/, '');
-          const parsedChunk = JSON.parse(jsonStr);
-          const chunkText = parsedChunk.choices?.[0]?.delta?.content || parsedChunk.choices?.[0]?.message?.content || '';
-          accumulatedContent += chunkText;
-          if (parsedChunk.usage) {
-            usage = parsedChunk.usage;
-          }
-        } catch (err) {}
-      }
-    }
-    text = accumulatedContent || rawText;
-  }
-
-  return { text, usage };
 }
 
-async function callCustomVisionAPI(baseUrl: string, apiKey: string, model: string, prompt: string, imageBuffer: Buffer, mimeType: string): Promise<{ text: string; usage: { prompt_tokens: number; completion_tokens: number } }> {
+async function callCustomVisionAPI(
+  baseUrl: string,
+  apiKey: string,
+  model: string,
+  prompt: string,
+  imageBuffer: Buffer,
+  mimeType: string
+): Promise<{ text: string; usage: { prompt_tokens: number; completion_tokens: number } }> {
   const base64Image = imageBuffer.toString('base64');
-  const url = baseUrl.endsWith('/') ? `${baseUrl}chat/completions` : `${baseUrl}/chat/completions`;
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: model || DEFAULT_9ROUTER_MODEL,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: prompt },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:${mimeType};base64,${base64Image}`
-              }
+  return generateAiCompletion({
+    baseUrl,
+    apiKey,
+    model,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          {
+            type: 'image_url',
+            image_url: {
+              url: `data:${mimeType};base64,${base64Image}`
             }
-          ]
-        }
-      ],
-      temperature: 0.1
-    })
+          }
+        ]
+      }
+    ]
   });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Custom Vision API returned status ${response.status}: ${errText}`);
-  }
-
-  const data = await response.json();
-  const text = data.choices?.[0]?.message?.content || '';
-  const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 };
-  return { text, usage };
 }

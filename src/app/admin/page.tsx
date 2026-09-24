@@ -34,8 +34,11 @@ export default function AdminDashboard() {
   const DEFAULT_9ROUTER_MODELS = [
     // 1. 9Router Auto-Switch & Fallback Combos (Recommended)
     'combo',
+    'bebas',
     'free-combo',
     'premium-coding',
+    'ag/gemini-3.7-flash-high',
+    'ag/gemini-3.7-flash-standard',
     // 2. Claude Code (cc/)
     'cc/claude-opus-4-7',
     'cc/claude-opus-4-6',
@@ -958,21 +961,17 @@ export default function AdminDashboard() {
   // CENTRAL AI CONFIGURATION ACTIONS
   const loadCentralAIConfig = async () => {
     try {
-      const savedLocalModel = typeof window !== 'undefined' ? localStorage.getItem('Mencatat_Aja_saved_ai_model') : null;
       const res = await fetch('/api/admin/ai-config');
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load AI config');
       
-      let loadedBaseUrl = data.baseUrl || 'http://100.80.46.70:20128/v1';
+      let loadedBaseUrl = data.baseUrl || data.nineRouterBaseUrl || 'http://100.80.46.70:20128/v1';
       if (loadedBaseUrl.includes('koboillm.com')) {
         loadedBaseUrl = 'http://100.80.46.70:20128/v1';
       }
       
-      const loadedApiKey = data.apiKey || '';
-      let loadedModel = data.defaultModel || 'combo';
-      if (loadedModel.includes('gemini-') || loadedModel.includes('kobo') || loadedModel.includes('ag/')) {
-        loadedModel = 'combo';
-      }
+      const loadedApiKey = data.apiKey || data.geminiApiKey || '';
+      const loadedModel = data.defaultModel || data.modelName || 'combo';
 
       setAiBaseUrl(loadedBaseUrl);
       setAiApiKey(loadedApiKey);
@@ -991,16 +990,27 @@ export default function AdminDashboard() {
           if (!mergedList.includes('combo')) {
             mergedList = ['combo', ...mergedList];
           }
+          if (loadedModel && !mergedList.includes(loadedModel)) {
+            mergedList.unshift(loadedModel);
+          }
           DEFAULT_9ROUTER_MODELS.forEach(m => {
             if (!mergedList.includes(m)) mergedList.push(m);
           });
           setModelsList(mergedList);
-          setDefaultAiModel(loadedModel || 'combo');
+          setDefaultAiModel(loadedModel);
         } else {
-          setModelsList(DEFAULT_9ROUTER_MODELS);
+          let mergedList = [...DEFAULT_9ROUTER_MODELS];
+          if (loadedModel && !mergedList.includes(loadedModel)) {
+            mergedList.unshift(loadedModel);
+          }
+          setModelsList(mergedList);
         }
       } catch (e) {
-        setModelsList(DEFAULT_9ROUTER_MODELS);
+        let mergedList = [...DEFAULT_9ROUTER_MODELS];
+        if (loadedModel && !mergedList.includes(loadedModel)) {
+          mergedList.unshift(loadedModel);
+        }
+        setModelsList(mergedList);
       }
     } catch (e: any) {
       console.error('Failed to load AI config:', e);
@@ -1016,7 +1026,6 @@ export default function AdminDashboard() {
     let interval: NodeJS.Timeout | null = null;
     if (activeTab === 'ai_logs') {
       fetchAdminData();
-    // Fetch pricing settings for admin
     fetch('/api/subscriptions/pricing')
       .then(res => res.json())
       .then(data => {
@@ -1036,7 +1045,6 @@ export default function AdminDashboard() {
       .catch(e => console.warn('Admin fetch pricing error:', e));
       interval = setInterval(() => {
         fetchAdminData();
-    // Fetch pricing settings for admin
     fetch('/api/subscriptions/pricing')
       .then(res => res.json())
       .then(data => {
@@ -1075,8 +1083,11 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           baseUrl: aiBaseUrl,
+          nineRouterBaseUrl: aiBaseUrl,
           apiKey: aiApiKey,
-          defaultModel: defaultAiModel || 'combo'
+          geminiApiKey: aiApiKey,
+          defaultModel: defaultAiModel || 'combo',
+          modelName: defaultAiModel || 'combo'
         })
       });
       const data = await res.json();
@@ -1097,7 +1108,7 @@ export default function AdminDashboard() {
     try {
       let reply = '';
       let testSuccess = false;
-      // 1. Try server-side proxy first
+      // 1. Try server-side proxy first (OpenAI-compatible /chat/completions)
       try {
         const response = await fetch('/api/ai/parse', {
           method: 'POST',
@@ -1118,11 +1129,24 @@ export default function AdminDashboard() {
         }
       } catch (serverErr: any) {
         console.warn('Server proxy failed, trying direct browser-to-9Router call...', serverErr);
-        // 2. Direct browser fetch fallback (useful when 9Router is on private/Tailscale IP 100.x.x.x)
-        const cleanBaseUrl = aiBaseUrl.endsWith('/') ? aiBaseUrl.slice(0, -1) : aiBaseUrl;
-        const targetUrl = cleanBaseUrl.endsWith('/chat/completions') ? cleanBaseUrl : `${cleanBaseUrl}/chat/completions`;
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (aiApiKey) headers['Authorization'] = `Bearer ${aiApiKey}`;
+        // 2. Direct browser fetch fallback (for local network / Tailscale mesh)
+        const cleanBase = aiBaseUrl.trim().replace(/\/+$/, '');
+        let targetUrl = cleanBase;
+        if (cleanBase.endsWith('/chat/completions')) {
+          targetUrl = cleanBase;
+        } else if (cleanBase.endsWith('/v1')) {
+          targetUrl = `${cleanBase}/chat/completions`;
+        } else {
+          targetUrl = `${cleanBase}/v1/chat/completions`;
+        }
+
+        const headers: Record<string, string> = { 
+          'Content-Type': 'application/json' 
+        };
+        if (aiApiKey) {
+          headers['Authorization'] = `Bearer ${aiApiKey}`;
+          headers['x-api-key'] = aiApiKey;
+        }
 
         const directRes = await fetch(targetUrl, {
           method: 'POST',
@@ -1130,6 +1154,7 @@ export default function AdminDashboard() {
           body: JSON.stringify({
             model: defaultAiModel || 'combo',
             messages: [{ role: 'user', content: testPrompt }],
+            stream: false,
             temperature: 0.1
           })
         });
@@ -1139,13 +1164,29 @@ export default function AdminDashboard() {
           throw new Error(`9Router Gateway Error (${directRes.status}): ${directErrText || serverErr.message}`);
         }
 
-        const directData = await directRes.json();
-        reply = directData.choices?.[0]?.message?.content || 'API terhubung, respon kosong.';
+        const rawText = await directRes.text();
+        // Dual Response Parser
+        try {
+          const directData = JSON.parse(rawText);
+          reply = directData.choices?.[0]?.message?.content ?? directData.choices?.[0]?.delta?.content ?? '';
+        } catch (e) {
+          const lines = rawText.split('\n');
+          let accumulated = '';
+          for (const line of lines) {
+            if (line.trim().startsWith('data:') && !line.includes('[DONE]')) {
+              try {
+                const chunk = JSON.parse(line.trim().replace(/^data:\s*/, ''));
+                accumulated += chunk.choices?.[0]?.delta?.content ?? chunk.choices?.[0]?.message?.content ?? '';
+              } catch (err) {}
+            }
+          }
+          reply = accumulated || rawText;
+        }
         testSuccess = true;
       }
 
       if (testSuccess) {
-        setTestReply(reply);
+        setTestReply(reply || 'API 9Router terhubung! Respon berhasil diterima.');
       } else {
         throw new Error('Gagal mendapatkan respon dari 9Router Gateway.');
       }
