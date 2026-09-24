@@ -66,6 +66,7 @@ export async function GET(request: Request) {
     // Resolve Users
     const resolvedUsers: any[] = (profsRes.data || []).map(p => {
       const userEmail = emailMap.get(p.id) || '-';
+      const userMeta = metaMap.get(p.id) || {};
       const txCount = txCountMap.get(p.id) || 0;
       const userWallets = walletMap.get(p.id) || [];
       const totalBalance = userWallets.reduce((acc, w) => acc + Number(w.balance || 0), 0);
@@ -88,11 +89,23 @@ export async function GET(request: Request) {
         daysRemaining = Math.max(0, Math.ceil((new Date(p.subscription_end).getTime() - Date.now()) / 86400000));
       }
 
+      const isSuperadmin = (userEmail || '').toLowerCase() === 'rickyrizkymnf123@gmail.com';
+      let isApproved = true;
+      if (isSuperadmin) {
+        isApproved = true;
+      } else if (userMeta.is_approved === false) {
+        isApproved = false;
+      } else if (userMeta.is_approved === true) {
+        isApproved = true;
+      } else {
+        isApproved = true;
+      }
+
       return {
         id: p.id,
-        name: p.full_name || metaMap.get(p.id)?.full_name || (userEmail !== '-' ? userEmail.split('@')[0] : 'User'),
+        name: p.full_name || userMeta.full_name || (userEmail !== '-' ? userEmail.split('@')[0] : 'User'),
         email: userEmail,
-        phone: p.phone_number || '-',
+        phone: p.phone_number || userMeta.phone || '-',
         plan: resolvedPlan,
         is_free_access: !!p.is_free_access,
         subscription_end: p.subscription_end || null,
@@ -104,23 +117,26 @@ export async function GET(request: Request) {
         txCount,
         wallets: userWallets,
         totalBalance,
-        is_approved: p.is_approved !== undefined && p.is_approved !== null ? p.is_approved : false,
+        is_approved: isApproved,
         created_at: p.created_at
       };
     });
 
-    // Also include any Auth users that might not have a profile yet
+    // Also include any Auth users that might not have a profile yet (new registrations)
     if (authRes.data && authRes.data.users) {
       const existingProfileIds = new Set((profsRes.data || []).map(p => p.id));
       authRes.data.users.forEach(u => {
         if (!existingProfileIds.has(u.id)) {
           const userWallets = walletMap.get(u.id) || [];
           const totalBalance = userWallets.reduce((acc, w) => acc + Number(w.balance || 0), 0);
+          const isSuperadmin = (u.email || '').toLowerCase() === 'rickyrizkymnf123@gmail.com';
+          const isApproved = isSuperadmin ? true : (u.user_metadata?.is_approved === true);
+          
           resolvedUsers.push({
             id: u.id,
             name: u.user_metadata?.full_name || (u.email ? u.email.split('@')[0] : 'User Baru'),
             email: u.email || '-',
-            phone: u.phone || '-',
+            phone: u.phone || u.user_metadata?.phone || '-',
             plan: 'Basic',
             is_free_access: false,
             subscription_end: null,
@@ -132,7 +148,7 @@ export async function GET(request: Request) {
             txCount: txCountMap.get(u.id) || 0,
             wallets: userWallets,
             totalBalance,
-            is_approved: u.user_metadata?.is_approved !== undefined ? u.user_metadata?.is_approved : false,
+            is_approved: isApproved,
             created_at: u.created_at
           });
         }
@@ -284,11 +300,31 @@ export async function PATCH(request: Request) {
       supabaseUrl.includes('placeholder-project');
 
     if (!isPlaceholder) {
-      const updateData: any = {};
-      if (is_approved !== undefined) updateData.is_approved = is_approved;
-      if (plan !== undefined) updateData.plan = plan;
+      // 1. Update Supabase Auth User Metadata (Source of truth for session approval)
+      if (is_approved !== undefined) {
+        try {
+          const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
+          const existingMeta = userData?.user?.user_metadata || {};
+          await supabaseAdmin.auth.admin.updateUserById(userId, {
+            user_metadata: {
+              ...existingMeta,
+              is_approved: is_approved
+            }
+          });
+        } catch (authErr) {
+          console.warn('Error updating auth user metadata:', authErr);
+        }
+      }
 
-      await supabaseAdmin.from('profiles').update(updateData).eq('id', userId);
+      // 2. Update / ensure Profile plan
+      if (plan !== undefined) {
+        try {
+          const dbPlan = plan === 'Basic' ? 'Starter' : plan;
+          await supabaseAdmin.from('profiles').update({ plan: dbPlan }).eq('id', userId);
+        } catch (profErr) {
+          console.warn('Error updating profile plan:', profErr);
+        }
+      }
     }
 
     return NextResponse.json({ success: true });

@@ -150,19 +150,29 @@ export async function POST(request: Request) {
         // Fetch user profile name, role, and approval status
         let userName = data.user.user_metadata?.full_name || email.split('@')[0];
         let userRole = data.user.user_metadata?.role || (isSuperadminEmail ? 'superadmin' : 'user');
-        let isApproved = isSuperadminEmail ? true : false;
+        
+        // Approval resolution: Superadmin always approved.
+        // If is_approved is explicitly false in auth user metadata, require approval.
+        let isApproved = isSuperadminEmail;
+        if (!isSuperadminEmail) {
+          if (data.user.user_metadata?.is_approved === true) {
+            isApproved = true;
+          } else if (data.user.user_metadata?.is_approved === false) {
+            isApproved = false;
+          } else {
+            // Existing users without metadata field are approved
+            isApproved = true;
+          }
+        }
 
         try {
           const { data: prof } = await supabaseAdmin
             .from('profiles')
-            .select('full_name, is_approved, plan')
+            .select('full_name, plan')
             .eq('id', data.user.id)
             .maybeSingle();
-          if (prof) {
-            if (prof.full_name) userName = prof.full_name;
-            if (prof.is_approved !== undefined && prof.is_approved !== null) {
-              isApproved = prof.is_approved;
-            }
+          if (prof && prof.full_name) {
+            userName = prof.full_name;
           }
         } catch (e) {
           // ignore
@@ -197,7 +207,8 @@ export async function POST(request: Request) {
           user_metadata: {
             full_name: fullName || email.split('@')[0],
             role: isSuperadminEmail ? 'superadmin' : 'user',
-            is_approved: isSuperadminEmail ? true : false
+            is_approved: isSuperadminEmail ? true : false,
+            phone: phoneNumber || null
           }
         });
 
@@ -208,13 +219,13 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: errMsg }, { status: 400 });
         }
 
-        // Create profile with is_approved: false
+        // Create initial profile in Supabase using valid constraint plan ('Starter')
         try {
           await supabaseAdmin.from('profiles').upsert({
             id: authUser.user.id,
             full_name: fullName || email.split('@')[0],
-            plan: 'Basic',
-            is_approved: isSuperadminEmail ? true : false,
+            plan: 'Starter', // Valid constraint in profiles_plan_check
+            monthly_transaction_limit: 50,
             created_at: new Date().toISOString()
           });
         } catch (e) {

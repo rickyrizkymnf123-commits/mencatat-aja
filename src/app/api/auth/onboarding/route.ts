@@ -44,7 +44,6 @@ export async function POST(request: Request) {
     }
 
     // 2. Create or Update Profile
-    const isSuperadminId = userId === '58c09700-965d-4104-a344-6e599c46deff';
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .upsert({
@@ -52,8 +51,7 @@ export async function POST(request: Request) {
         full_name: fullName || 'Nasabah Baru',
         phone_number: phoneNumber || null,
         telegram_link_token: telegramLinkToken,
-        plan: 'Basic',
-        is_approved: isSuperadminId ? true : false,
+        plan: 'Starter', // Valid constraint in profiles_plan_check
         monthly_transaction_limit: 50,
       });
 

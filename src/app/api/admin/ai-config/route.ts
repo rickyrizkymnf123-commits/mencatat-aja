@@ -89,13 +89,13 @@ export async function GET() {
         const raw = fs.readFileSync(FALLBACK_PATH, 'utf-8');
         return NextResponse.json(JSON.parse(raw));
       }
-      return NextResponse.json({ baseUrl: 'https://api.koboillm.com/v1', apiKey: '', defaultModel: 'gemini-1.5-flash' });
+      return NextResponse.json({ baseUrl: 'http://100.80.46.70:20128/v1', apiKey: '', defaultModel: 'combo' });
     }
 
     const { data: existing } = await supabaseAdmin
       .from('ai_providers')
       .select('*')
-      .eq('name', 'litellm')
+      .in('name', ['9router', 'litellm'])
       .maybeSingle();
 
     if (!existing) {
@@ -104,7 +104,7 @@ export async function GET() {
         const raw = fs.readFileSync(FALLBACK_PATH, 'utf-8');
         return NextResponse.json(JSON.parse(raw));
       }
-      return NextResponse.json({ baseUrl: 'https://api.koboillm.com/v1', apiKey: '', defaultModel: 'gemini-1.5-flash' });
+      return NextResponse.json({ baseUrl: 'http://100.80.46.70:20128/v1', apiKey: '', defaultModel: 'combo' });
     }
 
     const { decrypt } = await import('@/lib/crypto');
@@ -112,13 +112,13 @@ export async function GET() {
     if (dec.startsWith('{')) {
       const parsed = JSON.parse(dec);
       return NextResponse.json({
-        baseUrl: parsed.baseUrl || 'https://api.koboillm.com/v1',
+        baseUrl: parsed.baseUrl || 'http://100.80.46.70:20128/v1',
         apiKey: parsed.apiKey || '',
-        defaultModel: parsed.defaultModel || 'gemini-1.5-flash'
+        defaultModel: parsed.defaultModel || 'combo'
       });
     }
 
-    return NextResponse.json({ baseUrl: 'https://api.koboillm.com/v1', apiKey: dec, defaultModel: 'gemini-1.5-flash' });
+    return NextResponse.json({ baseUrl: 'http://100.80.46.70:20128/v1', apiKey: dec, defaultModel: 'combo' });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
   }

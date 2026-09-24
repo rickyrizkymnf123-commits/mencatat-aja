@@ -1,6 +1,5 @@
 {
-  "baseUrl": "https://api.koboillm.com/v1",
-  "apiKey": "sk-6aOzunNiy5HbFPMWAGy04g",
-  "defaultModel": "gemini-2.5-pro",
-  "botToken": "8648595043:AAFiI-k3s59JwFavg6O1E2dX0Pi6ZMtupfg"
+  "baseUrl": "http://100.80.46.70:20128/v1",
+  "apiKey": "",
+  "defaultModel": "combo"
 }

@@ -11,7 +11,7 @@ import { supabase, supabaseUrl } from '@/lib/supabase';
 export default function AdminDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
-    'users' | 'subscriptions' | 'tutorials' | 'ai_logs' | 'payments' | 'audit_logs' | 'user_preview' | 'ai_config' |
+    'users' | 'user_approvals' | 'subscriptions' | 'tutorials' | 'ai_logs' | 'payments' | 'audit_logs' | 'user_preview' | 'ai_config' |
     'admin_beranda' | 'admin_transaksi' | 'admin_laporan' | 'admin_budget' | 'admin_wallet' | 'admin_settings'
   >('users');
   const [isLoading, setIsLoading] = useState(true);
@@ -323,6 +323,8 @@ export default function AdminDashboard() {
   const [newUserPlanInput, setNewUserPlanInput] = useState('Basic');
   const [newUserApproveInput, setNewUserApproveInput] = useState(true);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userApprovalFilter, setUserApprovalFilter] = useState<'all' | 'pending' | 'approved'>('all');
   
   // USER PREVIEW STATES
   const [previewUserId, setPreviewUserId] = useState('');
@@ -638,11 +640,16 @@ export default function AdminDashboard() {
   const handleApproveUser = async (id: string, name: string) => {
     try {
       setIsLoading(true);
-      await fetch('/api/admin/data', {
+      const res = await fetch('/api/admin/data', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: id, is_approved: true })
       });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Gagal menyetujui user');
+      }
 
       const updatedUsers = users.map(u => {
         if (u.id === id) {
@@ -654,7 +661,61 @@ export default function AdminDashboard() {
       if (typeof window !== 'undefined') {
         localStorage.setItem('Mencatat_Aja_mock_users', JSON.stringify(updatedUsers));
       }
+      
+      const newAudit = {
+        id: `aud_${Date.now()}`,
+        admin: 'rickyrizkymnf123@gmail.com',
+        action: `ACC Pendaftaran User (${name})`,
+        target: id,
+        time: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
+      };
+      setAuditLogs(prev => [newAudit, ...prev]);
+
       alert(`🟢 Pendaftaran user "${name}" berhasil disetujui (ACC)!`);
+      fetchAdminData();
+    } catch (err: any) {
+      alert(`❌ Terjadi kesalahan: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleApproveWithProUser = async (id: string, name: string) => {
+    try {
+      setIsLoading(true);
+      const res = await fetch('/api/admin/data', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: id, is_approved: true, plan: 'Pro' })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Gagal menyetujui user');
+      }
+
+      const updatedUsers = users.map(u => {
+        if (u.id === id) {
+          return { ...u, is_approved: true, plan: 'Pro' };
+        }
+        return u;
+      });
+      setUsers(updatedUsers);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('Mencatat_Aja_mock_users', JSON.stringify(updatedUsers));
+      }
+
+      const newAudit = {
+        id: `aud_${Date.now()}`,
+        admin: 'rickyrizkymnf123@gmail.com',
+        action: `ACC + Beri Pro VIP User (${name})`,
+        target: id,
+        time: new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
+      };
+      setAuditLogs(prev => [newAudit, ...prev]);
+
+      alert(`👑 Pendaftaran user "${name}" berhasil disetujui (ACC) dan langsung ditingkatkan ke paket Pro VIP!`);
+      fetchAdminData();
     } catch (err: any) {
       alert(`❌ Terjadi kesalahan: ${err.message}`);
     } finally {
@@ -843,9 +904,9 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/ai-config');
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load AI config');
-      const loadedBaseUrl = data.baseUrl || 'https://api.koboillm.com/v1';
+      const loadedBaseUrl = data.baseUrl || 'http://100.80.46.70:20128/v1';
       const loadedApiKey = data.apiKey || '';
-      const loadedModel = savedLocalModel || data.defaultModel || 'gemini-1.5-flash';
+      const loadedModel = savedLocalModel || data.defaultModel || 'combo';
 
       setAiBaseUrl(loadedBaseUrl);
       setAiApiKey(loadedApiKey);
@@ -1914,6 +1975,16 @@ export default function AdminDashboard() {
             <li onClick={() => { setActiveTab('users'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'users' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span>👥</span> <span>Kelola Pengguna</span>
             </li>
+            <li onClick={() => { setActiveTab('user_approvals'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'user_approvals' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span>⏳</span> <span>Approval Pengguna</span>
+              </div>
+              {users.filter(u => u.is_approved === false).length > 0 && (
+                <span style={{ background: '#f59e0b', color: '#04060d', fontSize: '0.72rem', fontWeight: '800', padding: '2px 8px', borderRadius: '99px', boxShadow: '0 0 10px rgba(245, 158, 11, 0.5)' }}>
+                  {users.filter(u => u.is_approved === false).length}
+                </span>
+              )}
+            </li>
             <li onClick={() => { setActiveTab('subscriptions'); setSidebarOpen(false); fetchSubscriptions(); }} className={`menu-item ${activeTab === 'subscriptions' ? 'active' : ''}`} style={{ padding: '10px 14px', fontSize: '0.88rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span>💳</span> <span>Kelola Langganan</span>
             </li>
@@ -2011,7 +2082,7 @@ export default function AdminDashboard() {
             </div>
             <div style={{ fontSize: '0.78rem', color: '#059669', fontWeight: '700', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
-              LiteLLM / Kobo API Active
+              9Router Gateway Active (combo)
             </div>
           </div>
         </div>
@@ -2123,6 +2194,86 @@ export default function AdminDashboard() {
               </div>
             )}
 
+            {/* Filter & Search Toolbar */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setUserApprovalFilter('all')}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '10px',
+                    fontSize: '0.85rem',
+                    fontWeight: '700',
+                    border: '1px solid',
+                    borderColor: userApprovalFilter === 'all' ? '#10b981' : 'rgba(255, 255, 255, 0.12)',
+                    background: userApprovalFilter === 'all' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                    color: userApprovalFilter === 'all' ? '#10b981' : 'var(--text-muted)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Semua ({users.length})
+                </button>
+                <button
+                  onClick={() => setUserApprovalFilter('pending')}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '10px',
+                    fontSize: '0.85rem',
+                    fontWeight: '700',
+                    border: '1px solid',
+                    borderColor: userApprovalFilter === 'pending' ? '#f59e0b' : 'rgba(255, 255, 255, 0.12)',
+                    background: userApprovalFilter === 'pending' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                    color: userApprovalFilter === 'pending' ? '#fbbf24' : 'var(--text-muted)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span>⚠️ Menunggu ACC</span>
+                  <span style={{ background: '#f59e0b', color: '#000000', fontSize: '0.72rem', fontWeight: '800', padding: '1px 6px', borderRadius: '99px' }}>
+                    {users.filter(u => u.is_approved === false).length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setUserApprovalFilter('approved')}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '10px',
+                    fontSize: '0.85rem',
+                    fontWeight: '700',
+                    border: '1px solid',
+                    borderColor: userApprovalFilter === 'approved' ? '#3b82f6' : 'rgba(255, 255, 255, 0.12)',
+                    background: userApprovalFilter === 'approved' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                    color: userApprovalFilter === 'approved' ? '#60a5fa' : 'var(--text-muted)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🟢 Aktif Ter-ACC ({users.filter(u => u.is_approved !== false).length})
+                </button>
+              </div>
+
+              <div style={{ position: 'relative', minWidth: '240px' }}>
+                <input
+                  type="text"
+                  placeholder="Cari nama, email, no HP..."
+                  value={userSearchQuery}
+                  onChange={e => setUserSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '9px 14px 9px 36px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '10px',
+                    color: '#ffffff',
+                    fontSize: '0.85rem',
+                    outline: 'none'
+                  }}
+                />
+                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '0.85rem' }}>🔍</span>
+              </div>
+            </div>
+
             {/* Desktop Table View */}
             <div className="desktop-table-view tx-table-container animate-slide-up">
               <table className="tx-table">
@@ -2152,8 +2303,19 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(u => (
-                    <tr key={u.id}>
+                  {users
+                    .filter(u => {
+                      const matchQuery = !userSearchQuery ||
+                        (u.name || '').toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+                        (u.email || '').toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+                        (u.phone || '').toLowerCase().includes(userSearchQuery.toLowerCase());
+                      let matchFilter = true;
+                      if (userApprovalFilter === 'pending') matchFilter = u.is_approved === false;
+                      if (userApprovalFilter === 'approved') matchFilter = u.is_approved !== false;
+                      return matchQuery && matchFilter;
+                    })
+                    .map(u => (
+                    <tr key={u.id} style={{ background: u.is_approved === false ? 'rgba(245, 158, 11, 0.04)' : undefined }}>
                       <td style={{ textAlign: 'center' }}>
                         <input 
                           type="checkbox"
@@ -2167,7 +2329,14 @@ export default function AdminDashboard() {
                           }}
                         />
                       </td>
-                      <td style={{ fontWeight: '700' }}>{u.name}</td>
+                      <td style={{ fontWeight: '700' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>{u.name}</span>
+                          {u.is_approved === false && (
+                            <span style={{ fontSize: '0.65rem', padding: '1px 6px', borderRadius: '4px', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)', fontWeight: '800' }}>NEW</span>
+                          )}
+                        </div>
+                      </td>
                       <td>
                         <span style={{ fontFamily: 'monospace', fontSize: '0.82rem', color: '#38bdf8', fontWeight: '600', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '3px 8px', borderRadius: '6px', display: 'inline-block' }}>
                           {u.email || '-'}
@@ -2183,27 +2352,37 @@ export default function AdminDashboard() {
                         {u.is_approved !== false ? (
                           <span className="plan-badge pro" style={{ backgroundColor: 'var(--success-light)', color: 'var(--success)', borderColor: 'var(--success)' }}>🟢 Aktif (Ter-ACC)</span>
                         ) : (
-                          <span className="plan-badge starter" style={{ backgroundColor: 'var(--warning-light)', color: 'var(--warning)', borderColor: 'var(--warning)' }}>⚠️ Pending ACC</span>
+                          <span className="plan-badge starter" style={{ backgroundColor: 'var(--warning-light)', color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.4)', fontWeight: '800' }}>⚠️ Pending ACC</span>
                         )}
                       </td>
                       <td>{u.telegram}</td>
                       <td>{u.txCount} transaksi</td>
                       <td>
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          <button
-                            onClick={() => handleOpenEditSub(u)}
-                            className="btn"
-                            style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', fontWeight: '700', cursor: 'pointer' }}
-                          >
-                            👑 Langganan
-                          </button>
-                          {u.is_approved === false && (
-                            <button 
-                              onClick={() => handleApproveUser(u.id, u.name)} 
-                              className="btn" 
-                              style={{ backgroundColor: 'var(--success)', color: '#ffffff', border: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', fontWeight: '700', cursor: 'pointer' }}
+                          {u.is_approved === false ? (
+                            <>
+                              <button 
+                                onClick={() => handleApproveUser(u.id, u.name)} 
+                                className="btn" 
+                                style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 14px', fontSize: '0.8rem', borderRadius: '6px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)' }}
+                              >
+                                ✅ ACC
+                              </button>
+                              <button 
+                                onClick={() => handleApproveWithProUser(u.id, u.name)} 
+                                className="btn" 
+                                style={{ backgroundColor: '#f59e0b', color: '#000000', border: 'none', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                👑 ACC + Pro
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenEditSub(u)}
+                              className="btn"
+                              style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', fontWeight: '700', cursor: 'pointer' }}
                             >
-                              ✅ ACC
+                              👑 Langganan
                             </button>
                           )}
                           <button
@@ -2211,7 +2390,7 @@ export default function AdminDashboard() {
                             className="btn btn-secondary"
                             style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                           >
-                            🕵️ Impersonate
+                            🕵️ Masuk User
                           </button>
                           <button
                             onClick={() => handleDeleteUser(u.id, u.name)}
@@ -2230,8 +2409,19 @@ export default function AdminDashboard() {
 
             {/* Mobile Native Cards View (No Horizontal Scroll) */}
             <div className="mobile-cards-view animate-slide-up">
-              {users.map(u => (
-                <div key={u.id} className="mobile-data-card">
+              {users
+                .filter(u => {
+                  const matchQuery = !userSearchQuery ||
+                    (u.name || '').toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+                    (u.email || '').toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+                    (u.phone || '').toLowerCase().includes(userSearchQuery.toLowerCase());
+                  let matchFilter = true;
+                  if (userApprovalFilter === 'pending') matchFilter = u.is_approved === false;
+                  if (userApprovalFilter === 'approved') matchFilter = u.is_approved !== false;
+                  return matchQuery && matchFilter;
+                })
+                .map(u => (
+                <div key={u.id} className="mobile-data-card" style={{ borderColor: u.is_approved === false ? 'rgba(245, 158, 11, 0.4)' : undefined }}>
                   <div className="mobile-card-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <input 
@@ -2260,7 +2450,7 @@ export default function AdminDashboard() {
                       {u.is_approved !== false ? (
                         <span className="plan-badge pro" style={{ backgroundColor: 'var(--success-light)', color: 'var(--success)', borderColor: 'var(--success)', fontSize: '0.72rem' }}>🟢 Aktif (Ter-ACC)</span>
                       ) : (
-                        <span className="plan-badge starter" style={{ backgroundColor: 'var(--warning-light)', color: 'var(--warning)', borderColor: 'var(--warning)', fontSize: '0.72rem' }}>⚠️ Pending ACC</span>
+                        <span className="plan-badge starter" style={{ backgroundColor: 'var(--warning-light)', color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.4)', fontSize: '0.72rem', fontWeight: '800' }}>⚠️ Pending ACC</span>
                       )}
                     </div>
                     <div className="mobile-card-row">
@@ -2278,20 +2468,30 @@ export default function AdminDashboard() {
                   </div>
 
                   <div className="mobile-card-actions">
-                    <button
-                      onClick={() => handleOpenEditSub(u)}
-                      className="btn"
-                      style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '8px 12px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: '700' }}
-                    >
-                      👑 Langganan
-                    </button>
-                    {u.is_approved === false && (
-                      <button 
-                        onClick={() => handleApproveUser(u.id, u.name)} 
-                        className="btn" 
-                        style={{ backgroundColor: 'var(--success)', color: '#ffffff', border: 'none', padding: '8px 12px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: '700' }}
+                    {u.is_approved === false ? (
+                      <>
+                        <button 
+                          onClick={() => handleApproveUser(u.id, u.name)} 
+                          className="btn" 
+                          style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '8px 14px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: '800', flex: 1 }}
+                        >
+                          ✅ ACC User
+                        </button>
+                        <button 
+                          onClick={() => handleApproveWithProUser(u.id, u.name)} 
+                          className="btn" 
+                          style={{ backgroundColor: '#f59e0b', color: '#000000', border: 'none', padding: '8px 14px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: '800', flex: 1 }}
+                        >
+                          👑 ACC + Pro
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => handleOpenEditSub(u)}
+                        className="btn"
+                        style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '8px 12px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: '700' }}
                       >
-                        ✅ ACC User
+                        👑 Langganan
                       </button>
                     )}
                     <button
@@ -2313,6 +2513,142 @@ export default function AdminDashboard() {
               ))}
             </div>
           </>
+        )}
+
+        {/* 2.2 DEDICATED APPROVAL PENDAFTARAN PENGGUNA BARU */}
+        {activeTab === 'user_approvals' && (
+          <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.45rem', fontWeight: '800', letterSpacing: '-0.5px', color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span>⏳</span> Approval Pendaftaran Pengguna Baru
+                </h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: '4px' }}>
+                  Daftar pengguna baru yang menunggu persetujuan (ACC) dari Admin untuk dapat login dan mengakses dashboard.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={fetchAdminData}
+                  className="btn btn-outline"
+                  style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: '700', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <span>🔄</span> Refresh Data
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Stat Cards for Approvals */}
+            <div className="grid-2" style={{ gap: '16px' }}>
+              <div style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '16px', padding: '18px 22px', boxShadow: '0 4px 20px rgba(245, 158, 11, 0.1)' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Menunggu Persetujuan (Pending ACC)</div>
+                <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#fbbf24', marginTop: '6px' }}>
+                  {users.filter(u => u.is_approved === false).length} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Pendaftar</span>
+                </div>
+              </div>
+              <div style={{ background: 'rgba(13, 20, 38, 0.75)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '16px', padding: '18px 22px', boxShadow: '0 4px 20px rgba(16, 185, 129, 0.1)' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Pengguna Aktif (Ter-ACC)</div>
+                <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#10b981', marginTop: '6px' }}>
+                  {users.filter(u => u.is_approved !== false).length} <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Pengguna</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Pending Users List */}
+            {users.filter(u => u.is_approved === false).length === 0 ? (
+              <div className="card animate-slide-up" style={{ textAlign: 'center', padding: '48px 24px', background: 'rgba(13, 20, 38, 0.65)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: '18px' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🎉</div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#ffffff', margin: '0 0 6px 0' }}>
+                  Semua Pendaftaran Sudah Disetujui!
+                </h3>
+                <p style={{ color: '#94a3b8', fontSize: '0.9rem', maxWidth: '480px', margin: '0 auto 18px auto' }}>
+                  Saat ini tidak ada pendaftaran pengguna baru yang menunggu persetujuan (ACC). Seluruh pengguna yang terdaftar sudah aktif.
+                </p>
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className="btn"
+                  style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.35)', padding: '8px 18px', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }}
+                >
+                  Lihat Semua Pengguna
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {users.filter(u => u.is_approved === false).map(u => (
+                  <div 
+                    key={u.id}
+                    className="animate-slide-up"
+                    style={{
+                      background: 'rgba(13, 20, 38, 0.85)',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      borderRadius: '16px',
+                      padding: '20px 24px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: '16px',
+                      boxShadow: '0 4px 18px rgba(245, 158, 11, 0.08)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ width: '46px', height: '46px', borderRadius: '14px', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.35)', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '1.2rem' }}>
+                        ⏳
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '1.05rem', fontWeight: '800', color: '#ffffff' }}>{u.name}</span>
+                          <span style={{ fontSize: '0.7rem', fontWeight: '800', padding: '2px 8px', borderRadius: '99px', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                            ⚠️ Menunggu ACC
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px', fontSize: '0.82rem', color: '#94a3b8', flexWrap: 'wrap' }}>
+                          <span>📧 <strong style={{ color: '#38bdf8' }}>{u.email}</strong></span>
+                          <span>📱 {u.phone || 'No HP belum diisi'}</span>
+                          <span>📅 Daftar: {u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Baru Saja'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      {u.phone && u.phone !== '-' && (
+                        <a
+                          href={`https://wa.me/${u.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Halo ${u.name}, akun Anda di MencatatAja sudah kami terima. Ada yang bisa kami bantu?`)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn"
+                          style={{ background: 'rgba(37, 211, 102, 0.12)', color: '#25d366', border: '1px solid rgba(37, 211, 102, 0.3)', padding: '8px 14px', fontSize: '0.82rem', borderRadius: '10px', fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          <span>💬</span> WhatsApp
+                        </a>
+                      )}
+                      <button
+                        onClick={() => handleApproveUser(u.id, u.name)}
+                        className="btn"
+                        style={{ background: '#10b981', color: '#ffffff', border: 'none', padding: '8px 16px', fontSize: '0.85rem', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}
+                      >
+                        <span>✅</span> Setujui (ACC)
+                      </button>
+                      <button
+                        onClick={() => handleApproveWithProUser(u.id, u.name)}
+                        className="btn"
+                        style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#ffffff', border: 'none', padding: '8px 16px', fontSize: '0.85rem', borderRadius: '10px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)' }}
+                      >
+                        <span>👑</span> ACC + Pro VIP
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(u.id, u.name)}
+                        className="btn btn-outline"
+                        style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)', padding: '8px 12px', fontSize: '0.82rem', borderRadius: '10px' }}
+                      >
+                        <span>🗑️</span> Tolak
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         
@@ -4166,12 +4502,12 @@ export default function AdminDashboard() {
                       color: 'var(--text-main)',
                       fontSize: '0.95rem'
                     }}
-                    placeholder="https://api.koboillm.com/v1"
+                    placeholder="http://100.80.46.70:20128/v1"
                     value={aiBaseUrl}
                     onChange={(e) => setAiBaseUrl(e.target.value)}
                   />
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                    LiteLLM compatible API URL (contoh: api.koboillm.com/v1)
+                    Universal Gateway 9Router API URL (contoh: http://100.80.46.70:20128/v1)
                   </span>
                 </div>
 

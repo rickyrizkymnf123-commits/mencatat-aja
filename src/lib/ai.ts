@@ -21,36 +21,55 @@ interface AIProviderConfig {
   mode: string;
 }
 
-// Fetch active AI providers from database
+export const DEFAULT_9ROUTER_BASE_URL = process.env.AI_BASE_URL || 'http://100.80.46.70:20128/v1';
+export const DEFAULT_9ROUTER_MODEL = process.env.AI_MODEL || 'combo';
+
+// Fetch active AI providers from environment variables, database, or fallback
 async function getActiveProviders(): Promise<AIProviderConfig[]> {
   try {
+    const envBaseUrl = process.env.AI_BASE_URL || 'http://100.80.46.70:20128/v1';
+    const envApiKey = process.env.AI_API_KEY || '';
+    const envModel = process.env.AI_MODEL || 'combo';
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const isPlaceholder = !supabaseUrl || 
       supabaseUrl.includes('your-supabase-project-id') || 
       supabaseUrl.includes('placeholder-project');
 
-    if (isPlaceholder) {
-      try {
-        const fs = require('fs');
-        const path = require('path');
-        const fallbackPath = path.join(process.cwd(), 'src/lib/ai_config_fallback.json');
-        if (fs.existsSync(fallbackPath)) {
-          const raw = fs.readFileSync(fallbackPath, 'utf-8');
-          const parsed = JSON.parse(raw);
-          if (parsed && parsed.baseUrl) {
-            return [{
-              name: 'litellm',
-              api_key: parsed.apiKey || '',
-              is_active: true,
-              mode: 'single',
-              baseUrl: parsed.baseUrl,
-              defaultModel: parsed.defaultModel || 'gemini-1.5-flash'
-            } as any];
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to load local AI configuration fallback:', e);
+    // Read local fallback file if exists
+    let fallbackConfig: any = null;
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const fallbackPath = path.join(process.cwd(), 'src/lib/ai_config_fallback.json');
+      if (fs.existsSync(fallbackPath)) {
+        const raw = fs.readFileSync(fallbackPath, 'utf-8');
+        fallbackConfig = JSON.parse(raw);
       }
+    } catch (e) {
+      console.warn('Failed to load local AI configuration fallback:', e);
+    }
+
+    if (isPlaceholder) {
+      if (fallbackConfig && fallbackConfig.baseUrl) {
+        return [{
+          name: '9router',
+          api_key: fallbackConfig.apiKey || envApiKey,
+          is_active: true,
+          mode: 'single',
+          baseUrl: fallbackConfig.baseUrl || envBaseUrl,
+          defaultModel: fallbackConfig.defaultModel || envModel
+        } as any];
+      }
+
+      return [{
+        name: '9router',
+        api_key: envApiKey,
+        is_active: true,
+        mode: 'single',
+        baseUrl: envBaseUrl,
+        defaultModel: envModel
+      } as any];
     }
 
     const { data, error } = await supabaseAdmin
@@ -59,59 +78,44 @@ async function getActiveProviders(): Promise<AIProviderConfig[]> {
       .eq('is_active', true);
     
     if (error || !data || data.length === 0) {
-      // Check local fallback file even if DB has error/no data
-      try {
-        const fs = require('fs');
-        const path = require('path');
-        const fallbackPath = path.join(process.cwd(), 'src/lib/ai_config_fallback.json');
-        if (fs.existsSync(fallbackPath)) {
-          const raw = fs.readFileSync(fallbackPath, 'utf-8');
-          const parsed = JSON.parse(raw);
-          if (parsed && parsed.baseUrl) {
-            return [{
-              name: 'litellm',
-              api_key: parsed.apiKey || '',
-              is_active: true,
-              mode: 'single',
-              baseUrl: parsed.baseUrl,
-              defaultModel: parsed.defaultModel || 'gemini-1.5-flash'
-            } as any];
-          }
-        }
-      } catch (e) {
-        console.warn('Failed to load local fallback:', e);
+      if (fallbackConfig && fallbackConfig.baseUrl) {
+        return [{
+          name: '9router',
+          api_key: fallbackConfig.apiKey || envApiKey,
+          is_active: true,
+          mode: 'single',
+          baseUrl: fallbackConfig.baseUrl || envBaseUrl,
+          defaultModel: fallbackConfig.defaultModel || envModel
+        } as any];
       }
 
-      // Fallback to environment variables
-      const providers: AIProviderConfig[] = [];
-      if (process.env.GEMINI_API_KEY) {
-        providers.push({ name: 'gemini', api_key: process.env.GEMINI_API_KEY, is_active: true, mode: 'single' });
-      }
-      if (process.env.OPENAI_API_KEY) {
-        providers.push({ name: 'openai', api_key: process.env.OPENAI_API_KEY, is_active: true, mode: 'single' });
-      }
-      if (process.env.DEEPSEEK_API_KEY) {
-        providers.push({ name: 'deepseek', api_key: process.env.DEEPSEEK_API_KEY, is_active: true, mode: 'single' });
-      }
-      return providers;
+      // Default to 9Router Universal Gateway with auto-switch combo model
+      return [{
+        name: '9router',
+        api_key: envApiKey,
+        is_active: true,
+        mode: 'single',
+        baseUrl: envBaseUrl,
+        defaultModel: envModel
+      } as any];
     }
 
-    return data.map(p => {
+    const providers = data.map(p => {
       let dec = decrypt(p.api_key);
-      let baseUrl = '';
-      let defaultModel = '';
-      if (p.name === 'litellm' && dec.startsWith('{')) {
+      let baseUrl = envBaseUrl;
+      let defaultModel = envModel;
+      if ((p.name === 'litellm' || p.name === '9router') && dec.startsWith('{')) {
         try {
           const parsed = JSON.parse(dec);
-          dec = parsed.apiKey || '';
-          baseUrl = parsed.baseUrl || '';
-          defaultModel = parsed.defaultModel || '';
+          dec = parsed.apiKey || envApiKey;
+          baseUrl = parsed.baseUrl || envBaseUrl;
+          defaultModel = parsed.defaultModel || envModel;
         } catch (e) {
-          console.error('Failed to parse litellm json:', e);
+          console.error('Failed to parse 9router/litellm json:', e);
         }
       }
       return {
-        name: p.name,
+        name: p.name === 'litellm' ? '9router' : p.name,
         api_key: dec,
         is_active: p.is_active,
         mode: p.mode,
@@ -119,9 +123,31 @@ async function getActiveProviders(): Promise<AIProviderConfig[]> {
         defaultModel
       };
     });
+
+    // Ensure 9Router is present as primary provider
+    const hasGateway = providers.some(p => p.name === '9router' || (p as any).baseUrl);
+    if (!hasGateway) {
+      providers.unshift({
+        name: '9router',
+        api_key: envApiKey,
+        is_active: true,
+        mode: 'single',
+        baseUrl: envBaseUrl,
+        defaultModel: envModel
+      } as any);
+    }
+
+    return providers;
   } catch (err) {
     console.error('Error fetching AI providers:', err);
-    return [];
+    return [{
+      name: '9router',
+      api_key: process.env.AI_API_KEY || '',
+      is_active: true,
+      mode: 'single',
+      baseUrl: process.env.AI_BASE_URL || 'http://100.80.46.70:20128/v1',
+      defaultModel: process.env.AI_MODEL || 'combo'
+    } as any];
   }
 }
 
@@ -220,9 +246,9 @@ export async function parseTransactionText(
           const result = await callDeepSeekAPI(provider.api_key, prompt, 'text');
           await logAIUsage(userId, 'deepseek', 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
           return extractJsonHelper(result.text);
-        } else if (provider.name === 'litellm') {
-          const result = await callCustomLLMAPI((provider as any).baseUrl, provider.api_key, (provider as any).defaultModel, prompt);
-          await logAIUsage(userId, 'litellm', 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
+        } else if (provider.name === 'litellm' || provider.name === '9router') {
+          const result = await callCustomLLMAPI((provider as any).baseUrl || DEFAULT_9ROUTER_BASE_URL, provider.api_key, (provider as any).defaultModel || DEFAULT_9ROUTER_MODEL, prompt);
+          await logAIUsage(userId, provider.name, 'parsing_text', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
           let cleanText = result.text.trim();
           if (cleanText.startsWith('```')) {
             cleanText = cleanText.replace(/^```json\s*/, '').replace(/```$/, '').trim();
@@ -321,10 +347,10 @@ export async function transcribeAudio(
         const text = await callOpenAIWhisperAPI(provider.api_key, audioBuffer, mimeType);
         await logAIUsage(userId, 'openai', 'transcribe_audio', 0, 0, 'success');
         return text;
-      } else if (provider.name === 'litellm') {
+      } else if (provider.name === 'litellm' || provider.name === '9router') {
         // Correctly route proxy audio transcription requests through the proxy API completions instead of direct Google endpoints
-        const text = await callProxyAudioTranscription((provider as any).baseUrl, provider.api_key, (provider as any).defaultModel, audioBuffer, mimeType);
-        await logAIUsage(userId, 'litellm', 'transcribe_audio', 0, 0, 'success');
+        const text = await callProxyAudioTranscription((provider as any).baseUrl || DEFAULT_9ROUTER_BASE_URL, provider.api_key, (provider as any).defaultModel || DEFAULT_9ROUTER_MODEL, audioBuffer, mimeType);
+        await logAIUsage(userId, provider.name, 'transcribe_audio', 0, 0, 'success');
         return text;
       }
     } catch (err) {
@@ -395,9 +421,9 @@ export async function parseReceiptImage(
         const result = await callOpenAIVisionAPI(provider.api_key, imageBuffer, mimeType, prompt);
         await logAIUsage(userId, 'openai', 'ocr_receipt', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
         return extractJsonHelper(result.text);
-      } else if (provider.name === 'litellm') {
-        const result = await callCustomVisionAPI((provider as any).baseUrl, provider.api_key, (provider as any).defaultModel, prompt, imageBuffer, mimeType);
-        await logAIUsage(userId, 'litellm', 'ocr_receipt', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
+      } else if (provider.name === 'litellm' || provider.name === '9router') {
+        const result = await callCustomVisionAPI((provider as any).baseUrl || DEFAULT_9ROUTER_BASE_URL, provider.api_key, (provider as any).defaultModel || DEFAULT_9ROUTER_MODEL, prompt, imageBuffer, mimeType);
+        await logAIUsage(userId, provider.name, 'ocr_receipt', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
         let cleanText = result.text.trim();
         if (cleanText.startsWith('```')) {
           cleanText = cleanText.replace(/^```json\s*/, '').replace(/```$/, '').trim();
@@ -454,6 +480,10 @@ export async function generateFinancialAdvice(
       } else if (provider.name === 'deepseek') {
         const result = await callDeepSeekAPI(provider.api_key, prompt, 'advisor');
         await logAIUsage(userId, 'deepseek', 'advisor', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
+        return result.text;
+      } else if (provider.name === 'litellm' || provider.name === '9router') {
+        const result = await callCustomLLMAPI((provider as any).baseUrl || DEFAULT_9ROUTER_BASE_URL, provider.api_key, (provider as any).defaultModel || DEFAULT_9ROUTER_MODEL, prompt);
+        await logAIUsage(userId, provider.name, 'advisor', result.usage.prompt_tokens, result.usage.completion_tokens, 'success');
         return result.text;
       }
     } catch (err) {
@@ -798,7 +828,7 @@ export async function callCustomLLMAPI(baseUrl: string, apiKey: string, model: s
       'Authorization': `Bearer ${apiKey}`
     },
     body: JSON.stringify({
-      model: model || 'gemini-1.5-flash',
+      model: model || DEFAULT_9ROUTER_MODEL,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.1
     })
@@ -826,7 +856,7 @@ async function callCustomVisionAPI(baseUrl: string, apiKey: string, model: strin
       'Authorization': `Bearer ${apiKey}`
     },
     body: JSON.stringify({
-      model: model || 'gemini-1.5-flash',
+      model: model || DEFAULT_9ROUTER_MODEL,
       messages: [
         {
           role: 'user',

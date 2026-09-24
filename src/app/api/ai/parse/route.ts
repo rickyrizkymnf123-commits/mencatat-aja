@@ -87,11 +87,6 @@ export async function POST(request: Request) {
 
     // Try calling active AI parser
     try {
-      const isFakeKey = !process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY.includes('FakeKey');
-      if (isFakeKey) {
-        throw new Error('Placeholder Gemini key detected, running local regex parser.');
-      }
-
       const result = await parseTransactionText(text, categoriesList, walletsList, userId);
       return NextResponse.json({ success: true, parsed: result, parser: 'ai' });
     } catch (aiErr: any) {
