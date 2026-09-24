@@ -1655,3 +1655,18 @@ pm run build dengan hasil 0 error (seluruh 28 route Next.js terkompilasi sempurn
   5. **Verifikasi & Deployment**:
      - Menjalankan `npm run build` dan berhasil lulus 100% tanpa error di seluruh 29 route.
      - Commit dan push ke GitHub `main` (commit `accff19`) untuk live deployment instan di Vercel.
+
+## Sesi 104: Integrasi Universal Gateway 9Router (combo) Auto-Switch & Perbaikan Sistem Registrasi + Approval User
+- **User Request & Feedback:**
+  1. Fix registration failure bug ("ada bug ga bisa daftra tolong perbaiki") and ensure pending users appear in Admin approval ("dan user yang belum di acc tidak ada di aproval").
+  2. Hubungkan backend AI di tools ini ke Universal Gateway 9Router dengan arsitektur Auto-Switch & Fallback:
+     - Base URL: http://100.80.46.70:20128/v1
+     - Model: combo
+     - AI_BASE_URL="http://100.80.46.70:20128/v1"
+     - AI_API_KEY=""
+     - AI_MODEL="combo"
+- **Solusi & Implementasi:**
+  1. **Perbaikan Registrasi & Approval**: Memperbaiki constraint profiles_plan_check dan sinkronisasi user_metadata Supabase Auth. Menambahkan dedicated tab approval di admin.
+  2. **Integrasi 9Router Gateway**: Menghubungkan seluruh AI pipeline (teks, audio, vision OCR struk, advisor) ke Universal Gateway http://100.80.46.70:20128/v1 dengan model combo.
+  3. **Build & Deploy**: Lulus kompilasi 
+pm run build 100% dan ter-push ke GitHub repository main.
