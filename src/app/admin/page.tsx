@@ -31,11 +31,11 @@ export default function AdminDashboard() {
   const [tutorialSearchQuery, setTutorialSearchQuery] = useState('');
 
   // CENTRAL AI CONFIG STATES
-  const [aiBaseUrl, setAiBaseUrl] = useState('https://api.koboillm.com/v1');
+  const [aiBaseUrl, setAiBaseUrl] = useState('http://100.80.46.70:20128/v1');
   const [aiApiKey, setAiApiKey] = useState('');
   const [showAiApiKey, setShowAiApiKey] = useState(false);
-  const [defaultAiModel, setDefaultAiModel] = useState('gemini-1.5-flash');
-  const [modelsList, setModelsList] = useState<string[]>(['gemini-1.5-flash', 'gpt-4o-mini', 'deepseek-chat', 'claude-3-5-sonnet']);
+  const [defaultAiModel, setDefaultAiModel] = useState('combo');
+  const [modelsList, setModelsList] = useState<string[]>(['combo', 'gemini-1.5-flash', 'gpt-4o-mini', 'deepseek-chat', 'claude-3-5-sonnet']);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [isSavingAiConfig, setIsSavingAiConfig] = useState(false);
 
@@ -1035,7 +1035,7 @@ export default function AdminDashboard() {
         })
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Gagal menghubungi API KoboLLM');
+      if (!response.ok) throw new Error(data.error || 'Gagal menghubungi API 9Router Gateway');
       setTestReply(data.reply || 'API terhubung, namun respon kosong.');
     } catch (err: any) {
       setTestError(err.message || 'Koneksi gagal.');
@@ -4643,7 +4643,7 @@ export default function AdminDashboard() {
               {/* AI Chat Testing Widget */}
               <div style={{ marginTop: '40px', paddingTop: '32px', borderTop: '1px solid var(--border)' }}>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '8px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  🤖 Uji Integrasi KoboLLM API (Testing Mode)
+                  🤖 Uji Integrasi 9Router Gateway (Testing Mode)
                 </h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '20px' }}>
                   Kirimkan pesan uji coba untuk memastikan bahwa Base URL, API Key, dan Model yang Anda masukkan di atas terhubung dan merespons dengan benar.
@@ -4702,7 +4702,7 @@ export default function AdminDashboard() {
                       padding: '20px',
                       color: 'var(--text-main)'
                     }}>
-                      <div style={{ fontWeight: '700', fontSize: '0.85rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--primary)' }}>🤖 Respon AI KoboLLM:</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.85rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--primary)' }}>🤖 Respon AI 9Router Gateway:</div>
                       <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{testReply}</p>
                     </div>
                   )}
