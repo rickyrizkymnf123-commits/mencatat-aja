@@ -30,13 +30,57 @@ export default function AdminDashboard() {
   const [isSavingTutorial, setIsSavingTutorial] = useState(false);
   const [tutorialSearchQuery, setTutorialSearchQuery] = useState('');
 
-  // CENTRAL AI CONFIG STATES (9Router Universal Gateway)
+  // CENTRAL AI CONFIG STATES (9Router Official Catalogue)
   const DEFAULT_9ROUTER_MODELS = [
+    // 1. 9Router Auto-Switch & Fallback Combos (Recommended)
     'combo',
     'free-combo',
     'premium-coding',
+    // 2. Claude Code (cc/)
     'cc/claude-opus-4-7',
-    'cc/claude-sonnet-4-5',
+    'cc/claude-opus-4-6',
+    'cc/claude-sonnet-4-6',
+    'cc/claude-sonnet-4-5-20250929',
+    'cc/claude-haiku-4-5-20251001',
+    // 3. Codex (cx/)
+    'cx/gpt-5.5',
+    'cx/gpt-5.4',
+    'cx/gpt-5.3-codex',
+    'cx/gpt-5.2-codex',
+    'cx/gpt-5.1-codex-max',
+    // 4. GitHub Copilot (gh/)
+    'gh/gpt-5.4',
+    'gh/claude-opus-4.7',
+    'gh/claude-sonnet-4.6',
+    'gh/gemini-3.1-pro-preview',
+    'gh/grok-code-fast-1',
+    // 5. Cursor (cu/)
+    'cu/claude-4.6-opus-max',
+    'cu/claude-4.5-sonnet-thinking',
+    'cu/gpt-5.3-codex',
+    'cu/kimi-k2.5',
+    // 6. GLM & MiniMax
+    'glm/glm-5.1',
+    'glm/glm-5',
+    'glm/glm-4.7',
+    'minimax/MiniMax-M2.7',
+    'minimax/MiniMax-M2.5',
+    // 7. Kimi & Kiro
+    'kimi/kimi-k2.5',
+    'kimi/kimi-k2.5-thinking',
+    'kr/claude-sonnet-4.5',
+    'kr/claude-haiku-4.5',
+    'kr/glm-5',
+    'kr/MiniMax-M2.5',
+    'kr/qwen3-coder-next',
+    'kr/deepseek-3.2',
+    // 8. Vertex AI
+    'vertex/gemini-3.1-pro-preview',
+    'vertex/gemini-3-flash-preview',
+    'vertex/gemini-2.5-flash',
+    'vertex-partner/glm-5-maas',
+    'vertex-partner/deepseek-v3.2-maas',
+    // 9. Standard OpenAI / Anthropic / Google Aliases
     'gemini-2.5-flash',
     'gemini-1.5-flash',
     'gpt-4o',
@@ -4875,15 +4919,41 @@ export default function AdminDashboard() {
 
                   {testError && (
                     <div className="animate-slide-up" style={{
-                      backgroundColor: 'hsla(0, 100%, 50%, 0.05)',
-                      border: '1px solid hsla(0, 100%, 50%, 0.15)',
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
                       borderRadius: '12px',
-                      padding: '16px 20px',
-                      color: 'var(--error)',
+                      padding: '18px 20px',
+                      color: '#fca5a5',
                       fontSize: '0.9rem',
-                      fontWeight: '600'
+                      lineHeight: '1.6'
                     }}>
-                      ❌ Error: {testError}
+                      <div style={{ fontWeight: '800', color: '#ef4444', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>❌ Status:</span> {testError}
+                      </div>
+
+                      {aiBaseUrl.includes('100.') || aiBaseUrl.includes('localhost') || aiBaseUrl.includes('127.0.0.1') || aiBaseUrl.includes('192.168.') ? (
+                        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(239, 68, 68, 0.2)', fontSize: '0.83rem', color: '#e2e8f0' }}>
+                          <p style={{ margin: '0 0 8px 0', fontWeight: '700', color: '#fef08a' }}>
+                            💡 Mengapa terjadi error "fetch failed" pada IP <code>{aiBaseUrl}</code>?
+                          </p>
+                          <ul style={{ margin: '0 0 12px 0', paddingLeft: '20px', color: '#cbd5e1' }}>
+                            <li>Alamat <code>100.x.x.x</code> adalah IP internal <strong>Tailscale / VPN Private</strong>. Server cloud publik Vercel yang meng-hosting website ini tidak dapat mengakses jaringan private Anda tanpa Tunnel.</li>
+                            <li>Browser modern di website HTTPS (<code>https://www.mencatat.my.id</code>) juga memblokir pemanggilan langsung ke <code>http://</code> (Mixed Content Security).</li>
+                          </ul>
+                          <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#38bdf8' }}>
+                            🚀 Solusi Termudah agar 9Router Anda dapat diakses 24/7 dari domain ini:
+                          </p>
+                          <ol style={{ margin: 0, paddingLeft: '20px', color: '#e2e8f0' }}>
+                            <li>Jalankan <strong>Cloudflare Tunnel</strong> di komputer tempat 9Router berjalan:
+                              <br /><code style={{ background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: '4px' }}>cloudflared tunnel --url http://localhost:20128</code>
+                            </li>
+                            <li>Atau aktifkan <strong>Tailscale Funnel</strong>:
+                              <br /><code style={{ background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: '4px' }}>tailscale funnel 20128</code>
+                            </li>
+                            <li>Salin URL HTTPS publik yang dihasilkan (contoh: <code>https://your-tunnel.trycloudflare.com/v1</code>) ke kolom <strong>Base URL</strong> di atas, lalu klik <strong>💾 Simpan Pengaturan AI</strong>.</li>
+                          </ol>
+                        </div>
+                      ) : null}
                     </div>
                   )}
                 </div>
