@@ -1059,28 +1059,65 @@ export default function AdminDashboard() {
     }
     setIsFetchingModels(true);
     try {
-      const res = await fetch('/api/admin/fetch-models', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ baseUrl: aiBaseUrl, apiKey: aiApiKey })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal memuat model dari provider API');
-
-      if (data.models && Array.isArray(data.models) && data.models.length > 0) {
-        setModelsList(data.models);
-        if (!data.models.includes(defaultAiModel)) {
-          setDefaultAiModel(data.models[0]);
+      let data: any = null;
+      // 1. Try server-side proxy
+      try {
+        const res = await fetch('/api/admin/fetch-models', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ baseUrl: aiBaseUrl, apiKey: aiApiKey })
+        });
+        if (res.ok) {
+          data = await res.json();
         }
-        alert(`🟢 Berhasil memuat ${data.models.length} model asli dari provider AI!`);
+      } catch (errServer) {
+        console.warn('Server fetch-models proxy error:', errServer);
+      }
+
+      // 2. Direct client-side fetch (supports local / Tailscale mesh IPs like 100.x.x.x)
+      if (!data || !data.models || data.models.length === 0) {
+        try {
+          const cleanUrl = aiBaseUrl.endsWith('/') ? aiBaseUrl.slice(0, -1) : aiBaseUrl;
+          const target = cleanUrl.endsWith('/models') ? cleanUrl : `${cleanUrl}/models`;
+          const clientRes = await fetch(target, {
+            headers: aiApiKey ? { 'Authorization': `Bearer ${aiApiKey}` } : {}
+          });
+          if (clientRes.ok) {
+            const clientJson = await clientRes.json();
+            let modelIds: string[] = [];
+            if (clientJson && Array.isArray(clientJson.data)) {
+              modelIds = clientJson.data.map((m: any) => m.id || m.name).filter(Boolean);
+            } else if (Array.isArray(clientJson)) {
+              modelIds = clientJson.map((m: any) => m.id || m.name || String(m)).filter(Boolean);
+            }
+            if (modelIds.length > 0) {
+              data = { models: modelIds };
+            }
+          }
+        } catch (errClient) {
+          console.warn('Direct client-side fetch error:', errClient);
+        }
+      }
+
+      if (data && data.models && Array.isArray(data.models) && data.models.length > 0) {
+        let list = [...data.models];
+        if (!list.includes('combo')) {
+          list = ['combo', ...list];
+        }
+        setModelsList(list);
+        if (!list.includes(defaultAiModel)) {
+          setDefaultAiModel('combo');
+        }
+        alert(`🟢 Berhasil memuat ${data.models.length} model asli dari 9Router!`);
         return;
       }
       throw new Error('Daftar model kosong dari provider API');
     } catch (e: any) {
       console.warn('Fetch models error:', e);
-      const fallbackModels = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gpt-4o', 'gpt-4o-mini', 'deepseek-chat', 'deepseek-coder', 'claude-3-5-sonnet'];
+      const fallbackModels = ['combo', 'gemini-2.5-flash', 'gemini-1.5-flash', 'gpt-4o-mini', 'deepseek-chat', 'claude-3-5-sonnet'];
       setModelsList(fallbackModels);
-      alert(`⚠️ ${e.message}. Menggunakan daftar model standar.`);
+      setDefaultAiModel('combo');
+      alert(`⚠️ ${e.message}. Menggunakan daftar model standar dengan default "combo".`);
     } finally {
       setIsFetchingModels(false);
     }
@@ -4588,37 +4625,98 @@ export default function AdminDashboard() {
 
                 {/* Default Model */}
                 <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label htmlFor="defaultAiModel" style={{ color: 'var(--text-main)', fontWeight: '600', fontSize: '0.85rem', textTransform: 'none', width: 'auto', marginBottom: 0 }}>Default Model</label>
-                  <select
-                    id="defaultAiModel"
-                    style={{
-                      width: '100%',
-                      backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '8px',
-                      padding: '12px 16px',
-                      color: 'var(--text-main)',
-                      fontSize: '0.95rem',
-                      outline: 'none',
-                      cursor: 'pointer'
-                    }}
-                    value={defaultAiModel}
-                    onChange={(e) => {
-                      const selected = e.target.value;
-                      setDefaultAiModel(selected);
-                      if (typeof window !== 'undefined') {
-                        localStorage.setItem('Mencatat_Aja_saved_ai_model', selected);
-                      }
-                    }}
-                  >
-                    {modelsList.map(model => (
-                      <option key={model} value={model} style={{ backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)', color: 'var(--text-main)' }}>
-                        {model}
-                      </option>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label htmlFor="defaultAiModel" style={{ color: 'var(--text-main)', fontWeight: '600', fontSize: '0.85rem', textTransform: 'none', width: 'auto', marginBottom: 0 }}>Default Model</label>
+                    <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '700' }}>⚡ Rekomendasi: combo</span>
+                  </div>
+                  
+                  {/* Quick Model Badges */}
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                    {['combo', 'gemini-2.5-flash', 'gpt-4o-mini', 'deepseek-chat', 'claude-3-5-sonnet'].map(preset => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => {
+                          setDefaultAiModel(preset);
+                          if (typeof window !== 'undefined') {
+                            localStorage.setItem('Mencatat_Aja_saved_ai_model', preset);
+                          }
+                        }}
+                        style={{
+                          background: defaultAiModel === preset ? 'rgba(147, 51, 234, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                          border: defaultAiModel === preset ? '1px solid #c084fc' : '1px solid rgba(255, 255, 255, 0.1)',
+                          color: defaultAiModel === preset ? '#c084fc' : 'var(--text-muted)',
+                          borderRadius: '6px',
+                          padding: '4px 10px',
+                          fontSize: '0.75rem',
+                          fontWeight: '700',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {preset === 'combo' ? '🔥 combo (Auto-Switch)' : preset}
+                      </button>
                     ))}
-                  </select>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      id="defaultAiModel"
+                      type="text"
+                      list="models-datalist"
+                      style={{
+                        flex: 1,
+                        backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '8px',
+                        padding: '12px 16px',
+                        color: 'var(--text-main)',
+                        fontSize: '0.95rem'
+                      }}
+                      placeholder="Ketik nama model (contoh: combo)"
+                      value={defaultAiModel}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setDefaultAiModel(val);
+                        if (typeof window !== 'undefined') {
+                          localStorage.setItem('Mencatat_Aja_saved_ai_model', val);
+                        }
+                      }}
+                    />
+                    <select
+                      style={{
+                        backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '8px',
+                        padding: '12px 16px',
+                        color: 'var(--text-main)',
+                        fontSize: '0.95rem',
+                        cursor: 'pointer',
+                        maxWidth: '200px'
+                      }}
+                      value={defaultAiModel}
+                      onChange={(e) => {
+                        const selected = e.target.value;
+                        setDefaultAiModel(selected);
+                        if (typeof window !== 'undefined') {
+                          localStorage.setItem('Mencatat_Aja_saved_ai_model', selected);
+                        }
+                      }}
+                    >
+                      <option value="">Pilih Model...</option>
+                      {modelsList.map(model => (
+                        <option key={model} value={model}>
+                          {model}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <datalist id="models-datalist">
+                    {modelsList.map(model => (
+                      <option key={model} value={model} />
+                    ))}
+                  </datalist>
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                    Model yang dipilih akan digunakan oleh semua AI edge functions
+                    Model yang dipilih akan digunakan oleh semua AI edge functions. Gunakan <strong>combo</strong> untuk sistem Auto-Switch & Fallback 9Router.
                   </span>
                 </div>
 

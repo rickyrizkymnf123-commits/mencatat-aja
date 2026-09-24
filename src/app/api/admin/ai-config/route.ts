@@ -33,17 +33,18 @@ export async function POST(request: Request) {
     });
     const encryptedKey = encrypt(configPayload);
 
-    // Upsert the litellm provider row
+    // Upsert the 9router provider row in DB
     const { data: existing } = await supabaseAdmin
       .from('ai_providers')
       .select('id')
-      .eq('name', 'litellm')
+      .in('name', ['9router', 'litellm'])
       .maybeSingle();
 
     if (existing) {
       const { error } = await supabaseAdmin
         .from('ai_providers')
         .update({
+          name: '9router',
           api_key: encryptedKey,
           is_active: true
         })
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
       const { error } = await supabaseAdmin
         .from('ai_providers')
         .insert({
-          name: 'litellm',
+          name: '9router',
           api_key: encryptedKey,
           is_active: true,
           mode: 'single'
@@ -87,7 +88,12 @@ export async function GET() {
     if (isPlaceholder) {
       if (fs.existsSync(FALLBACK_PATH)) {
         const raw = fs.readFileSync(FALLBACK_PATH, 'utf-8');
-        return NextResponse.json(JSON.parse(raw));
+        const parsed = JSON.parse(raw);
+        if (parsed.baseUrl && parsed.baseUrl.includes('koboillm')) {
+          parsed.baseUrl = 'http://100.80.46.70:20128/v1';
+          parsed.defaultModel = 'combo';
+        }
+        return NextResponse.json(parsed);
       }
       return NextResponse.json({ baseUrl: 'http://100.80.46.70:20128/v1', apiKey: '', defaultModel: 'combo' });
     }
@@ -102,7 +108,12 @@ export async function GET() {
       // Return local fallback if db record not present yet
       if (fs.existsSync(FALLBACK_PATH)) {
         const raw = fs.readFileSync(FALLBACK_PATH, 'utf-8');
-        return NextResponse.json(JSON.parse(raw));
+        const parsed = JSON.parse(raw);
+        if (parsed.baseUrl && parsed.baseUrl.includes('koboillm')) {
+          parsed.baseUrl = 'http://100.80.46.70:20128/v1';
+          parsed.defaultModel = 'combo';
+        }
+        return NextResponse.json(parsed);
       }
       return NextResponse.json({ baseUrl: 'http://100.80.46.70:20128/v1', apiKey: '', defaultModel: 'combo' });
     }
@@ -111,10 +122,16 @@ export async function GET() {
     const dec = decrypt(existing.api_key);
     if (dec.startsWith('{')) {
       const parsed = JSON.parse(dec);
+      let returnBaseUrl = parsed.baseUrl || 'http://100.80.46.70:20128/v1';
+      let returnModel = parsed.defaultModel || 'combo';
+      if (returnBaseUrl.includes('koboillm')) {
+        returnBaseUrl = 'http://100.80.46.70:20128/v1';
+        returnModel = 'combo';
+      }
       return NextResponse.json({
-        baseUrl: parsed.baseUrl || 'http://100.80.46.70:20128/v1',
+        baseUrl: returnBaseUrl,
         apiKey: parsed.apiKey || '',
-        defaultModel: parsed.defaultModel || 'combo'
+        defaultModel: returnModel
       });
     }
 
