@@ -92,10 +92,20 @@ export default function AdminDashboard() {
     'claude-3-5-sonnet'
   ];
 
-  const [aiBaseUrl, setAiBaseUrl] = useState('http://100.80.46.70:20128/v1');
+  const [aiBaseUrl, setAiBaseUrl] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('Mencatat_Aja_saved_ai_base_url') || 'http://100.80.46.70:20128/v1';
+    }
+    return 'http://100.80.46.70:20128/v1';
+  });
   const [aiApiKey, setAiApiKey] = useState('');
   const [showAiApiKey, setShowAiApiKey] = useState(false);
-  const [defaultAiModel, setDefaultAiModel] = useState('combo');
+  const [defaultAiModel, setDefaultAiModel] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('Mencatat_Aja_saved_ai_model') || 'combo';
+    }
+    return 'combo';
+  });
   const [modelsList, setModelsList] = useState<string[]>(DEFAULT_9ROUTER_MODELS);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [isSavingAiConfig, setIsSavingAiConfig] = useState(false);
