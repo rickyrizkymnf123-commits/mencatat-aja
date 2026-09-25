@@ -1704,3 +1704,53 @@ pm run build 100% dan ter-push ke GitHub repository main.
      - Kompilasi `npm run build` sukses 100% tanpa error di 29 route.
      - Commit dan push ke repository GitHub `main`.
 
+
+## Session Checkpoint - 2026-09-25
+- Fixed dual model select element glitch in Mencatat.ID admin dashboard.
+- Deployed production build to Vercel (https://mencatat-id.vercel.app).
+- Verified VibePRD centralized 9Router API settings live at https://www.toolsprd.my.id.
+
+
+## Session Checkpoint - 2026-09-25 (Obsidian Multi-Color & Graph Categorization)
+- Analyzed Mencatat.ID reload glitch root cause (async fetch override vs localStorage priority).
+- Configured Obsidian Graph View with 15 rich color categories across tags and paths (AI, 9Router/VPS, SaaS, Meta Ads, Shopee, Hermes, iPhone QC, Finance, Skenario, Daily Notes, Ideas, Knowledge Base, Claude, Gemini, Hermes Outputs).
+- Created and enabled colorful-tags.css snippet in Obsidian.
+
+
+## Session Checkpoint - 2026-09-25 (Obsidian Circular Graph Physics)
+- Tuned Obsidian Graph View physics parameters for circular radial layout (centerStrength: 0.88, repelStrength: 18, linkDistance: 150, linkStrength: 0.95).
+- Relaunched Obsidian.
+
+
+## Session Checkpoint - 2026-09-25 (3D Holographic Neural Glass Brain Widget)
+- Created 3D Translucent Glass Brain interactive artifact (holographic_3d_brain_graph.html).
+- Integrated 15 color category nodes, translucent glass brain shell, glowing electrical synapse lightning pulses, rotatable 3D WebGL engine, node inspector, and auto-rotate controls.
+
+
+## Session Checkpoint - 2026-09-25 (Anatomical 3D Human Brain Visualizer Update)
+- Updated holographic_3d_brain_graph.html to feature exact Anatomical Human Brain geometry (Cerebrum, Cerebellum, Brainstem).
+- Added dense metallic synapse lattice mesh, surface golden spark beams, floating glass HUD panels matching user reference image.
+
+
+## Session Checkpoint - 2026-09-25 (Metallic Cybernetic 3D Brain Aesthetics Update)
+- Refined holographic_3d_brain_graph.html to match reference image 100%:
+  - Replaced bright neon glows with subtle metallic chrome lines and yellow-green sparkle dots.
+  - Added dark glass floating rectangle cards (* AI SYSTEMS, 01 / 1/7).
+  - Preserved exact 3D anatomical brain structure (Cerebrum, Cerebellum, Brainstem).
+
+
+## Session Checkpoint - 2026-09-25 (Installed 3D Graph Plugin into Obsidian)
+- Installed and enabled '3d-graph' plugin (v1.0.5) in Obsidian vault.
+- Restarted Obsidian process.
+
+
+## Session Checkpoint - 2026-09-25 (Set 3D Graph View as Active Workspace Tab)
+- Updated workspace.json leaf state from 'graph' (2D) to '3d_graph_view' (3D).
+- Relaunched Obsidian with 3D Graph tab as default.
+
+
+## Session Checkpoint - 2026-09-25 (Baked 339 Vault Notes into 3D Cybernetic Brain Visualizer)
+- Cleaned up unstyled 3d-graph plugin from Obsidian.
+- Parsed all 339 Markdown notes and 1,410 WikiLinks from Obsidian Vault.
+- Baked 339 real vault notes directly into 3D Cybernetic Metallic Brain visualizer (holographic_3d_brain_graph.html).
+

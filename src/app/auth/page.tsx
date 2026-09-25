@@ -125,18 +125,18 @@ function AuthContent() {
         return;
       }
 
-      // Check if superadmin
+      // Store session and redirect directly to dashboard
       const isSuperadmin = email.toLowerCase() === 'rickyrizkymnf123@gmail.com';
+      localStorage.setItem('Mencatat Aja_user_id', tempUserId);
+      localStorage.setItem('Mencatat Aja_user_email', email);
+      localStorage.setItem('Mencatat Aja_user_name', fullName || 'Nasabah Mencatat Aja');
+      localStorage.setItem('Mencatat Aja_role', isSuperadmin ? 'superadmin' : 'user');
+      localStorage.setItem('Mencatat Aja_plan', 'Basic');
+
       if (isSuperadmin) {
-        localStorage.setItem('Mencatat Aja_user_id', tempUserId);
-        localStorage.setItem('Mencatat Aja_user_email', email);
-        localStorage.setItem('Mencatat Aja_user_name', fullName || 'Ricky Rizky');
-        localStorage.setItem('Mencatat Aja_role', 'superadmin');
         router.push('/admin');
       } else {
-        // Normal user requires Admin ACC before login
-        setShowOnboarding(false);
-        setIsPendingApproval(true);
+        router.push('/dashboard');
       }
     } catch (err: any) {
       setIsLoading(false);

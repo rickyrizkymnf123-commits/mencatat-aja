@@ -198,8 +198,7 @@ export async function POST(request: Request) {
           session: data.session
         });
 
-      } else {
-        // Register action - New users require admin approval
+        // Register action - Auto-approve so new users can start using the app immediately
         const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email,
           password,
@@ -207,7 +206,7 @@ export async function POST(request: Request) {
           user_metadata: {
             full_name: fullName || email.split('@')[0],
             role: isSuperadminEmail ? 'superadmin' : 'user',
-            is_approved: isSuperadminEmail ? true : false,
+            is_approved: true, // Auto-ACC active
             phone: phoneNumber || null
           }
         });
@@ -235,7 +234,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
           success: true,
           user: authUser.user,
-          requiresApproval: !isSuperadminEmail,
+          requiresApproval: false,
           session: null
         });
       }

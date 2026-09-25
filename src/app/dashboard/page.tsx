@@ -372,7 +372,7 @@ export default function DashboardPage() {
       let storedPhone = localStorage.getItem('Mencatat Aja_user_phone') || '';
       let storedToken = localStorage.getItem('Mencatat Aja_telegram_token') || '';
       let storedPlan = localStorage.getItem('Mencatat Aja_plan') || 'Basic';
-      let isUserApproved = false;
+      let isUserApproved = true; // Default to true for seamless entry
 
       try {
         const { data } = await supabase.auth.getSession();
@@ -386,6 +386,13 @@ export default function DashboardPage() {
           storedPhone = user.phone || user.user_metadata?.phone_number || storedPhone;
           storedRole = user.user_metadata?.role || (user.email?.toLowerCase() === 'rickyrizkymnf123@gmail.com' ? 'superadmin' : storedRole);
           
+          // Approval resolution from user_metadata (Source of Truth)
+          if (user.user_metadata?.is_approved !== undefined) {
+            isUserApproved = user.user_metadata.is_approved !== false;
+          } else {
+            isUserApproved = true;
+          }
+
           localStorage.setItem('Mencatat Aja_user_id', storedId);
           localStorage.setItem('Mencatat Aja_user_email', storedEmail);
           localStorage.setItem('Mencatat Aja_user_name', storedName);
@@ -404,9 +411,6 @@ export default function DashboardPage() {
               storedPlan = profile.plan || 'Basic';
               storedToken = profile.telegram_link_token || '';
               if (profile.full_name) storedName = profile.full_name;
-              if (profile.is_approved !== undefined && profile.is_approved !== null) {
-                isUserApproved = profile.is_approved;
-              }
               localStorage.setItem('Mencatat Aja_plan', storedPlan);
               localStorage.setItem('Mencatat Aja_telegram_token', storedToken);
               localStorage.setItem('Mencatat Aja_user_name', storedName);
@@ -438,20 +442,6 @@ export default function DashboardPage() {
       const isSuperadminUser = storedRole === 'superadmin' || storedEmail.toLowerCase() === 'rickyrizkymnf123@gmail.com';
       if (isSuperadminUser) {
         isUserApproved = true;
-      }
-
-      // Check if user is approved from the mock users list or DB
-      if (!isSuperadminUser && typeof window !== 'undefined') {
-        const storedMockUsers = localStorage.getItem('Mencatat_Aja_mock_users');
-        if (storedMockUsers) {
-          try {
-            const list = JSON.parse(storedMockUsers);
-            const foundUser = list.find((u: any) => u.id === storedId);
-            if (foundUser && foundUser.is_approved !== undefined) {
-              isUserApproved = foundUser.is_approved;
-            }
-          } catch (e) {}
-        }
       }
 
       setIsApproved(isUserApproved);
