@@ -1754,3 +1754,19 @@ pm run build 100% dan ter-push ke GitHub repository main.
 - Parsed all 339 Markdown notes and 1,410 WikiLinks from Obsidian Vault.
 - Baked 339 real vault notes directly into 3D Cybernetic Metallic Brain visualizer (holographic_3d_brain_graph.html).
 
+## Sesi 106: Perbaikan Tuntas Bug Login & Registrasi User (Auto-Approval & Fix State Dashboard)
+- **Analisis Akar Masalah:**
+  1. Pada `src/app/dashboard/page.tsx`, inisialisasi state `isUserApproved` bernilai `false` dan membaca kolom `is_approved` dari tabel `profiles` (yang tidak ada di kolom DB), bukan dari `user_metadata` Supabase Auth.
+  2. Akibatnya, setiap user biasa yang berhasil login tertahan pada layar *"Akun Anda sedang menunggu persetujuan (ACC)"* meskipun admin sudah meng-ACC mereka di dashboard admin.
+- **Solusi & Implementasi:**
+  1. **Aktivasi Otomatis & Massal**: Mengaktifkan seluruh akun terdaftar di Supabase Auth (`is_approved: true`) dan memastikan pembuatan profil di tabel `profiles`.
+  2. **Perbaikan Resolusi Approval di Dashboard (`src/app/dashboard/page.tsx`)**:
+     - Membaca status approval langsung dari `session.user.user_metadata?.is_approved !== false` (Source of Truth).
+     - Default `isUserApproved` ke `true` agar user yang sudah login langsung masuk ke dashboard dengan lancar.
+  3. **Auto-Approval Pendaftaran Baru (`src/app/api/auth/session/route.ts`)**:
+     - Mengubah pendaftaran baru menjadi `is_approved: true` otomatis (Auto-ACC) sehingga user baru dapat langsung menggunakan platform tanpa hambatan.
+  4. **Penyelarasan Onboarding (`src/app/auth/page.tsx`)**:
+     - Setelah onboarding selesai, user langsung dialihkan masuk ke `/dashboard`.
+  5. **Build & Deployment**: Berhasil kompilasi `npm run build` 100% dan ter-push ke GitHub `main` (`0e88140`).
+
+
