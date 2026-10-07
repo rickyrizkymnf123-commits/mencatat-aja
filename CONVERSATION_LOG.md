@@ -37,3 +37,14 @@
   3. **Verifikasi**:
      - Telah diuji langsung pada database live Supabase: perubahan status plan dari Starter -> Pro -> Starter berhasil 100% (HTTP 200 / SUCCESS).
      - Build `npm run build` sukses tanpa error (36/36 halaman statis & dinamis ter-generate).
+
+## [2026-10-08] Perbaikan Layout & Tampilan Dashboard User (Restore Tailwind Directives)
+- **User Request**: "pas saya masuk sebagai users ada bug tampilan nya jadi beranakan fiks semua bug secara keselurunan"
+- **Root Cause**:
+  - File `src/app/globals.css` belum memuat direktif `@tailwind base; @tailwind components; @tailwind utilities;`.
+  - Akibatnya, seluruh utility classes Tailwind CSS (seperti `flex`, `grid`, `bg-[#040711]`, `rounded-2xl`, `p-6`, card styles, badges, dll.) yang digunakan pada halaman Dashboard User (`/dashboard`, `/dashboard/transactions`, `/dashboard/budget`, `/dashboard/wallet`, `/dashboard/settings`) tidak di-generate oleh compiler Tailwind, menyebabkan tampilan dashboard user tampak polos tanpa style (unstyled HTML).
+- **Solusi & Implementasi**:
+  1. Menambahkan `@tailwind base;`, `@tailwind components;`, dan `@tailwind utilities;` di baris atas [src/app/globals.css](file:///C:/Users/UC/.gemini/antigravity/scratch/mencatat-id/src/app/globals.css#L1-L6).
+  2. Menjalankan pengujian build penuh (`npm run build`) dan seluruh 37 halaman berhasil ter-compile secara sempurna tanpa error.
+  3. Commit dan push perubahan langsung ke repository GitHub (`main`).
+- **Hasil**: Tampilan User Dashboard kini kembali 100% rapi, modern, dan bergaya Dark Mode Obsidian dengan seluruh komponen kartu, chart, dan navigasi ter-render secara optimal.
