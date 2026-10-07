@@ -1,84 +1,29 @@
-import { NextResponse } from 'next/server';
-import { supabaseAdmin, supabaseUrl } from '@/lib/supabase';
-import { getPricingConfig } from '@/lib/pricing';
+import { NextRequest, NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/server';
 
-export async function GET(request: Request) {
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
-    const pricing = await getPricingConfig();
 
-    const isPlaceholder = !supabaseUrl || 
-      supabaseUrl.includes('your-supabase-project-id') || 
-      supabaseUrl.includes('placeholder-project');
-
-    if (isPlaceholder || !userId) {
-      return NextResponse.json({
-        success: true,
-        plan: 'Pro',
-        subscription_end: new Date(Date.now() + 30 * 86400000).toISOString(),
-        is_free_access: false,
-        is_active: true,
-        days_remaining: 30,
-        status: 'active',
-        admin_whatsapp: '6281234567890',
-        pricing
-      });
+    if (!userId) {
+      return NextResponse.json({ ok: false, plan: 'starter' });
     }
 
-    const { data: profile, error } = await supabaseAdmin
+    const supabase = createAdminClient();
+    const { data: profile } = await supabase
       .from('profiles')
-      .select('*')
+      .select('plan')
       .eq('id', userId)
-      .single();
-
-    if (error || !profile) {
-      return NextResponse.json({
-        success: true,
-        plan: 'Basic',
-        subscription_end: null,
-        is_free_access: false,
-        is_active: true,
-        days_remaining: 0,
-        status: 'basic',
-        admin_whatsapp: '6281234567890',
-        pricing
-      });
-    }
-
-    let daysRemaining = 0;
-    let status = 'basic';
-
-    if (profile.is_free_access) {
-      status = 'free_access';
-      daysRemaining = 999;
-    } else if (profile.subscription_end) {
-      const endMs = new Date(profile.subscription_end).getTime();
-      const nowMs = Date.now();
-      daysRemaining = Math.max(0, Math.ceil((endMs - nowMs) / 86400000));
-      if (daysRemaining > 0 && profile.is_active !== false) {
-        status = 'active';
-      } else {
-        status = 'expired';
-      }
-    }
-
-    let resolvedPlan = profile.plan || (status === 'active' || status === 'free_access' ? 'Pro' : 'Basic');
-    if (resolvedPlan === 'Starter') resolvedPlan = 'Basic';
+      .maybeSingle();
 
     return NextResponse.json({
-      success: true,
-      plan: resolvedPlan,
-      subscription_end: profile.subscription_end,
-      is_free_access: !!profile.is_free_access,
-      is_active: profile.is_active !== false,
-      days_remaining: daysRemaining,
-      status: status,
-      admin_whatsapp: '6281234567890',
-      pricing
+      ok: true,
+      plan: profile?.plan || 'starter',
     });
   } catch (err: any) {
-    console.error('Fetch user subscription error:', err);
-    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }

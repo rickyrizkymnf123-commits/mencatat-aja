@@ -1,384 +1,154 @@
-import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
-import fs from 'fs';
-import path from 'path';
-import { autoStartPollingIfConfigured } from '@/lib/telegram-polling';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 
-const MOCK_WALLETS_PATH = path.join(process.cwd(), 'src/lib/mock_wallets.json');
+export const dynamic = 'force-dynamic';
 
-const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-const SUPERADMIN_ID = '58c09700-965d-4104-a344-6e599c46deff';
-
-// Initialize mock wallets if file doesn't exist
-function getMockWallets(userId: string) {
-  let all: any[] = [];
-  if (fs.existsSync(MOCK_WALLETS_PATH)) {
-    try {
-      all = JSON.parse(fs.readFileSync(MOCK_WALLETS_PATH, 'utf-8'));
-    } catch (e) {
-      all = [];
-    }
-  }
-
-  // Seed default wallets if empty for this user
-  const userWallets = all.filter((w: any) => w.user_id === userId);
-  if (userWallets.length === 0) {
-    const seed = [
-      {
-        id: `w_bca_${userId}`,
-        user_id: userId,
-        name: 'BCA',
-        balance: 0,
-        is_default: true,
-        created_at: new Date().toISOString()
-      },
-      {
-        id: `w_cash_${userId}`,
-        user_id: userId,
-        name: 'Cash',
-        balance: 0,
-        is_default: false,
-        created_at: new Date().toISOString()
-      }
-    ];
-    all = [...all, ...seed];
-    fs.writeFileSync(MOCK_WALLETS_PATH, JSON.stringify(all, null, 2));
-    return seed;
-  }
-
-  return userWallets;
-}
-
-function updateMockWalletBalance(userId: string, walletId: string, newBalance: number) {
-  let all: any[] = [];
-  if (fs.existsSync(MOCK_WALLETS_PATH)) {
-    try {
-      all = JSON.parse(fs.readFileSync(MOCK_WALLETS_PATH, 'utf-8'));
-    } catch (e) {}
-  }
-  
-  all = all.map((w: any) => {
-    if (w.user_id === userId && (w.id === walletId || w.name === walletId)) {
-      return { ...w, balance: newBalance };
-    }
-    return w;
-  });
-  
-  fs.writeFileSync(MOCK_WALLETS_PATH, JSON.stringify(all, null, 2));
-}
-
-function saveNewMockWallet(wallet: any) {
-  let all: any[] = [];
-  if (fs.existsSync(MOCK_WALLETS_PATH)) {
-    try {
-      all = JSON.parse(fs.readFileSync(MOCK_WALLETS_PATH, 'utf-8'));
-    } catch (e) {}
-  }
-  all.push(wallet);
-  fs.writeFileSync(MOCK_WALLETS_PATH, JSON.stringify(all, null, 2));
-}
-export async function GET(request: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    const customToken = searchParams.get('custom_token');
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (customToken) {
-      try {
-        const fallbackPath = path.join(process.cwd(), 'src/lib/ai_config_fallback.json');
-        let fallbackData: any = {};
-        if (fs.existsSync(fallbackPath)) {
-          fallbackData = JSON.parse(fs.readFileSync(fallbackPath, 'utf-8'));
-        }
-        if (!fallbackData.botToken || fallbackData.botToken !== customToken) {
-          fallbackData.botToken = customToken;
-          fs.writeFileSync(fallbackPath, JSON.stringify(fallbackData, null, 2), 'utf-8');
-          console.log('Saved custom bot token to ai_config_fallback.json from wallet GET request');
-        }
-      } catch (writeErr) {
-        console.error('Failed to write botToken from GET request:', writeErr);
-      }
+    const adminClient = createAdminClient();
+    const targetUserId = user?.id;
+
+    if (!targetUserId) {
+      return NextResponse.json({
+        ok: true,
+        wallets: [
+          { id: 'w1', user_id: 'demo', name: 'Cash / Tunai', balance: 1250000, is_default: true, color: '#10b981', icon: 'wallet' },
+          { id: 'w2', user_id: 'demo', name: 'BCA Utama', balance: 8450000, is_default: false, color: '#3b82f6', icon: 'credit-card' },
+          { id: 'w3', user_id: 'demo', name: 'GoPay', balance: 350000, is_default: false, color: '#00a5cf', icon: 'smartphone' },
+        ],
+      });
     }
 
-    autoStartPollingIfConfigured();
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
-
-    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const isPlaceholder = !supabaseUrl || 
-      supabaseUrl.includes('your-supabase-project-id') || 
-      supabaseUrl.includes('placeholder-project');
-
-    if (isPlaceholder) {
-      return NextResponse.json(getMockWallets(targetUserId));
-    }
-
-    const { data: wallets, error } = await supabaseAdmin
+    const { data: wallets, error } = await adminClient
       .from('wallets')
       .select('*')
       .eq('user_id', targetUserId)
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Fetch wallets error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(wallets || []);
+    return NextResponse.json({ ok: true, wallets: wallets || [] });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { userId, name, balance, isDefault } = await request.json();
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const adminClient = createAdminClient();
 
-    if (!userId || !name) {
-      return NextResponse.json({ error: 'User ID and Wallet Name are required' }, { status: 400 });
+    const body = await req.json();
+    const { name, balance, color, isDefault } = body;
+
+    if (!name) {
+      return NextResponse.json({ ok: false, error: 'Nama dompet wajib diisi' }, { status: 400 });
     }
 
-    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
+    const userId = user?.id || 'demo-user-123';
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const isPlaceholder = !supabaseUrl || 
-      supabaseUrl.includes('your-supabase-project-id') || 
-      supabaseUrl.includes('placeholder-project');
+    if (user?.id) {
+      const { data: profile } = await adminClient
+        .from('profiles')
+        .select('plan')
+        .eq('id', user.id)
+        .maybeSingle();
 
-    if (isPlaceholder) {
-      const current = getMockWallets(targetUserId);
-      const isFirst = current.length === 0;
-      
-      const newWallet = {
-        id: `w_${Date.now()}`,
-        user_id: targetUserId,
-        name,
-        balance: Number(balance) || 0.00,
-        is_default: isFirst ? true : (isDefault || false),
-        created_at: new Date().toISOString()
-      };
-      
-      saveNewMockWallet(newWallet);
-      
-      // Update defaults if needed
-      if (newWallet.is_default && !isFirst) {
-        let all = JSON.parse(fs.readFileSync(MOCK_WALLETS_PATH, 'utf-8'));
-        all = all.map((w: any) => {
-          if (w.user_id === targetUserId && w.id !== newWallet.id) {
-            return { ...w, is_default: false };
-          }
-          return w;
-        });
-        fs.writeFileSync(MOCK_WALLETS_PATH, JSON.stringify(all, null, 2));
+      const { count } = await adminClient
+        .from('wallets')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (profile?.plan === 'starter' && count && count >= 3) {
+        return NextResponse.json({
+          ok: false,
+          error: 'Maksimal 3 dompet untuk Paket Starter. Upgrade ke Paket Pro untuk membuat dompet tanpa batas!',
+        }, { status: 403 });
       }
-      
-      return NextResponse.json(newWallet);
     }
 
-    // Check if this is the first wallet
-    const { count } = await supabaseAdmin
+    const { data: existingWallets } = await adminClient
       .from('wallets')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', targetUserId);
+      .select('id')
+      .eq('user_id', userId);
 
-    const isFirst = count === 0;
+    const shouldBeDefault = isDefault || !existingWallets || existingWallets.length === 0;
 
-    const { data: newWallet, error } = await supabaseAdmin
+    if (shouldBeDefault && existingWallets && existingWallets.length > 0) {
+      await adminClient.from('wallets').update({ is_default: false }).eq('user_id', userId);
+    }
+
+    const { data: newWallet, error } = await adminClient
       .from('wallets')
       .insert({
-        user_id: targetUserId,
+        user_id: userId,
         name,
-        balance: Number(balance) || 0.00,
-        is_default: isFirst ? true : (isDefault || false),
+        balance: parseFloat(balance) || 0,
+        is_default: shouldBeDefault,
+        color: color || '#10b981',
+        icon: 'wallet',
+        updated_at: new Date().toISOString(),
       })
       .select()
       .single();
 
     if (error) {
-      console.error('Insert wallet error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
 
-    // If marked as default, unset previous default wallets
-    if (newWallet.is_default && !isFirst) {
-      await supabaseAdmin
-        .from('wallets')
-        .update({ is_default: false })
-        .eq('user_id', targetUserId)
-        .neq('id', newWallet.id);
+    if (shouldBeDefault) {
+      await adminClient.from('wallets').update({ is_default: false }).eq('user_id', userId).neq('id', newWallet.id);
+      await adminClient.from('profiles').update({ default_wallet_id: newWallet.id }).eq('id', userId);
     }
 
-    return NextResponse.json(newWallet);
+    return NextResponse.json({ ok: true, wallet: newWallet });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
 
-export async function PUT(request: Request) {
+export async function PATCH(req: NextRequest) {
   try {
-    const { userId, walletId, name, balance } = await request.json();
-    if (!walletId || !name) {
-      return NextResponse.json({ error: 'Missing wallet update fields' }, { status: 400 });
-    }
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const adminClient = createAdminClient();
 
-    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const isPlaceholder = !supabaseUrl || 
-      supabaseUrl.includes('your-supabase-project-id') || 
-      supabaseUrl.includes('placeholder-project');
-
-    // Update in mock file if present
-    try {
-      if (fs.existsSync(MOCK_WALLETS_PATH)) {
-        let all = JSON.parse(fs.readFileSync(MOCK_WALLETS_PATH, 'utf-8'));
-        all = all.map((w: any) => {
-          if ((w.user_id === targetUserId || w.user_id === userId) && (w.id === walletId || w.name === walletId)) {
-            return { ...w, name, balance: Number(balance) };
-          }
-          return w;
-        });
-        fs.writeFileSync(MOCK_WALLETS_PATH, JSON.stringify(all, null, 2));
-      }
-    } catch (e) {}
-
-    if (isPlaceholder) {
-      return NextResponse.json({ id: walletId, user_id: targetUserId, name, balance: Number(balance) });
-    }
-
-    if (isUUID(walletId)) {
-      const { data: updated, error } = await supabaseAdmin
-        .from('wallets')
-        .update({ name, balance: Number(balance) })
-        .eq('user_id', targetUserId)
-        .eq('id', walletId)
-        .select()
-        .single();
-
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-      return NextResponse.json(updated);
-    } else {
-      // Non-UUID: match by name
-      const { data: existing } = await supabaseAdmin
-        .from('wallets')
-        .select('*')
-        .eq('user_id', targetUserId);
-      const matched = existing?.find(w => w.id === walletId || w.name.toLowerCase() === name.toLowerCase());
-      if (matched) {
-        const { data: updated } = await supabaseAdmin
-          .from('wallets')
-          .update({ name, balance: Number(balance) })
-          .eq('id', matched.id)
-          .select()
-          .single();
-        return NextResponse.json(updated || matched);
-      }
-      return NextResponse.json({ id: walletId, name, balance: Number(balance) });
-    }
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    const walletId = searchParams.get('walletId');
+    const { walletId, isDefault, balance, name } = await req.json();
+    const userId = user?.id || 'demo-user-123';
 
     if (!walletId) {
-      return NextResponse.json({ error: 'Missing walletId' }, { status: 400 });
+      return NextResponse.json({ ok: false, error: 'walletId wajib diisi' }, { status: 400 });
     }
 
-    const targetUserId = (userId && isUUID(userId)) ? userId : SUPERADMIN_ID;
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const isPlaceholder = !supabaseUrl || 
-      supabaseUrl.includes('your-supabase-project-id') || 
-      supabaseUrl.includes('placeholder-project');
-
-    // Always clean up mock file if it exists
-    try {
-      if (fs.existsSync(MOCK_WALLETS_PATH)) {
-        let all = JSON.parse(fs.readFileSync(MOCK_WALLETS_PATH, 'utf-8'));
-        all = all.filter((w: any) => !( (w.user_id === targetUserId || w.user_id === userId) && (w.id === walletId || w.name === walletId) ));
-        fs.writeFileSync(MOCK_WALLETS_PATH, JSON.stringify(all, null, 2));
-      }
-    } catch (e) {}
-
-    if (isPlaceholder) {
-      return NextResponse.json({ success: true });
+    if (isDefault) {
+      await adminClient.from('wallets').update({ is_default: false }).eq('user_id', userId);
+      await adminClient.from('wallets').update({ is_default: true }).eq('id', walletId);
+      await adminClient.from('profiles').update({ default_wallet_id: walletId }).eq('id', userId);
     }
 
-    if (isUUID(walletId)) {
-      // 1. First remove foreign key references in transactions to prevent constraint violation
-      try {
-        await supabaseAdmin
-          .from('transactions')
-          .delete()
-          .eq('user_id', targetUserId)
-          .eq('wallet_id', walletId);
+    const updatePayload: any = { updated_at: new Date().toISOString() };
+    if (balance !== undefined) updatePayload.balance = parseFloat(balance);
+    if (name !== undefined) updatePayload.name = name;
 
-        await supabaseAdmin
-          .from('transactions')
-          .delete()
-          .eq('user_id', targetUserId)
-          .eq('transfer_to_wallet_id', walletId);
-      } catch (fkErr) {
-        console.warn('Failed to cleanup transactions for deleted wallet:', fkErr);
-      }
+    const { data: updatedWallet, error } = await adminClient
+      .from('wallets')
+      .update(updatePayload)
+      .eq('id', walletId)
+      .select()
+      .single();
 
-      // 2. Delete the wallet
-      const { error } = await supabaseAdmin
-        .from('wallets')
-        .delete()
-        .eq('user_id', targetUserId)
-        .eq('id', walletId);
-
-      if (error) {
-        console.error('Delete wallet error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-
-      // 3. If there are remaining wallets and none is default, set the first one as default
-      try {
-        const { data: remaining } = await supabaseAdmin
-          .from('wallets')
-          .select('*')
-          .eq('user_id', targetUserId);
-        
-        if (remaining && remaining.length > 0 && !remaining.some(w => w.is_default)) {
-          await supabaseAdmin
-            .from('wallets')
-            .update({ is_default: true })
-            .eq('id', remaining[0].id);
-        }
-      } catch (e) {}
-    } else {
-      // Non-UUID mock wallet ID: also attempt deleting by name if a match exists in Supabase
-      try {
-        const { data: matchedWallets } = await supabaseAdmin
-          .from('wallets')
-          .select('*')
-          .eq('user_id', targetUserId);
-        
-        const matched = matchedWallets?.find(w => w.id === walletId || w.name.toLowerCase() === walletId.toLowerCase());
-        if (matched) {
-          await supabaseAdmin.from('transactions').delete().eq('user_id', targetUserId).eq('wallet_id', matched.id);
-          await supabaseAdmin.from('transactions').delete().eq('user_id', targetUserId).eq('transfer_to_wallet_id', matched.id);
-          await supabaseAdmin.from('wallets').delete().eq('id', matched.id);
-        }
-      } catch (e) {}
+    if (error) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ ok: true, wallet: updatedWallet });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }

@@ -319,8 +319,24 @@ export async function PATCH(request: Request) {
       // 2. Update / ensure Profile plan
       if (plan !== undefined) {
         try {
-          const dbPlan = plan === 'Basic' ? 'Starter' : plan;
-          await supabaseAdmin.from('profiles').update({ plan: dbPlan }).eq('id', userId);
+          const p = String(plan).toLowerCase();
+          const dbPlan = (p === 'pro') ? 'Pro' : 'Starter';
+          const isPro = dbPlan === 'Pro';
+          await supabaseAdmin.from('profiles').update({
+            plan: dbPlan,
+            monthly_transaction_limit: isPro ? 999999 : 50,
+            updated_at: new Date().toISOString()
+          }).eq('id', userId);
+
+          // Synchronize auth metadata
+          const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
+          const existingMeta = userData?.user?.user_metadata || {};
+          await supabaseAdmin.auth.admin.updateUserById(userId, {
+            user_metadata: {
+              ...existingMeta,
+              plan: dbPlan
+            }
+          });
         } catch (profErr) {
           console.warn('Error updating profile plan:', profErr);
         }

@@ -1,19 +1,18 @@
-import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
-import { sendMessage } from '@/lib/telegram';
+import { NextRequest, NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/server';
+import { sendTelegramMessage } from '@/lib/telegram';
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
-    const { order_id, transaction_status, payment_type } = body;
+    const body = await req.json();
+    const { order_id, transaction_status } = body;
 
     if (!order_id) {
       return NextResponse.json({ error: 'Missing order_id' }, { status: 400 });
     }
 
-    console.log(`Midtrans notification received for order_id: ${order_id}, status: ${transaction_status}`);
+    const supabase = createAdminClient();
 
-    // Resolve order status
     let statusUpdate: 'approved' | 'rejected' | 'pending' = 'pending';
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
       statusUpdate = 'approved';
@@ -22,62 +21,47 @@ export async function POST(request: Request) {
     }
 
     if (statusUpdate === 'approved') {
-      // 1. Update Payment Status in DB
-      const { data: payment, error: paymentErr } = await supabaseAdmin
+      const { data: payment } = await supabase
         .from('payments')
-        .update({
-          status: 'approved',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', order_id)
+        .update({ status: 'approved', updated_at: new Date().toISOString() })
+        .eq('order_id', order_id)
         .select()
         .maybeSingle();
 
-      if (paymentErr || !payment) {
-        console.error('Failed to find or update payment record:', paymentErr);
-        return NextResponse.json({ error: 'Payment record not found' }, { status: 404 });
-      }
+      if (payment) {
+        // Upgrade user plan to pro
+        const { data: profile } = await supabase
+          .from('profiles')
+          .update({ plan: 'pro' })
+          .eq('id', payment.user_id)
+          .select()
+          .single();
 
-      // 2. Upgrade User Plan to Pro
-      const { data: profile, error: profileErr } = await supabaseAdmin
-        .from('profiles')
-        .update({
-          plan: 'Pro'
-        })
-        .eq('id', payment.user_id)
-        .select()
-        .single();
+        if (profile && profile.telegram_chat_id) {
+          const botToken = profile.telegram_bot_token || process.env.TELEGRAM_BOT_TOKEN || '';
+          const msg = `🎉 *Pembayaran Berhasil! Akun Kamu Berhasil Diupgrade ke Paket PRO!*
 
-      if (profileErr || !profile) {
-        console.error('Failed to update user profile plan:', profileErr);
-        return NextResponse.json({ error: 'Failed to upgrade profile' }, { status: 500 });
-      }
+Halo *${profile.full_name}*, terima kasih atas pembayaran kamu!
 
-      // 3. Send Notification to User on Telegram
-      if (profile.telegram_chat_id) {
-        const botToken = process.env.TELEGRAM_BOT_TOKEN || '';
-        const decryptedBotToken = profile.telegram_bot_token 
-          ? (await import('@/lib/crypto')).decrypt(profile.telegram_bot_token) 
-          : botToken;
+Sekarang kamu dapat menikmati seluruh fitur unggulan mencatat.id:
+• Transaksi & wallet unlimited
+• Scan foto struk (AI Vision OCR)
+• Link Google Sheet privat otomatis
+• AI Financial Advisor 24/7
 
-        if (decryptedBotToken) {
-          const successMsg = `🎉 <b>Pembayaran Berhasil! Akun Anda Telah Diupgrade Ke PRO!</b>\n\nHalo <b>${profile.full_name || 'Nasabah'}</b>, terima kasih atas pembayaran Anda via <b>${payment_type || 'Midtrans'}</b>.\n\nSekarang Anda telah menikmati semua fitur premium Mencatat Aja:\n• <b>Transaksi Tanpa Batas</b> per bulan\n• <b>OCR Vision</b> untuk membaca foto struk belanja\n• <b>AI Financial Advisor</b> yang aktif 24/7\n• <b>Ekspor Laporan</b> ke Excel & PDF\n• <b>Koneksi Pengingat Kustom</b>\n\nSelamat mengelola keuangan dengan lebih cerdas! 💪`;
-          await sendMessage(decryptedBotToken, profile.telegram_chat_id, successMsg);
+Selamat mengendalikan keuanganmu! 💪`;
+          await sendTelegramMessage(botToken, profile.telegram_chat_id, msg);
         }
       }
     } else if (statusUpdate === 'rejected') {
-      await supabaseAdmin
+      await supabase
         .from('payments')
-        .update({
-          status: 'rejected',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', order_id);
+        .update({ status: 'rejected', updated_at: new Date().toISOString() })
+        .eq('order_id', order_id);
     }
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
-    console.error('Midtrans webhook route error:', err);
-    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

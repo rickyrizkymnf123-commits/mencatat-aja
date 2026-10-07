@@ -144,41 +144,43 @@ export async function POST(request: Request) {
     }
 
     for (const id of targets) {
-      const { data: prof } = await supabaseAdmin
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      let targetEnd = subscriptionEnd;
-      if (daysToAdd !== undefined && daysToAdd !== null) {
-        const baseDate = prof?.subscription_end && new Date(prof.subscription_end).getTime() > Date.now()
-          ? new Date(prof.subscription_end)
-          : new Date();
-        targetEnd = new Date(baseDate.getTime() + Number(daysToAdd) * 86400000).toISOString();
+      let normalizedPlan: 'Starter' | 'Pro' = 'Starter';
+      if (plan !== undefined && plan !== null) {
+        const p = String(plan).toLowerCase();
+        normalizedPlan = (p === 'pro') ? 'Pro' : 'Starter';
+      } else if (isFreeAccess) {
+        normalizedPlan = 'Pro';
       }
 
+      const isPro = normalizedPlan === 'Pro';
       const updatePayload: any = {
+        plan: normalizedPlan,
+        monthly_transaction_limit: isPro ? 999999 : 50,
         updated_at: new Date().toISOString()
       };
 
-      if (plan !== undefined) {
-        updatePayload.plan = plan === 'Starter' ? 'Basic' : plan;
-      } else if (isFreeAccess) {
-        updatePayload.plan = 'Pro';
-      } else if (targetEnd && new Date(targetEnd).getTime() > Date.now()) {
-        updatePayload.plan = 'Pro';
-      }
-
-      if (targetEnd !== undefined) updatePayload.subscription_end = targetEnd;
-      if (isFreeAccess !== undefined) updatePayload.is_free_access = isFreeAccess;
-      if (isActive !== undefined) updatePayload.is_active = isActive;
-      if (notes !== undefined) updatePayload.notes = notes;
-
-      await supabaseAdmin
+      const { error: profUpdateErr } = await supabaseAdmin
         .from('profiles')
         .update(updatePayload)
         .eq('id', id);
+
+      if (profUpdateErr) {
+        console.error(`Error updating profiles table for user ${id}:`, profUpdateErr);
+      }
+
+      // Synchronize Supabase Auth user metadata
+      try {
+        const { data: authUserData } = await supabaseAdmin.auth.admin.getUserById(id);
+        const existingMeta = authUserData?.user?.user_metadata || {};
+        await supabaseAdmin.auth.admin.updateUserById(id, {
+          user_metadata: {
+            ...existingMeta,
+            plan: normalizedPlan
+          }
+        });
+      } catch (authErr) {
+        console.warn(`Could not sync auth metadata for user ${id}:`, authErr);
+      }
     }
 
     return NextResponse.json({

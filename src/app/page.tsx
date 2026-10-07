@@ -1,1156 +1,385 @@
-'use strict';
 'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import {
+  FileSpreadsheet,
+  Bot,
+  CheckCircle,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  ChevronDown,
+  Play,
+  Lock,
+  MessageSquare,
+  Zap,
+} from 'lucide-react';
+import { formatIDR } from '@/lib/telegram';
 
 export default function LandingPage() {
-  const router = useRouter();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'once'>('monthly');
-  const [activeFaq, setActiveFaq] = useState<number | null>(null);
-  
-  // Interactive Chat State for Simulator & Live Dashboard Sync
-  const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'bot'; text: string; time: string; isIncome?: boolean }>>([
-    {
-      sender: 'bot',
-      text: '👋 <b>Halo! Asisten Finansial Mencatat Aja siap.</b>\nKetik transaksi kamu dalam bahasa santai. Contoh: <i>"beli bakso 25rb pake gopay"</i> atau <i>"gajian 8.5jt bca"</i>.',
-      time: '12:00',
-    }
-  ]);
-  const [isTyping, setIsTyping] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Live Sync Dashboard Stats inside Landing Page
-  const [simBalance, setSimBalance] = useState(4850000);
-  const [simExpense, setSimExpense] = useState(1150000);
-  const [simBudgetSpent, setSimBudgetSpent] = useState(450000);
-  const simBudgetLimit = 1500000;
-
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedId = localStorage.getItem('Mencatat Aja_user_id');
-      if (storedId && storedId !== '58c09700-965d-4104-a344-6e599c46deff') {
-        setIsLoggedIn(true);
-      } else {
-        setIsLoggedIn(false);
-      }
-    }
-  }, []);
-
-  // Safe Navigation Handler
-  const handleGoToDashboard = () => {
-    if (typeof window !== 'undefined') {
-      const storedId = localStorage.getItem('Mencatat Aja_user_id');
-      if (storedId && storedId !== '58c09700-965d-4104-a344-6e599c46deff') {
-        router.push('/dashboard');
-        return;
-      }
-    }
-    router.push('/auth?mode=login');
+  const toggleFaq = (index: number) => {
+    setOpenFaq(openFaq === index ? null : index);
   };
-
-  const handleGoToRegister = () => {
-    if (typeof window !== 'undefined') {
-      const storedId = localStorage.getItem('Mencatat Aja_user_id');
-      if (storedId && storedId !== '58c09700-965d-4104-a344-6e599c46deff') {
-        router.push('/dashboard');
-        return;
-      }
-    }
-    router.push('/auth?mode=register');
-  };
-
-  const handleSimulateChat = (userText: string) => {
-    if (!userText.trim()) return;
-
-    const timeNow = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
-    
-    setChatMessages(prev => [...prev, { sender: 'user', text: userText, time: timeNow }]);
-    setChatInput('');
-    setIsTyping(true);
-
-    setTimeout(() => {
-      setIsTyping(false);
-      let replyText = '';
-      const lower = userText.toLowerCase();
-      let isIncome = false;
-      let nominal = 25000;
-      let category = '🍜 Makanan & Minuman';
-      let wallet = '👛 GoPay (Utama)';
-
-      if (lower.includes('bakso') || lower.includes('makan') || lower.includes('kopi') || lower.includes('padang')) {
-        nominal = lower.includes('28') ? 28000 : (lower.includes('22') ? 22000 : (lower.includes('35') ? 35000 : 25000));
-        category = '🍜 Makanan & Minuman';
-        wallet = lower.includes('gopay') ? '📱 GoPay' : (lower.includes('bca') ? '🏦 BCA' : '👛 Cash');
-      } else if (lower.includes('struk') || lower.includes('indomaret') || lower.includes('belanja')) {
-        nominal = lower.includes('145') ? 145000 : (lower.includes('120') ? 120000 : 85000);
-        category = '🛒 Belanja Bulanan';
-        wallet = '🏦 BCA Debit';
-      } else if (lower.includes('bensin') || lower.includes('pertamax') || lower.includes('transport') || lower.includes('gojek')) {
-        nominal = lower.includes('50') ? 50000 : (lower.includes('25') ? 25000 : 30000);
-        category = '🚗 Transportasi & BBM';
-        wallet = '👛 Cash';
-      } else if (lower.includes('gaji') || lower.includes('gajian') || lower.includes('jt') || lower.includes('proyek') || lower.includes('pemasukan')) {
-        isIncome = true;
-        nominal = lower.includes('8.5') ? 8500000 : (lower.includes('5') ? 5000000 : 3500000);
-        category = '💼 Pemasukan / Gaji';
-        wallet = '🏦 Rekening BCA';
-      }
-
-      if (isIncome) {
-        setSimBalance(prev => prev + nominal);
-        replyText = `📅 ${timeNow}
-💰 <b>Pemasukan Berhasil Dicatat!</b>
-├ Nominal : <b>Rp ${nominal.toLocaleString('id-ID')}</b>
-├ Kategori : ${category}
-├ Rekening : ${wallet}
-└ Saldo Baru : <b>Rp ${(simBalance + nominal).toLocaleString('id-ID')}</b>
-
-💪 Mantap! Sisihkan minimal 20% untuk tabungan & investasi ya!`;
-      } else {
-        setSimBalance(prev => Math.max(0, prev - nominal));
-        setSimExpense(prev => prev + nominal);
-        const newSpent = simBudgetSpent + nominal;
-        setSimBudgetSpent(newSpent);
-        const pct = Math.min(100, Math.round((newSpent / simBudgetLimit) * 100));
-
-        replyText = `📅 ${timeNow}
-💸 <b>Pengeluaran Berhasil Dicatat!</b>
-├ Nominal : <b>Rp ${nominal.toLocaleString('id-ID')}</b>
-├ Kategori : ${category}
-├ Dompet : ${wallet}
-└ Sisa Saldo : <b>Rp ${(simBalance - nominal).toLocaleString('id-ID')}</b>
-
-📊 <b>Budget [Makanan]:</b> ${pct}% terpakai
-${generateBar(pct)} — sisa Rp ${Math.max(0, simBudgetLimit - newSpent).toLocaleString('id-ID')}
-💡 Tips: Pengeluaran makananmu masih dalam batas aman hari ini.`;
-      }
-
-      setChatMessages(prev => [...prev, { sender: 'bot', text: replyText, time: timeNow, isIncome }]);
-    }, 700);
-  };
-
-  function generateBar(percentage: number) {
-    const rounded = Math.min(Math.max(Math.round(percentage / 10), 0), 10);
-    return '█'.repeat(rounded) + '░'.repeat(10 - rounded);
-  }
-
-  const presets = [
-    '☕ Kopi Starbucks 45rb gopay',
-    '🍜 Makan Nasi Padang 28rb cash',
-    '⛽ Beli bensin pertamax 50rb',
-    '💼 Gajian bulanan 8.5jt bca',
-    '🛒 Belanja bulanan Indomaret 145rb bca'
-  ];
-
-  const faqs = [
-    {
-      q: 'Bagaimana cara kerja pencatatan via Telegram Bot?',
-      a: 'Cukup kirim pesan teks seperti biasa (misal: "makan siang 35rb pake cash" atau "gajian 8jt bca"). Asisten AI kami akan langsung mengekstrak nominal, dompet, dan kategori secara otomatis dalam hitungan 0.5 detik tanpa perlu mengisi form yang rumit.'
-    },
-    {
-      q: 'Apakah bisa langsung tembus dan melihat dashboard web?',
-      a: 'Tentu saja! Data yang dicatat via bot Telegram langsung tersinkronisasi 100% secara real-time ke Dashboard Web Anda. Anda bisa mengklik tombol "Buka Dashboard" kapan saja untuk melihat grafik, ringkasan saldo, dompet, dan laporan.'
-    },
-    {
-      q: 'Apakah data keuangan saya aman dan privat?',
-      a: 'Sangat aman. Setiap akun memiliki bot Telegram privat sendiri (BYOB - Bring Your Own Bot) dengan enkripsi data setara standar perbankan. Data Anda tidak pernah dibagikan kepada pihak ketiga manapun.'
-    },
-    {
-      q: 'Apakah mendukung scan kuitansi atau struk belanja belanjaan?',
-      a: 'Ya! Dengan teknologi AI Vision OCR kami, Anda cukup memotret struk belanja Indomaret, Alfamart, restoran, maupun nota kuitansi tulisan tangan. Bot akan langsung membaca total belanja dan rincian barangnya secara presisi.'
-    },
-    {
-      q: 'Bagaimana cara mengelola dan memperpanjang langganan Pro?',
-      a: 'Anda dapat mengelola langganan dengan sangat mudah langsung dari menu "Kelola Langganan" di Dashboard. Pembayaran didukung via QRIS/Midtrans instant atau konfirmasi langsung ke Admin WhatsApp resmi.'
-    }
-  ];
 
   return (
-    <div className="landing-root">
-      {/* BULLETPROOF PURE CSS STYLES */}
-      <style jsx global>{`
-        * {
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-
-        body {
-          background-color: #04060d !important;
-          color: #f1f5f9 !important;
-          overflow-x: hidden !important;
-        }
-
-        .landing-root {
-          min-height: 100vh;
-          background: radial-gradient(circle at 50% 0%, #0c1827 0%, #04060d 75%);
-          position: relative;
-          color: #f1f5f9;
-        }
-
-        /* Ambient Glow Backgrounds */
-        .ambient-glow {
-          position: absolute;
-          border-radius: 9999px;
-          filter: blur(120px);
-          pointer-events: none;
-          z-index: 0;
-          opacity: 0.35;
-        }
-        .glow-1 { top: -80px; left: 20%; width: 500px; height: 500px; background: #059669; }
-        .glow-2 { top: 450px; right: 5%; width: 450px; height: 450px; background: #0891b2; }
-        .glow-3 { bottom: 150px; left: 10%; width: 500px; height: 500px; background: #d97706; opacity: 0.2; }
-
-        /* Container Layout */
-        .max-container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 0 24px;
-          position: relative;
-          z-index: 10;
-        }
-
-        /* Header Navbar */
-        .navbar-header {
-          position: sticky;
-          top: 0;
-          z-index: 999;
-          background: rgba(4, 6, 13, 0.85);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          height: 76px;
-          display: flex;
-          align-items: center;
-        }
-        .navbar-content {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          width: 100%;
-        }
-        .brand-logo-unit {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          text-decoration: none;
-        }
-        .luxury-emblem-box {
-          position: relative;
-          width: 44px;
-          height: 44px;
-          border-radius: 14px;
-          background: linear-gradient(135deg, #052e16 0%, #022c22 100%);
-          border: 1px solid rgba(16, 185, 129, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
-        }
-        .brand-text-title {
-          font-size: 1.45rem;
-          font-weight: 900;
-          letter-spacing: -0.5px;
-          color: #ffffff;
-        }
-        .brand-text-accent {
-          background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-        .luxury-pro-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 3px 10px;
-          border-radius: 99px;
-          background: rgba(16, 185, 129, 0.12);
-          border: 1px solid rgba(16, 185, 129, 0.35);
-          color: #34d399;
-          font-size: 0.68rem;
-          font-weight: 800;
-          letter-spacing: 0.8px;
-          text-transform: uppercase;
-          margin-left: 8px;
-        }
-        .nav-links-row {
-          display: flex;
-          align-items: center;
-          gap: 28px;
-        }
-        .nav-link-item {
-          color: #94a3b8;
-          font-size: 0.88rem;
-          font-weight: 600;
-          text-decoration: none;
-          transition: color 0.2s;
-        }
-        .nav-link-item:hover {
-          color: #10b981;
-        }
-
-        /* Buttons */
-        .btn-dash-primary {
-          background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
-          color: #04060d;
-          font-weight: 800;
-          font-size: 0.85rem;
-          padding: 10px 20px;
-          border-radius: 12px;
-          border: none;
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          text-decoration: none;
-          box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
-          transition: all 0.2s ease;
-        }
-        .btn-dash-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 25px rgba(16, 185, 129, 0.5);
-          filter: brightness(1.1);
-        }
-
-        .btn-dash-large {
-          font-size: 1rem;
-          padding: 15px 32px;
-          border-radius: 16px;
-        }
-
-        .btn-dash-secondary {
-          background: rgba(255, 255, 255, 0.05);
-          color: #e2e8f0;
-          font-weight: 700;
-          font-size: 0.9rem;
-          padding: 14px 28px;
-          border-radius: 16px;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          text-decoration: none;
-          transition: all 0.2s;
-        }
-        .btn-dash-secondary:hover {
-          background: rgba(255, 255, 255, 0.1);
-          border-color: rgba(16, 185, 129, 0.4);
-          color: #ffffff;
-        }
-
-        /* Glass Panel */
-        .glass-box {
-          background: rgba(13, 20, 38, 0.75);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-          border: 1px solid rgba(255, 255, 255, 0.09);
-          border-radius: 24px;
-          box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-          padding: 28px;
-        }
-
-        /* Hero Layout */
-        .hero-wrap {
-          text-align: center;
-          padding: 60px 0 40px 0;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 24px;
-        }
-        .hero-top-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 6px 16px;
-          border-radius: 99px;
-          background: rgba(16, 185, 129, 0.1);
-          border: 1px solid rgba(16, 185, 129, 0.35);
-          color: #34d399;
-          font-size: 0.75rem;
-          font-weight: 800;
-          letter-spacing: 0.8px;
-          text-transform: uppercase;
-        }
-        .hero-headline {
-          font-size: clamp(2.4rem, 5.5vw, 4.2rem);
-          font-weight: 900;
-          line-height: 1.15;
-          letter-spacing: -1.2px;
-          max-width: 950px;
-        }
-        .hero-subhead {
-          font-size: clamp(1rem, 2vw, 1.25rem);
-          color: #94a3b8;
-          max-width: 720px;
-          line-height: 1.6;
-        }
-        .hero-cta-group {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 16px;
-          justify-content: center;
-          margin-top: 8px;
-        }
-
-        /* Metrics Bar */
-        .metrics-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 16px;
-          width: 100%;
-          max-width: 900px;
-          margin-top: 20px;
-        }
-        .metric-cell {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          border-radius: 18px;
-          padding: 16px 20px;
-          text-align: left;
-        }
-        .metric-val {
-          font-size: 1.6rem;
-          font-weight: 900;
-          color: #34d399;
-          font-family: monospace;
-        }
-        .metric-desc {
-          font-size: 0.75rem;
-          color: #94a3b8;
-          margin-top: 2px;
-        }
-
-        /* Simulator Stage */
-        .stage-title-wrap {
-          text-align: center;
-          margin: 60px 0 32px 0;
-        }
-        .stage-title {
-          font-size: clamp(1.8rem, 3.5vw, 2.5rem);
-          font-weight: 900;
-          letter-spacing: -0.5px;
-        }
-        .stage-subtitle {
-          color: #94a3b8;
-          font-size: 0.9rem;
-          margin-top: 6px;
-        }
-        .demo-split-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 24px;
-        }
-        @media (max-width: 860px) {
-          .max-container {
-            padding: 0 16px !important;
-          }
-          .navbar-header {
-            height: 60px !important;
-          }
-          .brand-text-title {
-            font-size: 1.25rem !important;
-          }
-          .luxury-pro-badge {
-            display: none !important;
-          }
-          .auth-nav-link {
-            display: none !important;
-          }
-          .btn-dash-primary {
-            padding: 8px 14px !important;
-            font-size: 0.8rem !important;
-          }
-          .floating-dash-pill {
-            display: none !important;
-          }
-          .demo-split-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .nav-links-row {
-            display: none !important;
-          }
-          .hero-wrap {
-            padding: 32px 0 20px 0 !important;
-            gap: 16px !important;
-          }
-          .hero-headline {
-            font-size: 1.95rem !important;
-            letter-spacing: -0.5px !important;
-            line-height: 1.25 !important;
-          }
-          .hero-subhead {
-            font-size: 0.9rem !important;
-            line-height: 1.5 !important;
-          }
-          .hero-cta-group {
-            flex-direction: column !important;
-            width: 100% !important;
-            gap: 10px !important;
-          }
-          .hero-cta-group > * {
-            width: 100% !important;
-            justify-content: center !important;
-          }
-          .metrics-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 10px !important;
-          }
-          .metric-cell {
-            padding: 12px 14px !important;
-          }
-          .metric-val {
-            font-size: 1.35rem !important;
-          }
-          .glass-box {
-            padding: 18px 16px !important;
-            border-radius: 20px !important;
-          }
-          .bento-layout {
-            grid-template-columns: 1fr !important;
-            gap: 14px !important;
-          }
-          .pricing-wrap {
-            grid-template-columns: 1fr !important;
-            gap: 16px !important;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .hero-headline {
-            font-size: 1.65rem !important;
-          }
-          .metrics-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 8px !important;
-          }
-          .metric-cell {
-            padding: 10px 12px !important;
-          }
-          .metric-val {
-            font-size: 1.2rem !important;
-          }
-          .chat-stream-box {
-            height: 250px !important;
-          }
-        }
-
-        /* Chat Stream */
-        .chat-stream-box {
-          height: 320px;
-          overflow-y: auto;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          padding-right: 6px;
-        }
-        .chat-bubble-user {
-          align-self: flex-end;
-          background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
-          color: #ffffff;
-          padding: 10px 16px;
-          border-radius: 18px 18px 2px 18px;
-          font-size: 0.85rem;
-          max-width: 80%;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .chat-bubble-bot {
-          align-self: flex-start;
-          background: rgba(15, 23, 42, 0.9);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: #e2e8f0;
-          padding: 12px 16px;
-          border-radius: 18px 18px 18px 2px;
-          font-size: 0.82rem;
-          font-family: monospace;
-          line-height: 1.5;
-          max-width: 85%;
-          box-shadow: 0 4px 14px rgba(0,0,0,0.4);
-        }
-
-        /* Bento Grid */
-        .bento-layout {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-          gap: 20px;
-          margin-top: 32px;
-        }
-        .bento-item {
-          background: rgba(13, 20, 38, 0.7);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 24px;
-          padding: 28px;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          gap: 16px;
-          transition: all 0.25s ease;
-        }
-        .bento-item:hover {
-          border-color: rgba(16, 185, 129, 0.35);
-          transform: translateY(-3px);
-        }
-        .bento-icon {
-          width: 48px;
-          height: 48px;
-          border-radius: 14px;
-          background: rgba(16, 185, 129, 0.12);
-          border: 1px solid rgba(16, 185, 129, 0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1.6rem;
-        }
-
-        /* Pricing Layout */
-        .pricing-wrap {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-          gap: 24px;
-          max-width: 860px;
-          margin: 32px auto 0 auto;
-        }
-        .pricing-card-pro {
-          background: rgba(13, 20, 38, 0.85);
-          border: 1px solid rgba(16, 185, 129, 0.5);
-          border-radius: 28px;
-          padding: 32px;
-          box-shadow: 0 0 35px rgba(16, 185, 129, 0.25);
-          position: relative;
-        }
-
-        /* Floating Pill */
-        .floating-dash-pill {
-          position: fixed;
-          bottom: 24px;
-          right: 24px;
-          z-index: 9999;
-          background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
-          color: #04060d;
-          font-weight: 800;
-          font-size: 0.85rem;
-          padding: 14px 24px;
-          border-radius: 99px;
-          box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
-          cursor: pointer;
-          border: none;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          transition: transform 0.2s;
-        }
-        .floating-dash-pill:hover {
-          transform: scale(1.06);
-        }
-      `}</style>
-
-      {/* Ambient Radial Lights */}
-      <div className="ambient-glow glow-1"></div>
-      <div className="ambient-glow glow-2"></div>
-      <div className="ambient-glow glow-3"></div>
-
-      {/* NAVBAR */}
-      <header className="navbar-header">
-        <div className="max-container" style={{ width: '100%' }}>
-          <div className="navbar-content">
-            
-            
-            {/* CLEAN SLEEK TEXT BRAND */}
-            <Link href="/" className="brand-logo-unit">
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span className="brand-text-title">
-                  Mencatat<span className="brand-text-accent">Aja</span>
-                </span>
-                <span className="luxury-pro-badge">
-                  💰 AI WEALTH OS
-                </span>
-              </div>
-            </Link>
-
-
-            {/* NAV LINKS */}
-            <nav className="nav-links-row">
-              <a href="#fitur" className="nav-link-item">Fitur Utama</a>
-              <a href="#demo" className="nav-link-item">Live Demo</a>
-              <a href="#pricing" className="nav-link-item">Langganan</a>
-              <a href="#faq" className="nav-link-item">FAQ</a>
-            </nav>
-
-            {/* AUTH & DASHBOARD NAVIGATION */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {isLoggedIn ? (
-                <button onClick={handleGoToDashboard} className="btn-dash-primary" style={{ whiteSpace: 'nowrap' }}>
-                  <span>🚀</span>
-                  <span>Buka Dashboard</span>
-                  <span>➔</span>
-                </button>
-              ) : (
-                <>
-                  <Link href="/auth?mode=login" className="nav-link-item auth-nav-link" style={{ padding: '8px 14px', fontSize: '0.88rem', fontWeight: '700' }}>
-                    Masuk
-                  </Link>
-                  <Link href="/auth?mode=register" className="btn-dash-primary" style={{ whiteSpace: 'nowrap', padding: '9px 18px' }}>
-                    <span>Daftar Gratis</span>
-                    <span>➔</span>
-                  </Link>
-                </>
-              )}
+    <div className="min-h-screen bg-[#040711] text-slate-100 font-sans selection:bg-emerald-500 selection:text-slate-950">
+      {/* 1. NAVBAR (Sticky & Glassmorphism) */}
+      <header className="sticky top-0 z-50 bg-[#040711]/80 backdrop-blur-xl border-b border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center space-x-2.5">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-emerald-500/20">
+              m
             </div>
+            <span className="font-extrabold text-white text-xl tracking-tight">mencatat.id</span>
+          </Link>
 
+          <nav className="hidden md:flex items-center space-x-8 text-xs font-semibold text-slate-400">
+            <a href="#fitur" className="hover:text-emerald-400 transition-colors">Fitur Utama</a>
+            <a href="#demo" className="hover:text-emerald-400 transition-colors">Demo Interactive</a>
+            <a href="#harga" className="hover:text-emerald-400 transition-colors">Paket & Harga</a>
+            <a href="#faq" className="hover:text-emerald-400 transition-colors">FAQ</a>
+          </nav>
+
+          <div className="flex items-center space-x-3">
+            <Link href="/login" className="text-xs font-bold text-slate-300 hover:text-white px-3.5 py-2">
+              Masuk
+            </Link>
+            <Link
+              href="/register"
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-2 rounded-xl text-xs font-black shadow-lg shadow-emerald-500/20 transition-all hover:scale-105"
+            >
+              Coba Gratis
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* HERO SECTION */}
-      <main className="max-container" style={{ paddingTop: '20px', paddingBottom: '80px' }}>
-        
-        <div className="hero-wrap">
-          <div className="hero-top-pill">
-            <span>✨</span> Next-Gen AI Financial Operating System 3.2
+      {/* 2 - 6. HERO SECTION ($1B Dark Glow Aesthetic) */}
+      <section className="relative pt-16 pb-24 overflow-hidden bg-grid-pattern">
+        {/* Glow Spheres */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-emerald-500/20 blur-[130px] rounded-full pointer-events-none" />
+
+        <div className="max-w-5xl mx-auto px-4 text-center space-y-8 relative z-10">
+          {/* Pre-headline Badge */}
+          <div className="inline-flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-4 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-emerald-500/5 backdrop-blur-md">
+            <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
+            <span>✨ Catat keuangan langsung dari Telegram kamu</span>
           </div>
 
-          <h1 className="hero-headline">
-            Catat Keuangan Instan Lewat Telegram,{' '}
-            <span className="brand-text-accent">Langsung Tembus ke Dashboard.</span>
+          {/* Headline H1 */}
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight leading-[1.1] max-w-4xl mx-auto">
+            Gaji habis sebelum akhir bulan? <br />
+            Saatnya tahu <span className="gradient-text-emerald">ke mana uangmu pergi.</span>
           </h1>
 
-          <p className="hero-subhead">
-            Bicara atau ketik transaksi dalam bahasa sehari-hari. AI canggih mengurai nominal, kategori, & dompet dalam 0.5 detik dan otomatis tersinkronisasi live ke dashboard finansial Anda.
+          {/* Sub-headline */}
+          <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed">
+            mencatat.id mencatat setiap pengeluaranmu langsung dari chat Telegram atau foto struk — sisanya kami yang urus secara otomatis.
           </p>
 
-          <div className="hero-cta-group">
-            {isLoggedIn ? (
-              <button onClick={handleGoToDashboard} className="btn-dash-primary btn-dash-large">
-                <span>🚀 Buka Dashboard Saya</span>
-                <span>➔</span>
-              </button>
-            ) : (
-              <>
-                <button onClick={handleGoToRegister} className="btn-dash-primary btn-dash-large">
-                  <span>🚀 Mulai Sekarang (Daftar Gratis)</span>
-                  <span>➔</span>
-                </button>
-                <Link href="/auth?mode=login" className="btn-dash-secondary">
-                  <span>🔑 Masuk ke Akun</span>
-                </Link>
-              </>
-            )}
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+            <Link
+              href="/register"
+              className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 px-8 py-4 rounded-2xl text-sm font-black shadow-xl shadow-emerald-500/25 transition-all hover:scale-105 flex items-center justify-center space-x-2"
+            >
+              <span>Mulai Gratis Sekarang</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <a
+              href="#demo"
+              className="w-full sm:w-auto bg-slate-900/80 hover:bg-slate-800 text-slate-200 border border-slate-700 px-7 py-4 rounded-2xl text-sm font-bold shadow-md transition-all flex items-center justify-center space-x-2 backdrop-blur-md"
+            >
+              <span>Lihat cara kerjanya →</span>
+            </a>
           </div>
 
-          <div className="metrics-grid">
-            <div className="metric-cell">
-              <div className="metric-val">0.5s</div>
-              <div className="metric-desc">Kecepatan Parsing AI</div>
-            </div>
-            <div className="metric-cell">
-              <div className="metric-val">100%</div>
-              <div className="metric-desc">Privat & Enkripsi BYOB</div>
-            </div>
-            <div className="metric-cell">
-              <div className="metric-val">Real-time</div>
-              <div className="metric-desc">Sinkronisasi Dashboard</div>
-            </div>
-            <div className="metric-cell">
-              <div className="metric-val">AI OCR</div>
-              <div className="metric-desc">Scan Struk & Kuitansi</div>
+          {/* Hero Video Placeholder */}
+          <div className="pt-12 max-w-4xl mx-auto">
+            {/* TODO: Ganti dengan video demo asli setelah ada beta user */}
+            <div className="relative rounded-3xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-950 aspect-video flex flex-col items-center justify-center group emerald-glow">
+              <div className="h-20 w-20 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform cursor-pointer">
+                <Play className="w-9 h-9 fill-slate-950 ml-1.5" />
+              </div>
+              <span className="text-xs text-slate-200 font-bold mt-4">
+                [ Placeholder Video Demo mencatat.id ]
+              </span>
+              <span className="text-[10px] text-slate-500">Klik untuk memutar penjelasan 1 menit</span>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* SECTION: SIMULATOR & LIVE DASHBOARD WIDGET */}
-        <section id="demo">
-          <div className="stage-title-wrap">
-            <h2 className="stage-title">
-              Coba Langsung Simulator <span className="brand-text-accent">Telegram & Dashboard Live</span>
+      {/* 7 & 8. RELATABLE PROBLEM & SOLUTION */}
+      <section className="py-24 bg-[#070b14] border-y border-slate-800/80">
+        <div className="max-w-5xl mx-auto px-4 space-y-16">
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <span className="text-xs font-bold text-rose-400 uppercase tracking-widest block">Relatable Problem</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              Pernah Mengalami Hal-Hal Ini?
             </h2>
-            <p className="stage-subtitle">
-              Klik preset kalimat di bawah atau ketik kalimat transaksimu sendiri. Dashboard langsung mengupdate saldo & anggaran secara real-time!
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-7 glass-card rounded-3xl space-y-3">
+              <div className="h-12 w-12 rounded-2xl bg-rose-500/15 text-rose-400 flex items-center justify-center text-2xl font-bold border border-rose-500/30">
+                😤
+              </div>
+              <h3 className="text-base font-extrabold text-white">&quot;Buka aplikasi keuangan? Nanti dulu deh...&quot;</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Aplikasi keuangan biasa terlalu ribet. Harus login, pilih kategori bertingkat, akhirnya malas mencatat.
+              </p>
+            </div>
+
+            <div className="p-7 glass-card rounded-3xl space-y-3">
+              <div className="h-12 w-12 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-2xl font-bold border border-amber-500/30">
+                💸
+              </div>
+              <h3 className="text-base font-extrabold text-white">&quot;Kok uangnya habis ya? Padahal tidak beli apa-apa&quot;</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Pengeluaran kecil seperti jajan kopi 20rb, parkir 5rb, atau jajan boba tak pernah tercatat sampai saldo mendadak nol.
+              </p>
+            </div>
+
+            <div className="p-7 glass-card rounded-3xl space-y-3">
+              <div className="h-12 w-12 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-2xl font-bold border border-blue-500/30">
+                📊
+              </div>
+              <h3 className="text-base font-extrabold text-white">&quot;Udah niat bikin budget, tapi seminggu lupa&quot;</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Tanpa pengingat otomatis di aplikasi yang setiap hari kamu buka, budget bulanan cuma tinggal wacana.
+              </p>
+            </div>
+          </div>
+
+          {/* Solution Transition */}
+          <div className="p-8 bg-gradient-to-r from-emerald-950 via-slate-900 to-teal-950 border border-emerald-500/30 text-white rounded-3xl shadow-2xl space-y-4 text-center">
+            <h3 className="text-2xl font-black">
+              Bagaimana kalau mencatat keuangan semudah kirim pesan ke teman?
+            </h3>
+            <p className="text-xs sm:text-sm text-emerald-200 max-w-xl mx-auto leading-relaxed">
+              Introducing <span className="font-extrabold text-white">mencatat.id</span> — Cukup kirim chat <code className="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-mono text-xs border border-emerald-500/30">beli bakso 15rb</code> ke Telegram, sistem kami langsung mencatat dan mengupdate Google Sheet kamu secara otomatis.
             </p>
           </div>
+        </div>
+      </section>
 
-          <div className="demo-split-grid">
-            
-            {/* LEFT: TELEGRAM SIMULATOR */}
-            <div className="glass-box" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'linear-gradient(135deg, #059669, #0891b2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
-                    🤖
+      {/* 9. LIVE INTERACTIVE DEMO PREVIEW */}
+      <section id="demo" className="py-24 bg-[#040711]">
+        <div className="max-w-6xl mx-auto px-4 space-y-12">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest block">Live Interactive Preview</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              Lihat Betapa Mudahnya Mencatat
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            {/* Telegram Bot UI */}
+            <div className="p-6 glass-card rounded-3xl space-y-4 font-sans border border-slate-800">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center space-x-3">
+                  <div className="h-9 w-9 rounded-full bg-emerald-500 flex items-center justify-center text-slate-950 font-black">
+                    m
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: '800', color: '#fff' }}>Mencatat Aja AI Bot</div>
-                    <div style={{ fontSize: '0.72rem', color: '#34d399' }}>● online • respons 0.5s</div>
+                    <span className="text-sm font-bold block text-white">mencatat.id Bot</span>
+                    <span className="text-[10px] text-emerald-400">bot • online</span>
                   </div>
                 </div>
-                <span style={{ fontSize: '0.7rem', padding: '3px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}>
-                  Telegram Dark Mode
-                </span>
               </div>
 
-              {/* Message Stream */}
-              <div className="chat-stream-box">
-                {chatMessages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={msg.sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-bot'}
-                    dangerouslySetInnerHTML={{ __html: msg.text }}
-                  />
-                ))}
-                {isTyping && (
-                  <div style={{ alignSelf: 'flex-start', background: 'rgba(15,23,42,0.8)', padding: '8px 14px', borderRadius: '12px', fontSize: '0.75rem', color: '#34d399', fontFamily: 'monospace' }}>
-                    ⏳ AI sedang menguraikan transaksi...
+              <div className="space-y-4 text-xs font-mono">
+                <div className="flex justify-end">
+                  <div className="bg-emerald-600 text-white px-4 py-2.5 rounded-2xl rounded-tr-none max-w-[80%] font-sans">
+                    beli bakso solo 25rb
                   </div>
-                )}
-              </div>
+                </div>
 
-              {/* Preset Buttons */}
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' }}>
-                <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginBottom: '6px' }}>⚡ Klik Contoh Cepat:</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {presets.map((p, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleSimulateChat(p)}
-                      style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#cbd5e1', padding: '5px 10px', borderRadius: '8px', fontSize: '0.72rem', cursor: 'pointer' }}
-                    >
-                      {p}
-                    </button>
-                  ))}
+                <div className="flex justify-start">
+                  <div className="bg-slate-900 text-slate-200 px-4 py-3 rounded-2xl rounded-tl-none max-w-[90%] border border-slate-800 space-y-1">
+                    <p className="text-slate-400">📅 Rabu, 30 September 2026 — 21:45 WIB</p>
+                    <p className="font-bold text-emerald-400">💸 Pengeluaran tercatat!</p>
+                    <p>├ Nominal : Rp25.000</p>
+                    <p>├ Kategori : 🍜 Makanan</p>
+                    <p>├ Dompet : 👛 Cash / Tunai</p>
+                    <p>├ Catatan : beli bakso solo</p>
+                    <p>└ Saldo : Rp1.225.000</p>
+                    <br />
+                    <p className="text-slate-300">📊 Budget 🍜 Makanan bulan ini:</p>
+                    <p className="text-emerald-400">[████░░░░░░] 40% — sisa Rp900.000</p>
+                    <p className="text-slate-400 text-[11px]">👍 Pengeluaran masih aman terkendali.</p>
+                  </div>
                 </div>
               </div>
-
-              {/* Chat Input Form */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSimulateChat(chatInput);
-                }}
-                style={{ display: 'flex', gap: '8px' }}
-              >
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Ketik misal: 'beli kopi 35rb pake gopay'..."
-                  style={{ flex: 1, padding: '10px 14px', borderRadius: '12px', background: '#02040a', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', fontSize: '0.82rem', outline: 'none' }}
-                />
-                <button
-                  type="submit"
-                  style={{ background: '#10b981', color: '#04060d', border: 'none', borderRadius: '12px', padding: '10px 18px', fontWeight: '800', fontSize: '0.82rem', cursor: 'pointer' }}
-                >
-                  Kirim ➔
-                </button>
-              </form>
-
             </div>
 
-            {/* RIGHT: LIVE DASHBOARD WIDGET */}
-            <div className="glass-box" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }}></span>
-                  <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                    Live Synchronized Dashboard
-                  </span>
-                </div>
-                
-                {/* DIRECT BRIDGE BUTTON */}
-                <button
-                  onClick={handleGoToDashboard}
-                  style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.4)', color: '#34d399', padding: '6px 14px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                >
-                  <span>🔗</span> Buka di Dashboard Penuh ➔
-                </button>
+            {/* Dashboard Sync Preview */}
+            <div className="p-6 glass-card rounded-3xl space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <span className="text-xs font-bold text-slate-400">Live Dashboard Web Sync</span>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">Auto-Sync 0.1s</span>
               </div>
 
-              {/* Stats Summary */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                <div style={{ background: 'rgba(0,0,0,0.4)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Total Saldo Terkini</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '900', color: '#ffffff', fontFamily: 'monospace', marginTop: '4px' }}>
-                    Rp {simBalance.toLocaleString('id-ID')}
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: '#34d399', marginTop: '2px' }}>● Tersinkronisasi Otomatis</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block">Saldo Total</span>
+                  <span className="text-base font-black text-white">Rp9.700.000</span>
                 </div>
-
-                <div style={{ background: 'rgba(0,0,0,0.4)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Total Pengeluaran</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '900', color: '#f87171', fontFamily: 'monospace', marginTop: '4px' }}>
-                    Rp {simExpense.toLocaleString('id-ID')}
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: '#f87171', marginTop: '2px' }}>Bulan Berjalan</div>
+                <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-bold block">Budget Tersisa</span>
+                  <span className="text-base font-black text-amber-400">Rp2.450.000</span>
                 </div>
               </div>
 
-              {/* Budget Progress Meter */}
-              <div style={{ background: 'rgba(0,0,0,0.4)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
-                  <span style={{ fontWeight: '700', color: '#cbd5e1' }}>🍜 Anggaran Makanan & Minuman</span>
-                  <span style={{ fontFamily: 'monospace', color: '#34d399' }}>
-                    Rp {simBudgetSpent.toLocaleString('id-ID')} / Rp {simBudgetLimit.toLocaleString('id-ID')}
-                  </span>
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-xs text-emerald-300 font-bold">
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                  <span>Google Sheet Privat User</span>
                 </div>
-                <div style={{ width: '100%', height: '10px', borderRadius: '99px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      width: `${Math.min(100, Math.round((simBudgetSpent / simBudgetLimit) * 100))}%`,
-                      height: '100%',
-                      borderRadius: '99px',
-                      background: 'linear-gradient(90deg, #10b981, #f59e0b)',
-                      transition: 'width 0.4s ease'
-                    }}
-                  />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94a3b8' }}>
-                  <span>{Math.round((simBudgetSpent / simBudgetLimit) * 100)}% Terpakai</span>
-                  <span>Sisa Rp {Math.max(0, simBudgetLimit - simBudgetSpent).toLocaleString('id-ID')}</span>
-                </div>
+                <span className="text-[10px] text-emerald-400 font-semibold">Live Auto Sync</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-              {/* Wallets */}
-              <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px' }}>
-                  Dompet Terdaftar:
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>🏦 BCA</div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: '800', color: '#fff', marginTop: '2px' }}>Rp 3.500.000</div>
-                  </div>
-                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>📱 GoPay</div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: '800', color: '#fff', marginTop: '2px' }}>Rp 850.000</div>
-                  </div>
-                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>👛 Cash</div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: '800', color: '#fff', marginTop: '2px' }}>Rp 500.000</div>
-                  </div>
-                </div>
+      {/* 10. FITUR SECTION */}
+      <section id="fitur" className="py-24 bg-[#070b14] border-t border-slate-800/80">
+        <div className="max-w-6xl mx-auto px-4 space-y-20">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+            <div className="space-y-4">
+              <div className="h-10 w-10 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold">
+                1
               </div>
+              <h3 className="text-3xl font-extrabold text-white">
+                Catat via Telegram — Teks Natural & Foto Struk AI
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                Cukup ketik kalimat santai seperti &quot;bensin 50k&quot; atau foto struk belanjaanmu. AI mutakhir kami mengenali nominal, jenis transaksi, dan otomatis mengelompokkan ke kategori yang tepat.
+              </p>
+            </div>
+            <div className="p-6 glass-card rounded-3xl border border-slate-800 space-y-3 text-xs">
+              <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-800">
+                <span className="font-bold text-white">Input:</span> &quot;gajian 7.5jt&quot; → <span className="text-emerald-400 font-bold">Terdeteksi Pemasukan Rp7.500.000</span>
+              </div>
+              <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-800">
+                <span className="font-bold text-white">Input:</span> &quot;kopi 25rb&quot; → <span className="text-rose-400 font-bold">Terdeteksi Pengeluaran Rp25.000</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-              {/* Direct Access Action */}
+      {/* 12. PRICING SECTION */}
+      <section id="harga" className="py-24 bg-[#040711]">
+        <div className="max-w-5xl mx-auto px-4 space-y-12">
+          <div className="text-center max-w-2xl mx-auto space-y-4">
+            <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest block">Paket & Harga</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white">Pilih Paket Yang Pas Untuk Keuanganmu</h2>
+
+            <div className="inline-flex items-center bg-slate-900 p-1.5 rounded-2xl border border-slate-800">
               <button
-                onClick={handleGoToDashboard}
-                className="btn-dash-primary"
-                style={{ width: '100%', justifyContent: 'center', padding: '14px' }}
+                onClick={() => setBillingCycle('monthly')}
+                className={`px-5 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                  billingCycle === 'monthly' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400'
+                }`}
               >
-                <span>🚀 Buka & Gunakan Dashboard Sekarang (Gratis)</span>
-                <span>➔</span>
+                Bulanan
               </button>
-
-            </div>
-
-          </div>
-        </section>
-
-        {/* SECTION: BENTO GRID FEATURES */}
-        <section id="fitur" style={{ marginTop: '80px' }}>
-          <div className="stage-title-wrap">
-            <h2 className="stage-title">
-              Fitur Dirancang untuk <span className="brand-text-accent">Kecepatan & Privasi Maksimal</span>
-            </h2>
-            <p className="stage-subtitle">Semua kebutuhan manajemen arus kas dalam satu sistem AI pintar.</p>
-          </div>
-
-          <div className="bento-layout">
-            <div className="bento-item">
-              <div className="bento-icon">🤖</div>
-              <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#fff' }}>AI Natural Language Parsing</h3>
-                <p style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: '1.5', marginTop: '6px' }}>
-                  Ketik transaksi gaya santai. AI mengenali nominal ribuan/jutaan dan kategori otomatis.
-                </p>
-              </div>
-              <button onClick={handleGoToDashboard} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
-                Coba di Dashboard ➔
-              </button>
-            </div>
-
-            <div className="bento-item">
-              <div className="bento-icon">📸</div>
-              <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#fff' }}>OCR Scan Struk & Kuitansi</h3>
-                <p style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: '1.5', marginTop: '6px' }}>
-                  Cukup foto struk belanja kasir atau kuitansi manual. AI Vision membaca rincian otomatis.
-                </p>
-              </div>
-              <button onClick={handleGoToDashboard} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
-                Coba di Dashboard ➔
-              </button>
-            </div>
-
-            <div className="bento-item">
-              <div className="bento-icon">👛</div>
-              <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#fff' }}>Multi-Dompet & Transfer</h3>
-                <p style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: '1.5', marginTop: '6px' }}>
-                  Kelola Rekening Bank, E-Wallet (GoPay, OVO), dan Uang Tunai dengan mutasi transfer instan.
-                </p>
-              </div>
-              <button onClick={handleGoToRegister} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
-                {isLoggedIn ? 'Buka di Dashboard ➔' : 'Coba Sekarang ➔'}
-              </button>
-            </div>
-
-            <div className="bento-item">
-              <div className="bento-icon">🎯</div>
-              <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#fff' }}>Target & Peringatan Budget</h3>
-                <p style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: '1.5', marginTop: '6px' }}>
-                  Tetapkan batas pengeluaran bulanan dan dapatkan peringatan proaktif saat mendekati batas.
-                </p>
-              </div>
-              <button onClick={handleGoToRegister} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
-                {isLoggedIn ? 'Buka di Dashboard ➔' : 'Coba Sekarang ➔'}
-              </button>
-            </div>
-
-            <div className="bento-item">
-              <div className="bento-icon">📊</div>
-              <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#fff' }}>Ekspor Laporan PDF & Excel</h3>
-                <p style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: '1.5', marginTop: '6px' }}>
-                  Unduh rekapitulasi keuangan bulanan berformat PDF elegan atau spreadsheet Excel lengkap.
-                </p>
-              </div>
-              <button onClick={handleGoToRegister} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
-                {isLoggedIn ? 'Buka di Dashboard ➔' : 'Coba Sekarang ➔'}
-              </button>
-            </div>
-
-            <div className="bento-item">
-              <div className="bento-icon">🔒</div>
-              <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#fff' }}>100% Private BYOB Bot</h3>
-                <p style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: '1.5', marginTop: '6px' }}>
-                  Gunakan token bot Telegram pribadi Anda sendiri dari @BotFather untuk keamanan penuh.
-                </p>
-              </div>
-              <button onClick={handleGoToRegister} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '800', fontSize: '0.8rem', cursor: 'pointer', textAlign: 'left' }}>
-                {isLoggedIn ? 'Buka di Dashboard ➔' : 'Coba Sekarang ➔'}
+              <button
+                onClick={() => setBillingCycle('yearly')}
+                className={`px-5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 ${
+                  billingCycle === 'yearly' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400'
+                }`}
+              >
+                <span>Tahunan</span>
+                <span className="bg-amber-400 text-slate-950 text-[9px] px-1.5 py-0.5 rounded-full font-black uppercase">Hemat 20%</span>
               </button>
             </div>
           </div>
-        </section>
 
-        {/* SECTION: PRICING */}
-        <section id="pricing" style={{ marginTop: '80px' }}>
-          <div className="stage-title-wrap">
-            <h2 className="stage-title">
-              Pilihan Paket <span className="brand-text-accent">Transparan & Terjangkau</span>
-            </h2>
-            <p className="stage-subtitle">Mulai gratis sekarang. Upgrade Pro kapan saja untuk kapasitas tanpa batas.</p>
-          </div>
-
-          <div className="pricing-wrap">
-            {/* Basic */}
-            <div className="glass-box" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px' }}>
-              <div>
-                <div style={{ fontSize: '1.2rem', fontWeight: '800', color: '#fff' }}>Basic (Gratis)</div>
-                <div style={{ fontSize: '2rem', fontWeight: '900', color: '#fff', fontFamily: 'monospace', margin: '10px 0' }}>
-                  Rp 0 <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>/ selamanya</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Starter */}
+            <div className="p-8 glass-card rounded-3xl space-y-6 flex flex-col justify-between">
+              <div className="space-y-4">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400 block">Starter</span>
+                <div className="flex items-baseline space-x-1">
+                  <span className="text-4xl font-black text-white">{billingCycle === 'monthly' ? 'Rp49.000' : 'Rp39.000'}</span>
+                  <span className="text-xs text-slate-400">/ bulan</span>
                 </div>
-                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.82rem', color: '#cbd5e1' }}>
-                  <li>✓ Hingga 50 transaksi per bulan</li>
-                  <li>✓ 2 Dompet Aktif (Cash & Bank)</li>
-                  <li>✓ Integrasi Bot Telegram Standar</li>
-                  <li>✓ Web Dashboard & Ringkasan Saldo</li>
+                <ul className="space-y-3 text-xs text-slate-300 pt-4">
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>Catat via teks Telegram</span></li>
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>Dashboard web lengkap</span></li>
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>Maksimal 50 transaksi / bulan</span></li>
                 </ul>
               </div>
-              <button onClick={handleGoToRegister} className="btn-dash-secondary" style={{ width: '100%', justifyContent: 'center' }}>
-                {isLoggedIn ? 'Buka Dashboard' : 'Daftar Gratis Sekarang'}
-              </button>
+              <Link href="/register?plan=starter" className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-extrabold text-xs text-center transition-all border border-slate-700">
+                Pilih Starter
+              </Link>
             </div>
 
             {/* Pro */}
-            <div className="pricing-card-pro" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '20px' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#fff' }}>Pro Member 💎</div>
-                  <span style={{ fontSize: '0.68rem', fontWeight: '800', padding: '3px 8px', borderRadius: '6px', background: '#f59e0b', color: '#04060d' }}>
-                    PALING POPULER
-                  </span>
+            <div className="p-8 bg-gradient-to-b from-emerald-950 via-slate-900 to-teal-950 text-white rounded-3xl shadow-2xl space-y-6 relative flex flex-col justify-between border border-emerald-500/40 emerald-glow">
+              <span className="absolute -top-3.5 right-8 bg-emerald-400 text-slate-950 text-[10px] font-black uppercase px-3 py-1 rounded-full">
+                Paling Populer
+              </span>
+              <div className="space-y-4">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-400 block">Pro</span>
+                <div className="flex items-baseline space-x-1">
+                  <span className="text-4xl font-black text-white">{billingCycle === 'monthly' ? 'Rp99.000' : 'Rp79.000'}</span>
+                  <span className="text-xs text-emerald-200">/ bulan</span>
                 </div>
-                <div style={{ fontSize: '2rem', fontWeight: '900', color: '#34d399', fontFamily: 'monospace', margin: '10px 0' }}>
-                  Rp 29.000 <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>/ bulan</span>
-                </div>
-                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.82rem', color: '#cbd5e1' }}>
-                  <li>✓ <b>Unlimited</b> Transaksi & Chat AI</li>
-                  <li>✓ <b>Unlimited</b> Dompet & Rekening</li>
-                  <li>✓ <b>AI Vision OCR</b> Scan Struk Kuitansi</li>
-                  <li>✓ <b>Ekspor Dokumen</b> Excel & PDF Pro</li>
-                  <li>✓ <b>Custom Bot Token</b> (Privat Penuh)</li>
-                  <li>✓ Modul <b>Kelola Langganan</b> Lengkap</li>
+                <ul className="space-y-3 text-xs text-emerald-100 pt-4">
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span className="font-bold">Unlimited transaksi & wallet</span></li>
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>Foto struk (AI OCR)</span></li>
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>Google Sheet privat</span></li>
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>AI Financial Advisor</span></li>
                 </ul>
               </div>
-              <button onClick={handleGoToRegister} className="btn-dash-primary" style={{ width: '100%', justifyContent: 'center', padding: '14px' }}>
-                {isLoggedIn ? '🚀 Buka Dashboard & Upgrade Pro' : '🚀 Daftar & Akses Pro'}
-              </button>
+              <Link href="/register?plan=pro" className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-2xl font-black text-xs text-center transition-all shadow-lg shadow-emerald-500/20">
+                Upgrade ke Pro Sekarang
+              </Link>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* FAQ */}
-        <section id="faq" style={{ marginTop: '80px', maxWidth: '800px', margin: '80px auto 0 auto' }}>
-          <div className="stage-title-wrap">
-            <h2 className="stage-title">Pertanyaan yang Sering Diajukan</h2>
+      {/* 13. FAQ */}
+      <section id="faq" className="py-24 bg-[#070b14]">
+        <div className="max-w-4xl mx-auto px-4 space-y-8">
+          <div className="text-center space-y-2">
+            <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">Pertanyaan Umum</span>
+            <h2 className="text-3xl font-extrabold text-white">FAQ</h2>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {faqs.map((faq, index) => {
-              const isOpen = activeFaq === index;
-              return (
-                <div key={index} className="glass-box" style={{ padding: '18px 24px', cursor: 'pointer' }} onClick={() => setActiveFaq(isOpen ? null : index)}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: '700', fontSize: '0.9rem', color: '#fff' }}>
-                    <span>{faq.q}</span>
-                    <span style={{ color: '#10b981', fontSize: '1.2rem' }}>{isOpen ? '−' : '+'}</span>
-                  </div>
-                  {isOpen && (
-                    <div style={{ fontSize: '0.82rem', color: '#94a3b8', lineHeight: '1.6', marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' }}>
-                      {faq.a}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-      </main>
-
-      {/* FLOATING QUICK BRIDGE BUTTON */}
-      <button onClick={handleGoToRegister} className="floating-dash-pill">
-        <span>✨</span>
-        <span>{isLoggedIn ? 'Buka Dashboard' : 'Daftar Sekarang'}</span>
-        <span>➔</span>
-      </button>
-
-      {/* FOOTER */}
-      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.08)', background: '#020307', padding: '40px 0', textAlign: 'center', fontSize: '0.78rem', color: '#64748b' }}>
-        <div className="max-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: '#fff', fontWeight: '800' }}>Mencatat<span style={{ color: '#10b981' }}>Aja</span> AI Financial OS</span>
-            <span>© 2026</span>
-          </div>
-          <div style={{ display: 'flex', gap: '20px' }}>
-            <a href="#fitur" style={{ color: '#94a3b8', textDecoration: 'none' }}>Fitur</a>
-            <a href="#pricing" style={{ color: '#94a3b8', textDecoration: 'none' }}>Langganan</a>
-            {isLoggedIn ? (
-              <button onClick={handleGoToDashboard} style={{ background: 'none', border: 'none', color: '#34d399', fontWeight: '700', cursor: 'pointer' }}>Buka Dashboard</button>
-            ) : (
-              <Link href="/auth?mode=login" style={{ color: '#34d399', fontWeight: '700', textDecoration: 'none' }}>Masuk Akun</Link>
-            )}
+          <div className="space-y-4">
+            {[
+              { q: 'Apakah bisa menggunakan foto struk di Paket Starter?', a: 'Fitur input via foto struk (AI OCR) tersedia khusus untuk pengguna Paket Pro. Pengguna Starter dapat mencatat melalui teks natural di Telegram.' },
+              { q: 'Bagaimana dengan keamanan data Google Sheet saya?', a: 'Google Sheet dibuat secara privat di Drive milik kamu sendiri. Admin mencatat.id tidak memiliki akses ke isi transaksi Google Sheet kamu.' },
+              { q: 'Apakah 1 bot Telegram digunakan oleh banyak pengguna?', a: 'Ya, 1 bot resmi mencatat.id digunakan bersama oleh seluruh pengguna. Sistem membedakan pemilik transaksi berdasarkan nomor HP dan Chat ID.' },
+            ].map((faq, idx) => (
+              <div key={idx} className="p-5 glass-card rounded-2xl border border-slate-800">
+                <button onClick={() => toggleFaq(idx)} className="w-full flex items-center justify-between text-left font-bold text-sm text-white">
+                  <span>{faq.q}</span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${openFaq === idx ? 'rotate-180' : ''}`} />
+                </button>
+                {openFaq === idx && <p className="text-xs text-slate-400 mt-3 pt-3 border-t border-slate-800 leading-relaxed">{faq.a}</p>}
+              </div>
+            ))}
           </div>
         </div>
-      </footer>
+      </section>
 
+      {/* FOOTER */}
+      <footer className="bg-[#020409] text-slate-400 py-16 text-xs border-t border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <p>© 2026 mencatat.id. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }

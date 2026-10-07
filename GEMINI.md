@@ -1,12 +1,14 @@
-# Gemini AI Configuration Notes - TataDana
+# GEMINI.md - mencatat.id User Preferences & System Notes
 
-## Integrasi Model AI
-1. **Gemini 2.5 Flash:** Diprioritaskan sebagai model default untuk parsing kalimat natural bahasa Indonesia, transkripsi voice note, dan OCR Vision foto struk karena kecepatannya dan dukungannya terhadap format JSON secara native.
-2. **OpenAI GPT-4o-mini & Whisper:** Digunakan sebagai provider alternatif / failover jika Gemini mengalami kendala kuota atau jaringan.
-3. **DeepSeek Chat:** Digunakan sebagai model alternatif untuk parsing teks natural.
-
-## Panduan Coding & Pola Codebase
-- **Next.js Serverless API routes:** Selalu tangani asinkronisasi dengan benar. Hindari `setTimeout` di route handler tanpa `await` karena dapat diputus container serverless. Gunakan helper `await new Promise(resolve => setTimeout(resolve, ms))`.
-- **Blob/Uint8Array Conversions:** Node.js `Buffer` tidak bisa langsung dijadikan parameter `File` constructor di browser/standard JS environment. Ubah menjadi `Uint8Array` sebelum dimasukkan ke constructor `Blob`/`File`.
-- **Escape JSX Special Characters:** Hindari meletakkan karakter seperti `>` atau `<` secara literal di JSX. Gunakan `&gt;` atau `&lt;` untuk mencegah kegagalan Turbopack compile.
-- **Pure CSS/Vanilla CSS Variables:** Gunakan HSL modern untuk tema orange-putih agar fleksibel dan responsif.
+## Guidelines
+- UI/UX Premium Fintech: Modern, clean, $1B Dollar Dark Mode (`#040711`), Emerald Green (`#10b981`), Glassmorphism, high contrast text.
+- Full end-to-end functionality (bukan mock, bukan prototype).
+- Superadmin Utama: `rickyizkymnf123@gmail.com` / `Ds2026` (Auto-approved, role: `admin`).
+- Form Inputs: Selalu sertakan tombol ikon mata (Eye/EyeOff toggle) pada field password untuk mencegah typo.
+- Alur ACC Admin: User baru berstatus `pending` dan wajib di-ACC oleh Admin via `/admin` sebelum bisa mengakses dashboard.
+- Endpoint Login Server-Side: Menggunakan `/api/auth/login` untuk penanganan kredensial & auto-recovery Superadmin yang andal.
+- Idempotent Telegram Webhook endpoint.
+- Structured LLM output for natural language expense parsing (Handling Rp, rb, jt, k, dll).
+- Automatic Google Sheets provisioning per user upon registration.
+- Plan tiers (Starter Rp49k/mo vs Pro Rp99k/mo) strictly enforced.
+- WIB (Asia/Jakarta) timezone formatting across bot and web app.
