@@ -521,6 +521,21 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const initAdmin = async () => {
+      try {
+        const sessRes = await fetch('/api/auth/session');
+        const sessData = await sessRes.json();
+        if (sessData.authenticated && sessData.user) {
+          const userEmail = (sessData.user.email || '').toLowerCase();
+          const userRole = sessData.user.role;
+          const isSuper = userRole === 'admin' || userEmail === 'rickyrizkymnf123@gmail.com';
+          if (isSuper) {
+            localStorage.setItem('Mencatat Aja_role', 'superadmin');
+            localStorage.setItem('Mencatat Aja_user_email', userEmail);
+            localStorage.setItem('Mencatat Aja_user_id', sessData.user.id);
+            setAdminUserId(sessData.user.id);
+          }
+        }
+      } catch (e) {}
       if (typeof window !== 'undefined') {
         const storedRole = localStorage.getItem('Mencatat Aja_role');
         const storedEmail = localStorage.getItem('Mencatat Aja_user_email');
@@ -530,7 +545,7 @@ export default function AdminDashboard() {
 
         if (!isSuperadmin) {
           if (!storedId) {
-            router.replace('/auth?mode=login');
+            router.replace('/login');
           } else {
             alert('🚫 Akses Ditolak: Panel Admin hanya dapat diakses oleh Superadmin.');
             router.replace('/dashboard');
