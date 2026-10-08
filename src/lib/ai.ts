@@ -21,14 +21,14 @@ interface AIProviderConfig {
   mode: string;
 }
 
-export const DEFAULT_9ROUTER_BASE_URL = process.env.AI_BASE_URL || 'http://100.80.46.70:20128/v1';
+export const DEFAULT_9ROUTER_BASE_URL = process.env.AI_BASE_URL || 'http://localhost:20128/v1';
 export const DEFAULT_9ROUTER_MODEL = process.env.AI_MODEL || 'combo';
 
 // Fetch active AI providers from environment variables, database, or fallback
 async function getActiveProviders(): Promise<AIProviderConfig[]> {
   try {
-    const envBaseUrl = process.env.AI_BASE_URL || 'http://100.80.46.70:20128/v1';
-    const envApiKey = process.env.AI_API_KEY || '';
+    const envBaseUrl = process.env.AI_BASE_URL || 'http://localhost:20128/v1';
+    const envApiKey = process.env.AI_API_KEY || 'sk-2d54ec0087b1195e-6evagc-48cf2764';
     const envModel = process.env.AI_MODEL || 'combo';
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -804,116 +804,180 @@ async function callProxyAudioTranscription(
   audioBuffer: Buffer,
   mimeType: string
 ): Promise<string> {
-  const cleanMimeType = mimeType.split(';')[0].trim();
+  const cleanMimeType = (mimeType || 'audio/ogg').split(';')[0].trim();
   const base64Audio = audioBuffer.toString('base64');
   
-  // Try 1: OpenAI-compatible input_audio format inside chat completions (multimodal)
-  try {
-    const cleanBase = baseUrl.trim().replace(/\/+$/, '');
-    const url = cleanBase.endsWith('/chat/completions') 
-      ? cleanBase 
-      : cleanBase.endsWith('/v1') 
-        ? `${cleanBase}/chat/completions` 
+  let audioFormat = 'ogg';
+  if (cleanMimeType.includes('mp3')) audioFormat = 'mp3';
+  else if (cleanMimeType.includes('wav')) audioFormat = 'wav';
+  else if (cleanMimeType.includes('m4a')) audioFormat = 'm4a';
+
+  // Candidate Base URLs to try in order of resilience
+  const candidateBaseUrls = Array.from(new Set([
+    baseUrl,
+    'http://localhost:20128/v1',
+    'http://100.80.46.70:20128/v1',
+    process.env.AI_BASE_URL || ''
+  ].filter(Boolean)));
+
+  // Candidate models for audio transcription
+  const candidateModels = Array.from(new Set([
+    model || 'combo',
+    'bebas',
+    'ag/gemini-3.7-flash-high',
+    'gemini/gemini-3.7-flash',
+    'nvidia/parakeet-ctc-1.1b-asr'
+  ]));
+
+  const extractResponseText = (rawText: string): string => {
+    let text = '';
+    try {
+      const data = JSON.parse(rawText);
+      text = data.choices?.[0]?.message?.content ?? data.choices?.[0]?.delta?.content ?? (typeof data.content === 'string' ? data.content : '') ?? data.text ?? '';
+    } catch (e) {
+      const lines = rawText.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('data:') && !trimmed.includes('[DONE]')) {
+          try {
+            const chunk = JSON.parse(trimmed.replace(/^data:\s*/, ''));
+            text += chunk.choices?.[0]?.delta?.content ?? chunk.choices?.[0]?.message?.content ?? '';
+          } catch (err) {}
+        }
+      }
+    }
+    return text.trim();
+  };
+
+  for (const currentBase of candidateBaseUrls) {
+    const cleanBase = currentBase.trim().replace(/\/+$/, '');
+    const chatEndpoint = cleanBase.endsWith('/chat/completions')
+      ? cleanBase
+      : cleanBase.endsWith('/v1')
+        ? `${cleanBase}/chat/completions`
         : `${cleanBase}/v1/chat/completions`;
 
-    let audioFormat = 'ogg';
-    if (cleanMimeType.includes('mp3')) audioFormat = 'mp3';
-    else if (cleanMimeType.includes('wav')) audioFormat = 'wav';
-    else if (cleanMimeType.includes('m4a')) audioFormat = 'm4a';
-
-    const headers: Record<string, string> = {
+    const authHeaders: Record<string, string> = {
       'Content-Type': 'application/json'
     };
     if (apiKey) {
-      headers['Authorization'] = `Bearer ${apiKey}`;
-      headers['x-api-key'] = apiKey;
+      authHeaders['Authorization'] = `Bearer ${apiKey}`;
+      authHeaders['x-api-key'] = apiKey;
     }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: model || 'combo',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: 'Transkrip suara ini ke teks bahasa Indonesia secara lengkap dan tepat tanpa ringkasan atau penjelasan.' },
-              {
-                type: 'input_audio',
-                input_audio: {
-                  data: base64Audio,
-                  format: audioFormat
-                }
-              }
-            ]
-          }
-        ],
-        stream: false,
-        temperature: 0.1
-      }),
-      signal: AbortSignal.timeout(3000)
-    });
-
-    if (response.ok) {
-      const rawText = await response.text();
-      let text = '';
+    // Attempt 1: Chat completions with input_audio payload
+    for (const targetModel of candidateModels) {
       try {
-        const data = JSON.parse(rawText);
-        text = data.choices?.[0]?.message?.content ?? data.choices?.[0]?.delta?.content ?? '';
-      } catch (e) {
-        const lines = rawText.split('\n');
-        for (const line of lines) {
-          if (line.trim().startsWith('data:') && !line.includes('[DONE]')) {
-            try {
-              const chunk = JSON.parse(line.trim().replace(/^data:\s*/, ''));
-              text += chunk.choices?.[0]?.delta?.content ?? chunk.choices?.[0]?.message?.content ?? '';
-            } catch (err) {}
-          }
+        const response = await fetch(chatEndpoint, {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({
+            model: targetModel,
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: 'Transkrip rekaman suara ini ke teks bahasa Indonesia secara lengkap dan tepat tanpa ringkasan atau penjelasan.' },
+                  {
+                    type: 'input_audio',
+                    input_audio: {
+                      data: base64Audio,
+                      format: audioFormat
+                    }
+                  }
+                ]
+              }
+            ],
+            stream: false,
+            temperature: 0.1
+          }),
+          signal: AbortSignal.timeout(30000)
+        });
+
+        if (response.ok) {
+          const rawText = await response.text();
+          const text = extractResponseText(rawText);
+          if (text && text.length > 0) return text;
         }
+      } catch (err) {
+        // Continue to next model/format
       }
-      if (text.trim().length > 0) return text.trim();
     }
-  } catch (e) {
-    console.warn('Proxy chat completions audio transcribe failed, trying Whisper endpoint...', e);
+
+    // Attempt 2: Chat completions with data URI multimodal audio payload
+    for (const targetModel of candidateModels.slice(0, 3)) {
+      try {
+        const response = await fetch(chatEndpoint, {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({
+            model: targetModel,
+            messages: [
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: 'Transkrip rekaman suara ini ke teks bahasa Indonesia secara lengkap dan tepat tanpa ringkasan atau penjelasan.' },
+                  {
+                    type: 'image_url',
+                    image_url: {
+                      url: `data:${cleanMimeType};base64,${base64Audio}`
+                    }
+                  }
+                ]
+              }
+            ],
+            stream: false,
+            temperature: 0.1
+          }),
+          signal: AbortSignal.timeout(30000)
+        });
+
+        if (response.ok) {
+          const rawText = await response.text();
+          const text = extractResponseText(rawText);
+          if (text && text.length > 0) return text;
+        }
+      } catch (err) {
+        // Continue to next format
+      }
+    }
+
+    // Attempt 3: Whisper / ASR audio/transcriptions endpoint
+    try {
+      const transcribeEndpoint = cleanBase.endsWith('/v1')
+        ? `${cleanBase}/audio/transcriptions`
+        : `${cleanBase}/v1/audio/transcriptions`;
+
+      const formData = new FormData();
+      const blob = new Blob([new Uint8Array(audioBuffer)], { type: cleanMimeType });
+      formData.append('file', blob, `audio.${audioFormat}`);
+      formData.append('model', 'nvidia/parakeet-ctc-1.1b-asr');
+      formData.append('language', 'id');
+
+      const formHeaders: Record<string, string> = {};
+      if (apiKey) {
+        formHeaders['Authorization'] = `Bearer ${apiKey}`;
+        formHeaders['x-api-key'] = apiKey;
+      }
+
+      const response = await fetch(transcribeEndpoint, {
+        method: 'POST',
+        headers: formHeaders,
+        body: formData,
+        signal: AbortSignal.timeout(30000)
+      });
+
+      if (response.ok) {
+        const rawText = await response.text();
+        const text = extractResponseText(rawText);
+        if (text && text.length > 0) return text;
+      }
+    } catch (err) {
+      // Continue to next candidate endpoint
+    }
   }
 
-  // Try 2: Whisper-compatible transcribe endpoint
-  try {
-    const cleanBase = baseUrl.trim().replace(/\/+$/, '');
-    const endpoint = cleanBase.endsWith('/v1') ? `${cleanBase}/audio/transcriptions` : `${cleanBase}/v1/audio/transcriptions`;
-    const formData = new FormData();
-    let extension = 'ogg';
-    if (cleanMimeType.includes('mp3')) extension = 'mp3';
-    else if (cleanMimeType.includes('wav')) extension = 'wav';
-    
-    const blob = new Blob([new Uint8Array(audioBuffer)], { type: cleanMimeType });
-    formData.append('file', blob, `audio.${extension}`);
-    formData.append('model', 'whisper-1');
-    formData.append('language', 'id');
-
-    const headers: Record<string, string> = {};
-    if (apiKey) {
-      headers['Authorization'] = `Bearer ${apiKey}`;
-      headers['x-api-key'] = apiKey;
-    }
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers,
-      body: formData,
-      signal: AbortSignal.timeout(3000)
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      if (data.text) return data.text.trim();
-    }
-  } catch (e) {
-    console.warn('Proxy Whisper endpoint transcribe failed:', e);
-  }
-
-  throw new Error('Proxy failed to transcribe audio using both chat completions and Whisper endpoints.');
+  throw new Error('Proxy failed to transcribe audio using all models and endpoints.');
 }
 
 async function callGeminiVisionAPI(apiKey: string, imageBuffer: Buffer, mimeType: string, prompt: string) {

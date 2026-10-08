@@ -1,8 +1,8 @@
 {
-  "baseUrl": "http://100.80.46.70:20128/v1",
-  "nineRouterBaseUrl": "http://100.80.46.70:20128/v1",
-  "apiKey": "sk-de71076d511ef08b-i4rka0-10e68572",
-  "geminiApiKey": "sk-de71076d511ef08b-i4rka0-10e68572",
-  "defaultModel": "ag/gemini-3.7-flash-high",
-  "modelName": "ag/gemini-3.7-flash-high"
+  "baseUrl": "http://localhost:20128/v1",
+  "nineRouterBaseUrl": "http://localhost:20128/v1",
+  "apiKey": "sk-2d54ec0087b1195e-6evagc-48cf2764",
+  "geminiApiKey": "sk-2d54ec0087b1195e-6evagc-48cf2764",
+  "defaultModel": "combo",
+  "modelName": "combo"
 }
