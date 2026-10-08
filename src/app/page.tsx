@@ -313,9 +313,10 @@ export default function LandingPage() {
                   <span className="text-xs text-slate-400">/ bulan</span>
                 </div>
                 <ul className="space-y-3 text-xs text-slate-300 pt-4">
-                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>Catat via teks Telegram</span></li>
                   <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>Dashboard web lengkap</span></li>
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>Pencatatan manual via web</span></li>
                   <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>Maksimal 50 transaksi / bulan</span></li>
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>Kelola dompet & kategori custom</span></li>
                 </ul>
               </div>
               <Link href="/register?plan=starter" className="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-extrabold text-xs text-center transition-all border border-slate-700">
@@ -335,10 +336,11 @@ export default function LandingPage() {
                   <span className="text-xs text-emerald-200">/ bulan</span>
                 </div>
                 <ul className="space-y-3 text-xs text-emerald-100 pt-4">
-                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span className="font-bold">Unlimited transaksi & wallet</span></li>
-                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>Foto struk (AI OCR)</span></li>
-                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>Google Sheet privat</span></li>
-                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>AI Financial Advisor</span></li>
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span className="font-bold">🤖 Integrasi Bot Telegram (Chat & Voice Note AI)</span></li>
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span className="font-bold">🚀 Unlimited transaksi & wallet</span></li>
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>📸 Foto struk (AI Vision OCR)</span></li>
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>📊 Google Sheet privat sync</span></li>
+                  <li className="flex items-center space-x-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><span>💡 AI Financial Advisor</span></li>
                 </ul>
               </div>
               <Link href="/register?plan=pro" className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-2xl font-black text-xs text-center transition-all shadow-lg shadow-emerald-500/20">

@@ -93,6 +93,22 @@ export async function POST(request: Request) {
       supabaseUrl.includes('your-supabase-project-id') || 
       supabaseUrl.includes('placeholder-project');
 
+    // 0. Plan Authorization Check: Telegram Bot Connection is PRO-only
+    if (!isPlaceholder && targetUserId) {
+      const { data: userProf } = await supabaseAdmin
+        .from('profiles')
+        .select('plan, role, is_superadmin')
+        .eq('id', targetUserId)
+        .maybeSingle();
+
+      const isProOrAdmin = userProf?.plan === 'Pro' || userProf?.role === 'superadmin' || userProf?.is_superadmin || targetUserId === SUPERADMIN_ID;
+      if (userProf && !isProOrAdmin) {
+        return NextResponse.json({ 
+          error: 'Fitur integrasi Bot Telegram hanya tersedia untuk pengguna paket PRO. Silakan upgrade langganan Anda di menu Kelola Langganan.' 
+        }, { status: 403 });
+      }
+    }
+
     // 1. Auto-detach token from any previous user if it was previously registered
     if (!isPlaceholder) {
       try {

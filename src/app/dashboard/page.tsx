@@ -3726,50 +3726,106 @@ export default function DashboardPage() {
                 {/* Telegram Bot connection tab */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                   <div style={{ paddingBottom: '32px', borderBottom: '1px solid var(--border)' }}>
-                    <h3 style={{ marginBottom: '16px' }}>🤖 Integrasi Telegram Bot</h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '20px', lineHeight: '1.5' }}>
-                      Mencatat keuangan semudah mengirim pesan chat. Hubungkan bot Telegram pribadi Anda menggunakan token dari BotFather.<br />
-                      Jika tidak memiliki bot kustom, gunakan bot global Mencatat Aja dengan mengirimkan token pairing Anda di chat: <b>{telegramToken}</b>
-                    </p>
-                    
-                    <div className="form-group" style={{ maxWidth: '560px', width: '100%' }}>
-                      <label htmlFor="botToken">Token Bot Telegram Kustom (BYOB)</label>
-                      <div className="byob-input-container" style={{ marginTop: '8px' }}>
-                        <input
-                          id="botToken"
-                          type="password"
-                          placeholder="Paste token bot dari @BotFather di sini"
-                          value={botTokenInput}
-                          onChange={e => setBotTokenInput(e.target.value)}
-                          className="byob-input"
-                        />
-                        <div className="byob-btn-group">
-                          <button
-                            type="button"
-                            onClick={handleTestBotConnection}
-                            disabled={botStatus === 'testing'}
-                            className="btn btn-primary byob-btn"
-                          >
-                            {botStatus === 'testing' ? 'Testing...' : 'Test Koneksi'}
-                          </button>
-                          {botStatus === 'connected' && (
-                            <button
-                              type="button"
-                              onClick={handleDisconnectBot}
-                              className="btn btn-outline byob-btn"
-                              style={{ color: 'var(--error)', borderColor: 'var(--error)', fontWeight: '700' }}
-                            >
-                              🔌 Putuskan
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      {botStatusMsg && (
-                        <p style={{ fontSize: '0.85rem', marginTop: '10px', color: botStatus === 'connected' ? 'var(--success)' : 'var(--error)', fontWeight: '600' }}>
-                          {botStatusMsg}
-                        </p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+                      <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        🤖 Integrasi Telegram Bot
+                        <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '6px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', fontWeight: '900' }}>PRO ONLY</span>
+                      </h3>
+                      {userPlan === 'Pro' || userRole === 'superadmin' ? (
+                        <span style={{ fontSize: '0.75rem', fontWeight: '700', padding: '3px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+                          💎 PRO MEMBER AKTIF
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => setActiveTab('langganan')}
+                          style={{ padding: '6px 14px', borderRadius: '10px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', fontWeight: '800', fontSize: '0.82rem', border: 'none', cursor: 'pointer' }}
+                        >
+                          🔒 Upgrade ke Pro
+                        </button>
                       )}
                     </div>
+
+                    {userPlan !== 'Pro' && userRole !== 'superadmin' ? (
+                      <div className="card" style={{ background: 'rgba(13, 20, 38, 0.85)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '16px', padding: '32px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ width: '60px', height: '60px', borderRadius: '18px', background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                          🔒
+                        </div>
+                        <div>
+                          <h4 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#ffffff', marginBottom: '6px' }}>Koneksi Bot Telegram Khusus Paket Pro</h4>
+                          <p style={{ color: 'var(--text-muted)', maxWidth: '520px', margin: '0 auto', fontSize: '0.88rem', lineHeight: '1.6' }}>
+                            Fitur <b>Integrasi Bot Telegram</b> (Pencatatan Cepat via Chat, Voice Note Rekaman Suara AI, & Cek Saldo Otomatis) hanya tersedia untuk pelanggan paket <b>Pro</b>.<br />
+                            Pengguna paket <b>Starter (Basic)</b> dapat mencatat seluruh transaksi keuangan melalui form manual di menu <b>Transaksi</b>.
+                          </p>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', width: '100%', maxWidth: '640px', marginTop: '6px', textAlign: 'left' }}>
+                          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '12px 16px', borderRadius: '10px' }}>
+                            <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.85rem' }}>💬 Chat Teks Natural</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>Cukup ketik "beli bakso 25rb" langsung tercatat otomatis.</div>
+                          </div>
+                          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '12px 16px', borderRadius: '10px' }}>
+                            <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.85rem' }}>🎙️ Voice Note AI</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>Kirim pesan suara dan biarkan AI mentranskrip secara instan.</div>
+                          </div>
+                          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '12px 16px', borderRadius: '10px' }}>
+                            <div style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.85rem' }}>🤖 Bot Pribadi (BYOB)</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>Gunakan bot Telegram khusus milik Anda sendiri tanpa batas.</div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setActiveTab('langganan')}
+                          className="btn btn-primary"
+                          style={{ padding: '10px 28px', fontSize: '0.92rem', fontWeight: '800', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', border: 'none', borderRadius: '10px', cursor: 'pointer', marginTop: '6px', boxShadow: '0 6px 20px rgba(245, 158, 11, 0.25)' }}
+                        >
+                          💎 Upgrade ke Paket Pro Sekarang
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '20px', lineHeight: '1.5' }}>
+                          Mencatat keuangan semudah mengirim pesan chat. Hubungkan bot Telegram pribadi Anda menggunakan token dari BotFather.<br />
+                          Jika tidak memiliki bot kustom, gunakan bot global Mencatat Aja dengan mengirimkan token pairing Anda di chat: <b>{telegramToken}</b>
+                        </p>
+                        
+                        <div className="form-group" style={{ maxWidth: '560px', width: '100%' }}>
+                          <label htmlFor="botToken">Token Bot Telegram Kustom (BYOB)</label>
+                          <div className="byob-input-container" style={{ marginTop: '8px' }}>
+                            <input
+                              id="botToken"
+                              type="password"
+                              placeholder="Paste token bot dari @BotFather di sini"
+                              value={botTokenInput}
+                              onChange={e => setBotTokenInput(e.target.value)}
+                              className="byob-input"
+                            />
+                            <div className="byob-btn-group">
+                              <button
+                                type="button"
+                                onClick={handleTestBotConnection}
+                                disabled={botStatus === 'testing'}
+                                className="btn btn-primary byob-btn"
+                              >
+                                {botStatus === 'testing' ? 'Testing...' : 'Test Koneksi'}
+                              </button>
+                              {botStatus === 'connected' && (
+                                <button
+                                  type="button"
+                                  onClick={handleDisconnectBot}
+                                  className="btn btn-outline byob-btn"
+                                  style={{ color: 'var(--error)', borderColor: 'var(--error)', fontWeight: '700' }}
+                                >
+                                  🔌 Putuskan
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          {botStatusMsg && (
+                            <p style={{ fontSize: '0.85rem', marginTop: '10px', color: botStatus === 'connected' ? 'var(--success)' : 'var(--error)', fontWeight: '600' }}>
+                              {botStatusMsg}
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Reminder Settings tab */}
@@ -3777,6 +3833,7 @@ export default function DashboardPage() {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
                       <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                         ⏰ Pengingat Pencatatan Harian (Notifikasi Telegram Nyata)
+                        <span style={{ fontSize: '0.72rem', padding: '3px 8px', borderRadius: '6px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', fontWeight: '900' }}>PRO ONLY</span>
                       </h3>
                       <span style={{ fontSize: '0.75rem', fontWeight: '700', padding: '3px 8px', borderRadius: '6px', background: reminderActive ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.05)', color: reminderActive ? '#10b981' : 'var(--text-muted)' }}>
                         {reminderActive ? '🟢 AKTIF' : '⚪ NONAKTIF'}
@@ -3786,82 +3843,97 @@ export default function DashboardPage() {
                       Kirimkan notifikasi pengingat otomatis ke bot Telegram Anda agar tidak lupa mencatat pengeluaran dan pemasukan setiap hari.
                     </p>
                     
-                    <div className="form-group">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <input
-                          type="checkbox"
-                          id="reminderOn"
-                          checked={reminderActive}
-                          onChange={e => setReminderActive(e.target.checked)}
-                          style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        />
-                        <label htmlFor="reminderOn" style={{ fontSize: '1rem', textTransform: 'none', fontWeight: '700', color: '#ffffff', cursor: 'pointer' }}>
-                          Aktifkan Pengingat Harian ke Telegram
-                        </label>
+                    {userPlan !== 'Pro' && userRole !== 'superadmin' ? (
+                      <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                        <span style={{ fontSize: '0.85rem', color: '#f59e0b', fontWeight: '600' }}>
+                          🔒 Notifikasi pengingat harian otomatis ke Telegram hanya tersedia untuk paket Pro.
+                        </span>
+                        <button
+                          onClick={() => setActiveTab('langganan')}
+                          style={{ padding: '6px 12px', borderRadius: '8px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000', fontWeight: '800', fontSize: '0.78rem', border: 'none', cursor: 'pointer' }}
+                        >
+                          Upgrade ke Pro
+                        </button>
                       </div>
-                    </div>
-
-                    {reminderActive && (
-                      <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginTop: '16px', padding: '20px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-                          <div className="form-group" style={{ margin: 0 }}>
-                            <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Frekuensi Pengingat</label>
-                            <select
-                              className="filter-select"
-                              value={reminderFreq}
-                              onChange={e => setReminderFreq(e.target.value)}
-                              style={{ width: '100%', padding: '10px 14px', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
-                            >
-                              <option value="1">1x Sehari (Sore / Malam)</option>
-                              <option value="2">2x Sehari (Siang & Malam)</option>
-                            </select>
-                          </div>
-
-                          <div className="form-group" style={{ margin: 0 }}>
-                            <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Waktu Pengingat Utama (WIB)</label>
+                    ) : (
+                      <>
+                        <div className="form-group">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <input
-                              type="time"
-                              value={reminderTime1}
-                              onChange={e => setReminderTime1(e.target.value)}
-                              style={{ width: '100%', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                              type="checkbox"
+                              id="reminderOn"
+                              checked={reminderActive}
+                              onChange={e => setReminderActive(e.target.checked)}
+                              style={{ width: '20px', height: '20px', cursor: 'pointer' }}
                             />
+                            <label htmlFor="reminderOn" style={{ fontSize: '1rem', textTransform: 'none', fontWeight: '700', color: '#ffffff', cursor: 'pointer' }}>
+                              Aktifkan Pengingat Harian ke Telegram
+                            </label>
                           </div>
+                        </div>
 
-                          {reminderFreq === '2' && (
-                            <div className="form-group" style={{ margin: 0 }}>
-                              <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Waktu Pengingat Kedua (WIB)</label>
-                              <input
-                                type="time"
-                                value={reminderTime2}
-                                onChange={e => setReminderTime2(e.target.value)}
-                                style={{ width: '100%', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
-                              />
+                        {reminderActive && (
+                          <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginTop: '16px', padding: '20px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                              <div className="form-group" style={{ margin: 0 }}>
+                                <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Frekuensi Pengingat</label>
+                                <select
+                                  className="filter-select"
+                                  value={reminderFreq}
+                                  onChange={e => setReminderFreq(e.target.value)}
+                                  style={{ width: '100%', padding: '10px 14px', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                                >
+                                  <option value="1">1x Sehari (Sore / Malam)</option>
+                                  <option value="2">2x Sehari (Siang & Malam)</option>
+                                </select>
+                              </div>
+
+                              <div className="form-group" style={{ margin: 0 }}>
+                                <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Waktu Pengingat Utama (WIB)</label>
+                                <input
+                                  type="time"
+                                  value={reminderTime1}
+                                  onChange={e => setReminderTime1(e.target.value)}
+                                  style={{ width: '100%', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                                />
+                              </div>
+
+                              {reminderFreq === '2' && (
+                                <div className="form-group" style={{ margin: 0 }}>
+                                  <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Waktu Pengingat Kedua (WIB)</label>
+                                  <input
+                                    type="time"
+                                    value={reminderTime2}
+                                    onChange={e => setReminderTime2(e.target.value)}
+                                    style={{ width: '100%', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '8px', color: '#ffffff' }}
+                                  />
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
 
-                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '6px' }}>
-                          <button
-                            type="button"
-                            onClick={() => handleSaveReminderSettings(false)}
-                            disabled={isSavingReminder}
-                            className="btn btn-primary"
-                            style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: '800', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', border: 'none', borderRadius: '8px', cursor: isSavingReminder ? 'not-allowed' : 'pointer' }}
-                          >
-                            {isSavingReminder ? 'Menyimpan...' : '💾 Simpan Jadwal Pengingat'}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleSaveReminderSettings(true)}
-                            disabled={isSendingTestReminder}
-                            className="btn btn-outline"
-                            style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: '700', color: '#fbbf24', borderColor: 'rgba(245, 158, 11, 0.4)', background: 'rgba(245, 158, 11, 0.08)', borderRadius: '8px', cursor: isSendingTestReminder ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                          >
-                            <span>🔔</span> {isSendingTestReminder ? 'Mengirim...' : 'Tes Kirim Notifikasi Pengingat ke Telegram'}
-                          </button>
-                        </div>
-                      </div>
+                            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                              <button
+                                type="button"
+                                onClick={handleSaveReminderSettings}
+                                disabled={isSavingReminder}
+                                className="btn btn-primary"
+                                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                              >
+                                {isSavingReminder ? 'Menyimpan...' : '💾 Simpan Pengaturan Pengingat'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleSendTestReminder}
+                                disabled={isSendingTestReminder}
+                                className="btn btn-outline"
+                                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                              >
+                                {isSendingTestReminder ? 'Mengirim...' : '🔔 Kirim Test Notifikasi'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                   

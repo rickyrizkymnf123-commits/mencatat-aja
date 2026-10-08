@@ -376,6 +376,20 @@ export async function POST(request: Request) {
       }
     }
     
+    // 4. Plan Restriction: Telegram Bot connection & transactions are exclusive to PRO plan
+    const isProOrSuperadmin = userProfile.plan === 'Pro' || userProfile.role === 'superadmin' || userProfile.is_superadmin;
+    if (!isProOrSuperadmin) {
+      await telegram.sendMessage(
+        botToken,
+        chatId,
+        `⚠️ <b>Fitur Bot Telegram Khusus Pengguna PRO!</b>\n\n` +
+        `Halo <b>${userProfile.full_name || 'Nasabah'}</b>, integrasi bot Telegram merupakan fitur eksklusif untuk pengguna paket <b>PRO</b>.\n\n` +
+        `Paket akun Anda saat ini: <b>Starter (Basic)</b>.\n\n` +
+        `Silakan upgrade ke paket <b>PRO</b> di dashboard web Mencatat Aja untuk menikmati pencatatan via Telegram tanpa batas, foto struk AI, dan asisten keuangan! 🚀`
+      );
+      return NextResponse.json({ ok: true });
+    }
+
     if (userProfile.plan === 'Starter' && txCount >= userProfile.monthly_transaction_limit) {
       await telegram.sendMessage(
         botToken,
