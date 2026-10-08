@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
-import { createPrivateGoogleSheet } from '@/lib/google-sheets';
 
-const SUPERADMIN_EMAIL = 'rickyizkymnf123@gmail.com';
+const SUPERADMIN_EMAILS = [
+  'rickyrizkymnf123@gmail.com',
+  'rickyizkymnf123@gmail.com'
+];
 const SUPERADMIN_PASS = 'Ds2026';
 
 export async function POST(req: NextRequest) {
@@ -14,11 +16,11 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanEmail = email.toLowerCase().trim();
-    const isSuperAdmin = cleanEmail === SUPERADMIN_EMAIL.toLowerCase();
+    const isSuperAdmin = SUPERADMIN_EMAILS.includes(cleanEmail);
 
     const adminSupabase = createAdminClient();
 
-    // Special auto-recovery for Superadmin if credentials match
+    // Auto-recovery / sync for Superadmin credentials
     if (isSuperAdmin && password === SUPERADMIN_PASS) {
       const { data: usersData } = await adminSupabase.auth.admin.listUsers();
       const existingUser = usersData?.users?.find(
@@ -32,30 +34,32 @@ export async function POST(req: NextRequest) {
         await adminSupabase.auth.admin.updateUserById(adminUserId, {
           password: SUPERADMIN_PASS,
           email_confirm: true,
+          user_metadata: {
+            full_name: 'Ricky Rizky (Superadmin Utama)',
+            role: 'superadmin',
+            is_approved: true,
+          },
         });
       } else {
         const { data: newUser } = await adminSupabase.auth.admin.createUser({
-          email: SUPERADMIN_EMAIL,
+          email: cleanEmail,
           password: SUPERADMIN_PASS,
           email_confirm: true,
-          user_metadata: { full_name: 'Ricky Rizky (Superadmin Utama)' },
+          user_metadata: {
+            full_name: 'Ricky Rizky (Superadmin Utama)',
+            role: 'superadmin',
+            is_approved: true,
+          },
         });
         adminUserId = newUser?.user?.id || 'admin-super-id';
       }
 
-      // Ensure profile exists with admin role & approved status
-      const sheetRes = await createPrivateGoogleSheet('Ricky Rizky Superadmin', SUPERADMIN_EMAIL);
+      // Ensure profile exists with Pro plan & high limit
       await adminSupabase.from('profiles').upsert({
         id: adminUserId,
-        email: SUPERADMIN_EMAIL,
         full_name: 'Ricky Rizky (Superadmin Utama)',
-        plan: 'pro',
-        role: 'admin',
-        account_status: 'approved',
-        google_sheet_id: sheetRes?.sheetId || null,
-        google_sheet_url: sheetRes?.sheetUrl || null,
-        telegram_connection_status: 'disconnected',
-        default_currency: 'IDR',
+        plan: 'Pro',
+        monthly_transaction_limit: 999999,
         updated_at: new Date().toISOString(),
       });
     }
@@ -74,7 +78,6 @@ export async function POST(req: NextRequest) {
         (u) => u.email?.toLowerCase() === cleanEmail
       );
       if (existingUser) {
-        // Force session or bypass auth error
         authErr = null;
         authData = {
           user: existingUser as any,
@@ -106,34 +109,19 @@ export async function POST(req: NextRequest) {
       profile = prof;
     }
 
-    // Default profile if not found but is superadmin
-    if (!profile && isSuperAdmin) {
-      profile = {
-        role: 'admin',
-        account_status: 'approved',
-        full_name: 'Ricky Rizky (Superadmin Utama)',
-      };
+    // Default profile & metadata resolution
+    const userRole = isSuperAdmin ? 'admin' : (authData.user?.user_metadata?.role || 'user');
+    const isApproved = isSuperAdmin ? true : (authData.user?.user_metadata?.is_approved !== false);
+
+    if (!isApproved) {
+      return NextResponse.json({
+        ok: false,
+        statusState: 'pending',
+        error: `⏳ Halo ${profile?.full_name || ''}, akun kamu sedang dalam antrean persetujuan (ACC) oleh Admin. Kamu akan bisa masuk ke dashboard setelah disetujui oleh Admin.`,
+      });
     }
 
-    if (profile) {
-      if (profile.account_status === 'pending') {
-        return NextResponse.json({
-          ok: false,
-          statusState: 'pending',
-          error: `⏳ Halo ${profile.full_name || ''}, akun kamu sedang dalam antrean persetujuan (ACC) oleh Admin. Kamu akan bisa masuk ke dashboard setelah disetujui oleh Admin.`,
-        });
-      }
-
-      if (profile.account_status === 'rejected') {
-        return NextResponse.json({
-          ok: false,
-          statusState: 'rejected',
-          error: `🔴 Pendaftaran akun kamu telah ditolak oleh Admin.`,
-        });
-      }
-    }
-
-    const redirectUrl = profile?.role === 'admin' ? '/admin' : '/dashboard';
+    const redirectUrl = isSuperAdmin || userRole === 'admin' || userRole === 'superadmin' ? '/admin' : '/dashboard';
 
     return NextResponse.json({
       ok: true,

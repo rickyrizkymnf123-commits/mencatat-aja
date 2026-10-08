@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
-import { createPrivateGoogleSheet } from '@/lib/google-sheets';
 
-const SUPERADMIN_EMAIL = 'rickyizkymnf123@gmail.com';
+const SUPERADMIN_EMAILS = [
+  'rickyrizkymnf123@gmail.com',
+  'rickyizkymnf123@gmail.com'
+];
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,14 +16,19 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient();
     const cleanEmail = email.toLowerCase().trim();
-    const isSuperAdmin = cleanEmail === SUPERADMIN_EMAIL.toLowerCase();
+    const isSuperAdmin = SUPERADMIN_EMAILS.includes(cleanEmail);
 
     // 1. SignUp in Supabase Auth
     const { data: authData, error: authErr } = await supabase.auth.signUp({
       email: cleanEmail,
       password,
       options: {
-        data: { full_name: fullName, phone_number: phone }
+        data: {
+          full_name: fullName,
+          phone_number: phone,
+          role: isSuperAdmin ? 'superadmin' : 'user',
+          is_approved: isSuperAdmin ? true : true, // Auto approved
+        }
       }
     });
 
@@ -31,24 +38,14 @@ export async function POST(req: NextRequest) {
 
     const userId = authData.user?.id;
     if (userId) {
-      // 2. Auto-provision private Google Sheet for the user
-      const sheetRes = await createPrivateGoogleSheet(fullName, cleanEmail);
-
-      // 3. Insert Profile
-      // Superadmin is automatically approved & role 'admin', other users are 'pending' & role 'user'
+      // 2. Insert Profile
       await supabase.from('profiles').upsert({
         id: userId,
-        email: cleanEmail,
-        phone_number: phone || null,
-        phone_verified: true,
         full_name: fullName,
-        plan: isSuperAdmin ? 'pro' : 'starter',
-        role: isSuperAdmin ? 'admin' : 'user',
-        account_status: isSuperAdmin ? 'approved' : 'pending',
-        google_sheet_id: sheetRes?.sheetId || null,
-        google_sheet_url: sheetRes?.sheetUrl || null,
-        telegram_connection_status: 'disconnected',
-        default_currency: 'IDR',
+        phone_number: phone || null,
+        plan: isSuperAdmin ? 'Pro' : 'Starter',
+        monthly_transaction_limit: isSuperAdmin ? 999999 : 50,
+        currency: 'IDR',
         updated_at: new Date().toISOString(),
       });
     }
@@ -56,10 +53,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       userId,
-      accountStatus: isSuperAdmin ? 'approved' : 'pending',
-      message: isSuperAdmin
-        ? 'Akun Superadmin Utama berhasil didaftarkan dan langsung disetujui!'
-        : 'Pendaftaran berhasil. Akun Anda sedang dalam antrean verifikasi dan persetujuan Admin.',
+      accountStatus: 'approved',
+      message: 'Pendaftaran berhasil! Akun Anda siap digunakan.',
     });
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
