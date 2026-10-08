@@ -86,3 +86,17 @@
   1. Menulis ulang parser nominal Indonesia berpresisi tinggi di [src/lib/ai-provider.ts](file:///C:/Users/UC/.gemini/antigravity/scratch/mencatat-id/src/lib/ai-provider.ts) dengan dukungan penuh untuk `25rb`, `15k`, `500k`, `1.5jt`, `rp 25.000`, transfer, pemasukan, dan kategorisasi otomatis.
   2. Membersihkan seluruh karakter mojibake (`föä` -> `🔄`, `föÑ` -> `⚡`, `fÆ` -> `💾`, `Çö` -> `—`, ikon mata sandi, badge preset) di seluruh UI Superadmin.
   3. Menguji build `npm run build` berhasil 100% dan melakukan push ke `main`.
+
+## [2026-10-08] Pemulihan Penuh Handler Webhook Bot Telegram & Pembersihan Karakter Encoding Global
+- **User Requests**:
+  1. "gua mau fitur bot tele itu kaya dulu ga ad abug"
+  2. "cek secara global ini masih ada font tai kayak gini gua mau di semua tools ini ga ada font ga jelas" (Menampilkan tangkapan layar `₱ò Tambah Video Tutorial`, `🔍 ìCari video tutorial...`).
+- **Solusi & Hasil**:
+  1. **Pemindaian Global Encoding Rusak (*Mojibake Scan*)**: Memindai seluruh berkas kode di folder `src/` menggunakan script regex mendalam dan menghapus 100% karakter aneh (`₱ò` -> `➕`, `🔍ì` -> `🔍`, `💾╛` -> `💾`, `åô` -> `↓`, `åæ` -> `↑`, `Å░` -> `⏰`, dll.).
+  2. **Pemulihan Handler Webhook Telegram Lengkap**: Mengembalikan handler webhook battle-tested penuh (1.200+ baris) dari commit `7e624a5` yang mendukung seluruh fitur lengkap:
+     - Voice note / audio transcription.
+     - Multi-item OCR scan struk otomatis.
+     - Interactive reply keyboards (`/saldo`, `/budget`, `/hari_ini`, `/sheet`, `/bantuan`, `/hapus`).
+     - Sinkronisasi instan multi-dompet & Google Sheets live.
+     - Auto-pairing token kustom tanpa batas.
+  3. **Verifikasi Build**: `npm run build` sukses 100% tanpa error maupun warning dan langsung di-push ke branch `main`.
