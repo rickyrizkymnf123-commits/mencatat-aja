@@ -61,3 +61,16 @@
   2. **Perbaikan API Login & Register**: Mendukung kedua format email (`rickyrizkymnf123@gmail.com` & `rickyizkymnf123@gmail.com`), memperbaiki schema query yang sebelumnya mencoba mengupdate kolom tidak terdaftar pada tabel `profiles`.
   3. **Pemulihan Dashboard User Asli**: Mengembalikan file [src/app/dashboard/page.tsx](file:///C:/Users/UC/.gemini/antigravity/scratch/mencatat-id/src/app/dashboard/page.tsx) lengkap dengan seluruh tab dan fiturnya (Beranda, Transaksi, Scan Struk, Kategori, Budget, Dompet, Tutorial Penggunaan, Langganan, Pengaturan Telegram & Reminder).
   4. **Verifikasi Build**: `npm run build` sukses 100% tanpa error, dan telah di-push ke branch `main`.
+
+## [2026-10-08] Perbaikan Bot Telegram Tidak Merespon (Fix Webhook Route & Token Decryption)
+- **User Request**: "bot tele kenapa ga fungsi sekarang" (Mengirim pesan seperti "P" ke bot `@bebas12334343434_bot` tetapi tidak ada balasan sama sekali).
+- **Diagnosa Root Cause**:
+  1. **Kesalahan Nama Tabel Idempotency**: Pada endpoint webhook [src/app/api/telegram/webhook/route.ts](file:///C:/Users/UC/.gemini/antigravity/scratch/mencatat-id/src/app/api/telegram/webhook/route.ts), query sebelumnya memanggil tabel `telegram_processed_updates`, padahal nama tabel yang ada di Supabase adalah `processed_telegram_updates` (dengan primary key kolom `id`). Error `PGRST205` ini menyebabkan seluruh panggilan webhook gagal crash di awal eksekusi.
+  2. **Token Bot Terenkripsi**: Di database `profiles`, token disimpan terenkripsi AES-256 (`telegram_bot_token`). Webhook sebelumnya tidak melakukan decrypt (`decrypt(profile.telegram_bot_token)`) sehingga `sendTelegramMessage` memanggil Telegram API dengan token enkripsi yang tidak valid (401 Unauthorized).
+  3. **Penanganan Pesan Non-Transaksi (Casual Text)**: Pengguna mengetik pesan sapaan/singkat seperti "P", "halo", atau "test", yang sebelumnya belum di-handle dengan panduan instruksi interaktif yang ramah.
+- **Solusi & Implementasi**:
+  1. Memperbaiki query idempotency agar menggunakan tabel `processed_telegram_updates` dengan safe try-catch.
+  2. Menambahkan dekripsi token otomatis (`decrypt`) dan fallback ke query parameter `bot_token`.
+  3. Mengimplementasikan auto-link `telegram_chat_id` ketika pengguna berinteraksi pertama kali dengan bot.
+  4. Menambahkan respon otomatis yang ramah dan instruksi panduan pencatatan saat user mengetik kata singkat seperti "P", "halo", "test", atau "/start".
+  5. Build `npm run build` sukses 100% dan perubahan langsung di-push ke branch `main`.
