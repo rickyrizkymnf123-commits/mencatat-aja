@@ -10,9 +10,14 @@ import {
   formatIDR
 } from '@/lib/telegram';
 import { appendTransactionToSheet } from '@/lib/google-sheets';
+import { decrypt } from '@/lib/crypto';
 
 export async function POST(req: NextRequest) {
   try {
+    const url = new URL(req.url);
+    const queryUserId = url.searchParams.get('user_id');
+    const queryBotToken = url.searchParams.get('bot_token');
+
     const body = await req.json();
     const updateId = body.update_id;
     if (!updateId) {
@@ -21,111 +26,182 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient();
 
-    // 1. Idempotency Check: skip if update_id already processed
-    const { data: existingUpdate } = await supabase
-      .from('telegram_processed_updates')
-      .select('id')
-      .eq('update_id', updateId)
-      .maybeSingle();
+    // 1. Idempotency Check
+    try {
+      const { data: existingUpdate } = await supabase
+        .from('processed_telegram_updates')
+        .select('id')
+        .eq('id', updateId)
+        .maybeSingle();
 
-    if (existingUpdate) {
-      return NextResponse.json({ ok: true, note: 'Idempotent skip' });
+      if (existingUpdate) {
+        return NextResponse.json({ ok: true, note: 'Idempotent skip' });
+      }
+
+      await supabase.from('processed_telegram_updates').insert({ id: updateId });
+    } catch (idempErr) {
+      console.warn('Idempotency table notice:', idempErr);
     }
 
-    // Record update_id immediately
-    await supabase.from('telegram_processed_updates').insert({ update_id: updateId });
-
-    const message = body.message;
+    const message = body.message || body.edited_message;
     if (!message || !message.chat) {
       return NextResponse.json({ ok: true });
     }
 
     const chatId = message.chat.id;
-    const text = message.text?.trim() || '';
+    const text = (message.text || message.caption || '').trim();
     const photos = message.photo;
 
-    // 2. Find Profile by telegram_chat_id
-    let { data: profile } = await supabase
+    // 2. Resolve Profile
+    let profile: any = null;
+
+    // A. By telegram_chat_id
+    const { data: profByChat } = await supabase
       .from('profiles')
       .select('*')
-      .eq('telegram_chat_id', chatId)
+      .eq('telegram_chat_id', String(chatId))
       .maybeSingle();
 
-    // Fallback: If not linked yet, check contact message or ask user to connect via web app
+    profile = profByChat;
+
+    // B. By queryUserId if not linked yet
+    if (!profile && queryUserId) {
+      const { data: profById } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', queryUserId)
+        .maybeSingle();
+
+      if (profById) {
+        profile = profById;
+        // Auto link this chat ID to user profile
+        await supabase
+          .from('profiles')
+          .update({
+            telegram_chat_id: String(chatId),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', queryUserId);
+        profile.telegram_chat_id = String(chatId);
+      }
+    }
+
+    // C. Resolve Bot Token
+    let resolvedBotToken = queryBotToken || '';
+    if (!resolvedBotToken && profile?.telegram_bot_token) {
+      const dec = decrypt(profile.telegram_bot_token);
+      resolvedBotToken = dec || profile.telegram_bot_token;
+    }
+    if (!resolvedBotToken) {
+      resolvedBotToken = process.env.TELEGRAM_BOT_TOKEN || '';
+    }
+
+    // 3. If profile still not found
     if (!profile) {
-      const defaultToken = process.env.TELEGRAM_BOT_TOKEN;
-      if (text.startsWith('/start')) {
+      if (text.startsWith('/start') || text.toLowerCase() === 'p' || text.toLowerCase() === 'halo') {
         await sendTelegramMessage(
-          defaultToken || '',
+          resolvedBotToken,
           chatId,
           `👋 *Selamat datang di mencatat.id!*
 
 Aplikasi pencatatan keuangan pribadi serba otomatis dari Telegram.
 
-Untuk memulainya:
-1. Daftar / Masuk di *https://mencatat.id*
-2. Ke menu *Settings -> Telegram Bot*
-3. Masukkan chat ID kamu: \`${chatId}\` atau hubungkan via tombol di dashboard.
+Untuk menghubungkan akun kamu:
+1. Masuk ke web *https://mencatat.id* (atau *https://www.mencatat.my.id*)
+2. Buka menu *Settings -> Integrasi Telegram Bot*
+3. Tempelkan token bot ini dan klik *Test Koneksi*.
 
-Setelah terhubung, tinggal ketik transaksi seperti:
-• \`beli bakso 15rb\`
-• \`gajian 5jt\``
+Setelah terhubung, kamu bisa langsung mencatat pengeluaran semudah kirim chat:
+• \`beli kopi 25rb\`
+• \`gajian 5jt\`
+• \`bensin 50k\``
         );
         return NextResponse.json({ ok: true });
       }
 
       await sendTelegramMessage(
-        defaultToken || '',
+        resolvedBotToken,
         chatId,
         `⚠️ Akun Telegram kamu belum terhubung dengan mencatat.id.
-Silakan login ke https://mencatat.id dan masukkan Chat ID kamu: \`${chatId}\` pada menu Settings.`
+Silakan buka menu *Settings* di web dashboard untuk menghubungkan bot ini.`
       );
       return NextResponse.json({ ok: true });
     }
 
-    const botToken = profile.telegram_bot_token || process.env.TELEGRAM_BOT_TOKEN || '';
+    // Ensure telegram_chat_id is saved if it was missing or different
+    if (!profile.telegram_chat_id || profile.telegram_chat_id !== String(chatId)) {
+      await supabase
+        .from('profiles')
+        .update({
+          telegram_chat_id: String(chatId),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', profile.id);
+      profile.telegram_chat_id = String(chatId);
+    }
 
-    // 3. Handle Commands
+    // 4. Handle Commands (/saldo, /budget, /bantuan, /start, dll)
     if (text.startsWith('/')) {
-      await handleBotCommands(supabase, profile, chatId, text, botToken);
+      await handleBotCommands(supabase, profile, chatId, text, resolvedBotToken);
       return NextResponse.json({ ok: true });
     }
 
-    // 4. Handle Photo Receipts (Pro only)
+    // 5. Handle Photo Receipts
     if (photos && photos.length > 0) {
-      if (profile.plan === 'starter') {
-        await sendTelegramMessage(botToken, chatId, formatPhotoReceiptStarterMessage());
+      const isPro = (profile.plan || '').toLowerCase() === 'pro';
+      if (!isPro) {
+        await sendTelegramMessage(resolvedBotToken, chatId, formatPhotoReceiptStarterMessage());
         return NextResponse.json({ ok: true });
       }
 
-      // Pro Plan: Process Receipt Photo OCR
-      await sendTelegramMessage(botToken, chatId, '🔍 *Menganalisa foto struk belanjaan kamu...*');
+      await sendTelegramMessage(resolvedBotToken, chatId, '🔍 *Menganalisa foto struk belanjaan kamu...*');
 
-      // Fetch photo file from Telegram
       const photoFileId = photos[photos.length - 1].file_id;
-      const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${photoFileId}`);
+      const fileRes = await fetch(`https://api.telegram.org/bot${resolvedBotToken}/getFile?file_id=${photoFileId}`);
       const fileData = await fileRes.json();
 
       let parsedReceipt: any = null;
       if (fileData.ok && fileData.result.file_path) {
-        const imgRes = await fetch(`https://api.telegram.org/file/bot${botToken}/${fileData.result.file_path}`);
+        const imgRes = await fetch(`https://api.telegram.org/file/bot${resolvedBotToken}/${fileData.result.file_path}`);
         const arrayBuffer = await imgRes.arrayBuffer();
         const base64Img = Buffer.from(arrayBuffer).toString('base64');
         parsedReceipt = await parseReceiptPhoto(base64Img);
       }
 
       if (!parsedReceipt || parsedReceipt.nominal <= 0) {
-        await sendTelegramMessage(botToken, chatId, '❌ Struk tidak terbaca dengan jelas. Pastikan foto struk terang dan fokus.');
+        await sendTelegramMessage(resolvedBotToken, chatId, '❌ Struk tidak terbaca dengan jelas. Pastikan foto struk terang dan fokus.');
         return NextResponse.json({ ok: true });
       }
 
-      // Record transaction
-      await recordTransactionAndReply(supabase, profile, chatId, botToken, parsedReceipt, 'telegram_receipt');
+      await recordTransactionAndReply(supabase, profile, chatId, resolvedBotToken, parsedReceipt, 'telegram_receipt');
       return NextResponse.json({ ok: true });
     }
 
-    // 5. Check Starter Limit (50 transactions / month)
-    if (profile.plan === 'starter') {
+    // 6. Handle Casual greetings or non-financial messages ("p", "halo", "hai", "test")
+    const lower = text.toLowerCase();
+    if (['p', 'halo', 'hai', 'hi', 'ping', 'test', 'tes', 'assalamualaikum', 'selamat pagi', 'selamat siang', 'selamat malam'].includes(lower)) {
+      await sendTelegramMessage(
+        resolvedBotToken,
+        chatId,
+        `👋 Halo *${profile.full_name || 'Kak'}*! Aku siap membantu mencatat keuanganmu.
+
+💡 *Contoh cara mencatat:*
+• \`beli kopi 25rb\` *(pengeluaran)*
+• \`gaji freelance 2.5jt\` *(pemasukan)*
+• \`bensin 50k tunai\`
+• \`transfer dari BCA ke Gopay 200rb\`
+
+📌 *Pintasan Perintah:*
+• \`/saldo\` — Cek saldo seluruh dompet
+• \`/budget\` — Cek sisa limit anggaran
+• \`/bantuan\` — Bantuan & panduan lengkap`
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    // 7. Check Transaction Limit (Starter 50 tx/month)
+    const isPro = (profile.plan || '').toLowerCase() === 'pro';
+    if (!isPro) {
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const { count } = await supabase
@@ -135,17 +211,12 @@ Silakan login ke https://mencatat.id dan masukkan Chat ID kamu: \`${chatId}\` pa
         .gte('created_at', firstDayOfMonth);
 
       if (count && count >= 50) {
-        await sendTelegramMessage(botToken, chatId, formatLimitReachedMessage(count));
+        await sendTelegramMessage(resolvedBotToken, chatId, formatLimitReachedMessage(count));
         return NextResponse.json({ ok: true });
       }
     }
 
-    // 6. Natural Language Text Input Parsing via AI
-    if (!text) {
-      return NextResponse.json({ ok: true });
-    }
-
-    // Fetch user categories for context
+    // 8. Natural Language Text Input Parsing via AI
     const { data: userCats } = await supabase
       .from('categories')
       .select('name')
@@ -154,24 +225,25 @@ Silakan login ke https://mencatat.id dan masukkan Chat ID kamu: \`${chatId}\` pa
     const categoryNames = userCats ? userCats.map((c: any) => c.name) : [];
     const parsed = await parseTransactionText(text, categoryNames);
 
-    if (!parsed || parsed.nominal <= 0) {
+    if (!parsed || !parsed.nominal || parsed.nominal <= 0) {
       await sendTelegramMessage(
-        botToken,
+        resolvedBotToken,
         chatId,
-        `🤔 *Maaf, mencatat.id kurang memahami transaksi tersebut.*
+        `🤔 *Maaf, transaksi belum terbaca.*
 
-Format yang benar contohnya:
+Contoh format yang bisa kamu ketik:
 • \`beli bakso 15rb\`
 • \`gajian 5jt\`
-• \`bensin 50k\`
+• \`bensin motor 30k\`
+• \`transfer bca ke gopay 100rb\`
 
-Coba ketik ulang kalimat kamu ya!`
+Ketik \`/bantuan\` untuk melihat daftar menu lengkap!`
       );
       return NextResponse.json({ ok: true });
     }
 
-    // 7. Save Transaction & Send Rich Reply
-    await recordTransactionAndReply(supabase, profile, chatId, botToken, parsed, 'telegram_text');
+    // 9. Save Transaction & Send Rich Reply
+    await recordTransactionAndReply(supabase, profile, chatId, resolvedBotToken, parsed, 'telegram_text');
 
     return NextResponse.json({ ok: true });
   } catch (error: any) {
@@ -186,16 +258,34 @@ Coba ketik ulang kalimat kamu ya!`
 async function handleBotCommands(supabase: any, profile: any, chatId: number, text: string, botToken: string) {
   const command = text.split(' ')[0].toLowerCase();
 
-  if (command === '/saldo') {
+  if (command === '/start') {
+    await sendTelegramMessage(
+      botToken,
+      chatId,
+      `🚀 *Selamat Datang di mencatat.id!*
+
+Halo *${profile.full_name || 'Nasabah'}*, bot asisten keuangan pintar kamu sudah aktif 24/7.
+
+📖 *Contoh Penggunaan Langsung:*
+• \`beli bakso 15rb\` *(Mencatat pengeluaran)*
+• \`gaji freelance 3jt\` *(Mencatat pemasukan)*
+• \`transfer dari BCA ke Gopay 500rb\` *(Mencatat transfer)*
+
+Gunakan perintah cepat di bawah ini:
+• \`/saldo\` — Cek saldo semua dompet
+• \`/budget\` — Cek sisa anggaran kategori
+• \`/bantuan\` — Buka panduan lengkap`
+    );
+  } else if (command === '/saldo') {
     const { data: wallets } = await supabase.from('wallets').select('*').eq('user_id', profile.id);
     if (!wallets || wallets.length === 0) {
-      await sendTelegramMessage(botToken, chatId, '👛 Belum ada dompet tercatat.');
+      await sendTelegramMessage(botToken, chatId, '👛 Belum ada dompet tercatat. Silakan buat dompet di dashboard web!');
       return;
     }
     let total = 0;
     const lines = wallets.map((w: any) => {
-      total += Number(w.balance);
-      return `├ ${w.is_default ? '⭐ ' : ''}${w.name} : ${formatIDR(Number(w.balance))}`;
+      total += Number(w.balance || 0);
+      return `├ ${w.is_default ? '⭐ ' : ''}${w.name} : ${formatIDR(Number(w.balance || 0))}`;
     });
     await sendTelegramMessage(
       botToken,
@@ -205,7 +295,8 @@ ${lines.join('\n')}
 └ *Total Saldo : ${formatIDR(total)}*`
     );
   } else if (command === '/sheet') {
-    if (profile.plan === 'starter') {
+    const isPro = (profile.plan || '').toLowerCase() === 'pro';
+    if (!isPro) {
       await sendTelegramMessage(botToken, chatId, '🔒 Integrasi Google Sheet pribadi adalah fitur khusus *Paket Pro*. Upgrade di web dashboard!');
     } else {
       const sheetUrl = profile.google_sheet_url || 'https://docs.google.com';
@@ -218,12 +309,16 @@ ${lines.join('\n')}
       `📌 *Daftar Perintah mencatat.id:*
 
 • \`/saldo\` — Cek saldo semua dompet
-• \`/hari ini\` — Rekap transaksi hari ini
-• \`/minggu ini\` — Rekap 7 hari terakhir
-• \`/bulan ini\` — Rekap bulan berjalan
 • \`/budget\` — Status budget kategori
 • \`/sheet\` — Link Google Sheet kamu
-• \`/bantuan\` — Tampilkan daftar bantuan ini`
+• \`/bantuan\` — Tampilkan daftar bantuan ini
+
+💡 *Cara Mencatat Otomatis:*
+Cukup kirim teks biasa:
+• \`beli kopi 25rb\`
+• \`makan siang 35k tunai\`
+• \`gaji 7.5jt\`
+• \`transfer bca ke ovo 150rb\``
     );
   } else if (command === '/budget') {
     const { data: categories } = await supabase
@@ -236,10 +331,10 @@ ${lines.join('\n')}
       await sendTelegramMessage(botToken, chatId, '🎯 Belum ada budget kategori yang diatur bulan ini.');
       return;
     }
-    const lines = categories.map((c: any) => `${c.emoji} *${c.name}*: Budget ${formatIDR(c.monthly_budget)}`);
+    const lines = categories.map((c: any) => `${c.emoji || '📁'} *${c.name}*: Budget ${formatIDR(Number(c.monthly_budget))}`);
     await sendTelegramMessage(botToken, chatId, `🎯 *Status Budget Bulan Ini:*\n\n${lines.join('\n')}`);
   } else {
-    await sendTelegramMessage(botToken, chatId, `🤖 Ketik \`/bantuan\` untuk melihat daftar perintah.`);
+    await sendTelegramMessage(botToken, chatId, `🤖 Perintah tidak dikenal. Ketik \`/bantuan\` untuk melihat daftar perintah.`);
   }
 }
 
@@ -273,7 +368,6 @@ async function recordTransactionAndReply(
   }
 
   if (!defaultWallet) {
-    // Create initial Cash wallet
     const { data: createdWallet } = await supabase
       .from('wallets')
       .insert({
@@ -304,7 +398,6 @@ async function recordTransactionAndReply(
       .maybeSingle();
 
     if (!matchedCategory) {
-      // Auto create category
       const { data: newCat } = await supabase
         .from('categories')
         .insert({
@@ -329,8 +422,8 @@ async function recordTransactionAndReply(
   }
 
   // 3. Calculate new balance
-  const currentBalance = Number(defaultWallet.balance);
-  const transactionAmount = Number(parsed.nominal);
+  const currentBalance = Number(defaultWallet.balance || 0);
+  const transactionAmount = Number(parsed.nominal || 0);
   const isIncome = parsed.jenis === 'pemasukan';
   const newBalance = isIncome ? currentBalance + transactionAmount : currentBalance - transactionAmount;
 
@@ -342,7 +435,7 @@ async function recordTransactionAndReply(
 
   // Insert Transaction
   const nowStr = new Date().toISOString();
-  const { data: newTx } = await supabase
+  await supabase
     .from('transactions')
     .insert({
       user_id: profile.id,
@@ -353,9 +446,7 @@ async function recordTransactionAndReply(
       notes: parsed.catatan || parsed.kategori,
       source,
       transaction_date: nowStr,
-    })
-    .select()
-    .single();
+    });
 
   // 4. Calculate monthly budget total used for this category
   if (!isIncome && categoryId) {
@@ -369,18 +460,18 @@ async function recordTransactionAndReply(
       .gte('transaction_date', firstDay);
 
     if (monthTxs) {
-      budgetUsedMonth = monthTxs.reduce((sum: number, t: any) => sum + Number(t.amount), 0);
+      budgetUsedMonth = monthTxs.reduce((sum: number, t: any) => sum + Number(t.amount || 0), 0);
     }
   }
 
-  // 5. Append to Google Sheet (Pro users or enabled sheets)
-  if (profile.plan === 'pro' && profile.google_sheet_id) {
+  // 5. Append to Google Sheet (if configured)
+  const isPro = (profile.plan || '').toLowerCase() === 'pro';
+  if (isPro && profile.google_sheet_id) {
     const nowWIB = new Date();
     const dateYMD = nowWIB.toISOString().split('T')[0];
     const timeHHMM = nowWIB.toTimeString().split(' ')[0].substring(0, 5);
 
     if (parsed.items && parsed.items.length > 0) {
-      // Split receipt items into separate rows in Google Sheet
       for (const item of parsed.items) {
         await appendTransactionToSheet(profile.google_sheet_id, {
           tanggal: dateYMD,
@@ -429,7 +520,7 @@ async function recordTransactionAndReply(
     await sendTelegramMessage(botToken, chatId, replyText);
 
     // AI Financial Advisor Trigger (Pro Plan)
-    if (profile.plan === 'pro' && monthlyBudget > 0 && budgetUsedMonth > monthlyBudget * 0.8) {
+    if (isPro && monthlyBudget > 0 && budgetUsedMonth > monthlyBudget * 0.8) {
       const advisorMsg = await generateAIAdvisorMessage(profile.full_name, categoryName);
       await sendTelegramMessage(botToken, chatId, advisorMsg);
     }
