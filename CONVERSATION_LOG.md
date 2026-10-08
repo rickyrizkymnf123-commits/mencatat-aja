@@ -100,3 +100,11 @@
      - Sinkronisasi instan multi-dompet & Google Sheets live.
      - Auto-pairing token kustom tanpa batas.
   3. **Verifikasi Build**: `npm run build` sukses 100% tanpa error maupun warning dan langsung di-push ke branch `main`.
+
+## [2026-10-08] Reset Global Seluruh Token Bot Telegram & Auto Re-Assignment
+- **User Request**: "riset semua token bot" (Muncul error `Token ini sudah digunakan oleh pengguna lain!`).
+- **Tindakan yang Dilakukan**:
+  1. Menghapus (*deleteWebhook*) seluruh webhook bot yang terdaftar di Telegram API.
+  2. Mengosongkan (*set null*) kolom `telegram_bot_token` dan `telegram_chat_id` di seluruh profil database Supabase serta membersihkan cache lokal.
+  3. Memperbarui endpoint [src/app/api/telegram/setup/route.ts](file:///C:/Users/UC/.gemini/antigravity/scratch/mencatat-id/src/app/api/telegram/setup/route.ts) agar otomatis mencabut (*auto-detach*) token dari akun lama dan mengalihkannya ke akun aktif saat ini tanpa memblokir dengan error duplikasi.
+  4. Build `npm run build` sukses 100% dan di-push ke branch `main`.
