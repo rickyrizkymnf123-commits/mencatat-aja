@@ -384,7 +384,7 @@ export default function DashboardPage() {
           storedEmail = user.email || storedEmail;
           storedName = user.user_metadata?.full_name || user.email?.split('@')[0] || storedName;
           storedPhone = user.phone || user.user_metadata?.phone_number || storedPhone;
-          storedRole = user.user_metadata?.role || (user.email?.toLowerCase() === 'rickyrizkymnf123@gmail.com' ? 'superadmin' : storedRole);
+          storedRole = user.user_metadata?.role || (['rickyrizkymnf123@gmail.com', 'rickyizkymnf123@gmail.com'].includes(user.email?.toLowerCase() || '') ? 'superadmin' : storedRole);
           
           // Approval resolution from user_metadata (Source of Truth)
           if (user.user_metadata?.is_approved !== undefined) {
@@ -439,7 +439,7 @@ export default function DashboardPage() {
         }
       }
 
-      const isSuperadminUser = storedRole === 'superadmin' || storedEmail.toLowerCase() === 'rickyrizkymnf123@gmail.com';
+      const isSuperadminUser = storedRole === 'superadmin' || ['rickyrizkymnf123@gmail.com', 'rickyizkymnf123@gmail.com'].includes(storedEmail.toLowerCase());
       if (isSuperadminUser) {
         isUserApproved = true;
       }
@@ -2203,7 +2203,7 @@ export default function DashboardPage() {
             <li onClick={() => { setActiveTab('profile'); setSidebarOpen(false); }} className={`menu-item ${activeTab === 'profile' ? 'active' : ''}`}>
               👤 Profil & Kredit
             </li>
-            {(userRole === 'superadmin' || userEmail.toLowerCase() === 'rickyrizkymnf123@gmail.com' || isAdminMode) && (
+            {(userRole === 'superadmin' || userRole === 'admin' || ['rickyrizkymnf123@gmail.com', 'rickyizkymnf123@gmail.com'].includes(userEmail.toLowerCase()) || isAdminMode) && (
               <Link href="/admin" className="menu-item" style={{ color: '#059669', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.25)', fontWeight: '700', textDecoration: 'none', marginTop: '12px' }}>
                 👑 Panel Admin (/admin)
               </Link>
@@ -2221,7 +2221,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-          {(userRole === 'superadmin' || userEmail.toLowerCase() === 'rickyrizkymnf123@gmail.com' || isAdminMode) && (
+          {(userRole === 'superadmin' || userRole === 'admin' || ['rickyrizkymnf123@gmail.com', 'rickyizkymnf123@gmail.com'].includes(userEmail.toLowerCase()) || isAdminMode) && (
             <button 
               onClick={() => {
                 localStorage.setItem('Mencatat Aja_admin_mode', 'true');
