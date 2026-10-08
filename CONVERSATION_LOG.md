@@ -108,3 +108,21 @@
   2. Mengosongkan (*set null*) kolom `telegram_bot_token` dan `telegram_chat_id` di seluruh profil database Supabase serta membersihkan cache lokal.
   3. Memperbarui endpoint [src/app/api/telegram/setup/route.ts](file:///C:/Users/UC/.gemini/antigravity/scratch/mencatat-id/src/app/api/telegram/setup/route.ts) agar otomatis mencabut (*auto-detach*) token dari akun lama dan mengalihkannya ke akun aktif saat ini tanpa memblokir dengan error duplikasi.
   4. Build `npm run build` sukses 100% dan di-push ke branch `main`.
+
+## [2026-10-08] Perbaikan Voice Note (VN) Telegram & Pipeline Transkripsi AI Multi-Payload
+- **User Request**: "vn ini gagal anjing kemarin aman , model ai gua juag support" (Voice note menghasilkan error `⚠️ Gagal memproses rekaman suara: All AI providers failed to transcribe the audio..`).
+- **Diagnosa Root Cause**:
+  1. **Timeout Terlalu Pendek (3 Detik)**: Pada `callProxyAudioTranscription` di `src/lib/ai.ts`, timeout disetel ke `AbortSignal.timeout(3000)` (hanya 3 detik). Pengiriman berkas suara berukuran sedang/panjang dan proses inferensi AI biasanya membutuhkan 4–10 detik, sehingga seluruh panggilan transkripsi suara otomatis di-cancel/dibatalkan sebelum model selesai membalas.
+  2. **Format Payload & Endpoint Fallback**: Telegram mengirim voice note dalam format OGG/Opus. 9Router mendukung format multimodal `input_audio`, `image_url` data URI (`data:audio/ogg;base64,...`), dan `/v1/audio/transcriptions` (Parakeet ASR).
+  3. **Base URL Expired**: `AI_BASE_URL` sempat mengarah ke tunnel Cloudflare sementara yang sudah kedaluwarsa.
+- **Solusi & Implementasi**:
+  1. **Perpanjangan Timeout Menjadi 30 Detik**: Mengubah batas timeout panggilan audio transkripsi menjadi `AbortSignal.timeout(30000)` pada seluruh model.
+  2. **Multi-Payload & Multi-Model Fallback Engine**:
+     - Percobaan 1: OpenAI-compatible `input_audio` payload dengan model `combo`, `bebas`, `ag/gemini-3.7-flash-high`, `gemini/gemini-3.7-flash`.
+     - Percobaan 2: Data URI format multimodal payload.
+     - Percobaan 3: Endpoint Whisper / ASR `/v1/audio/transcriptions` dengan model `nvidia/parakeet-ctc-1.1b-asr`.
+  3. **Resilient Endpoint Resolvers**: Otomatis mencoba urutan endpoint `http://localhost:20128/v1` dan `http://100.80.46.70:20128/v1` dengan token `sk-2d54ec0087b1195e-6evagc-48cf2764`.
+  4. **Dual SSE/JSON Parser**: Memastikan chunk SSE (`data: {"id": ...}`) dan JSON standar diurai secara akurat menjadi teks transkrip bahasa Indonesia.
+  5. **Verifikasi**:
+     - Uji coba live panggilan audio transkripsi ke 9Router berhasil mengembalikan HTTP 200 dengan transkripsi akurat.
+     - `npm run build` sukses 100% tanpa error, dan kode telah di-push ke branch `main`.
