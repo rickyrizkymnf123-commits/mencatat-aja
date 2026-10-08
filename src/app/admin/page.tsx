@@ -344,7 +344,7 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal menyimpan harga paket');
 
-      alert(`✅ Berhasil Memperbarui Harga Paket Langganan!\n\nÇó Basic: Rp ${Number(adminBasicPrice).toLocaleString('id-ID')} / ${adminBasicPeriod}\nÇó Pro: Rp ${Number(adminProPrice).toLocaleString('id-ID')} / ${adminProPeriod}`);
+      alert(`✅ Berhasil Memperbarui Harga Paket Langganan!\n\n• Basic: Rp ${Number(adminBasicPrice).toLocaleString('id-ID')} / ${adminBasicPeriod}\n• Pro: Rp ${Number(adminProPrice).toLocaleString('id-ID')} / ${adminProPeriod}`);
       await fetchPricingConfig();
     } catch (err: any) {
       alert('❌ Error: ' + err.message);
@@ -378,7 +378,7 @@ export default function AdminDashboard() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal');
-      alert(`ƒÄë Sukses menambahkan +${days} hari untuk ${selectedUserIds.length} pengguna!`);
+      alert(`🎬ë Sukses menambahkan +${days} hari untuk ${selectedUserIds.length} pengguna!`);
       await fetchSubscriptions();
       await fetchAdminData();
     // Fetch pricing settings for admin
@@ -1426,10 +1426,10 @@ export default function AdminDashboard() {
       if (walletsList.length > 0) {
         setPreviewWallets(walletsList);
         setPreviewCategories(categoriesList.length > 0 ? categoriesList : [
-          { id: 'c1', name: 'Makanan', emoji: 'ƒì£', color: '#FF8A00', type: 'expense' },
-          { id: 'c2', name: 'Transport', emoji: 'ƒÜù', color: '#00A3FF', type: 'expense' },
-          { id: 'c6', name: 'Gaji', emoji: 'ƒÆ╝', color: '#00E047', type: 'income' },
-          { id: 'c7', name: 'Lainnya', emoji: 'ƒôª', color: '#888888', type: 'expense' }
+          { id: 'c1', name: 'Makanan', emoji: '🍜£', color: '#FF8A00', type: 'expense' },
+          { id: 'c2', name: 'Transport', emoji: '🚀ù', color: '#00A3FF', type: 'expense' },
+          { id: 'c6', name: 'Gaji', emoji: '💾╝', color: '#00E047', type: 'income' },
+          { id: 'c7', name: 'Lainnya', emoji: '📊ª', color: '#888888', type: 'expense' }
         ]);
         setPreviewTransactions(transactionsList);
         setPreviewBudgets(budgetsList);
@@ -1442,12 +1442,12 @@ export default function AdminDashboard() {
             { id: 'wb3', name: 'Gopay', balance: 1500000, is_default: false }
           ]);
           setPreviewCategories([
-            { id: 'c1', name: 'Makanan', emoji: 'ƒì£', color: '#FF8A00', type: 'expense' },
-            { id: 'c2', name: 'Transport', emoji: 'ƒÜù', color: '#00A3FF', type: 'expense' },
-            { id: 'c3', name: 'Hiburan', emoji: 'ƒÄ«', color: '#9E00FF', type: 'expense' },
-            { id: 'c4', name: 'Tagihan', emoji: 'ƒÅá', color: '#FF005C', type: 'expense' },
-            { id: 'c5', name: 'Belanja', emoji: 'ƒæò', color: '#FFB800', type: 'expense' },
-            { id: 'c6', name: 'Gaji', emoji: 'ƒÆ╝', color: '#00E047', type: 'income' }
+            { id: 'c1', name: 'Makanan', emoji: '🍜£', color: '#FF8A00', type: 'expense' },
+            { id: 'c2', name: 'Transport', emoji: '🚀ù', color: '#00A3FF', type: 'expense' },
+            { id: 'c3', name: 'Hiburan', emoji: '🎬«', color: '#9E00FF', type: 'expense' },
+            { id: 'c4', name: 'Tagihan', emoji: '🏷️á', color: '#FF005C', type: 'expense' },
+            { id: 'c5', name: 'Belanja', emoji: '🛍️', color: '#FFB800', type: 'expense' },
+            { id: 'c6', name: 'Gaji', emoji: '💾╝', color: '#00E047', type: 'income' }
           ]);
           setPreviewBudgets([
             { id: 'bb1', category_id: 'c1', monthly_limit: 2000000, current_spent: 850000 },
@@ -1464,9 +1464,9 @@ export default function AdminDashboard() {
             { id: 'wa2', name: 'ShopeePay', balance: 120000, is_default: false }
           ]);
           setPreviewCategories([
-            { id: 'c1', name: 'Makanan', emoji: 'ƒì£', color: '#FF8A00', type: 'expense' },
-            { id: 'c2', name: 'Transport', emoji: 'ƒÜù', color: '#00A3FF', type: 'expense' },
-            { id: 'c6', name: 'Gaji', emoji: 'ƒÆ╝', color: '#00E047', type: 'income' }
+            { id: 'c1', name: 'Makanan', emoji: '🍜£', color: '#FF8A00', type: 'expense' },
+            { id: 'c2', name: 'Transport', emoji: '🚀ù', color: '#00A3FF', type: 'expense' },
+            { id: 'c6', name: 'Gaji', emoji: '💾╝', color: '#00E047', type: 'income' }
           ]);
           setPreviewBudgets([]);
           setPreviewTransactions([
@@ -1476,9 +1476,9 @@ export default function AdminDashboard() {
         } else {
           setPreviewWallets([]);
           setPreviewCategories([
-            { id: 'c1', name: 'Makanan', emoji: 'ƒì£', color: '#FF8A00', type: 'expense' },
-            { id: 'c2', name: 'Transport', emoji: 'ƒÜù', color: '#00A3FF', type: 'expense' },
-            { id: 'c6', name: 'Gaji', emoji: 'ƒÆ╝', color: '#00E047', type: 'income' }
+            { id: 'c1', name: 'Makanan', emoji: '🍜£', color: '#FF8A00', type: 'expense' },
+            { id: 'c2', name: 'Transport', emoji: '🚀ù', color: '#00A3FF', type: 'expense' },
+            { id: 'c6', name: 'Gaji', emoji: '💾╝', color: '#00E047', type: 'income' }
           ]);
           setPreviewBudgets([]);
           setPreviewTransactions([]);
@@ -1762,7 +1762,7 @@ export default function AdminDashboard() {
         localStorage.setItem('Mencatat Aja_mock_transactions', JSON.stringify(updatedTxs));
         setPreviewWallets(updatedWallets);
         setPreviewTransactions(updatedTxs);
-        alert(`🤖 AI Berhasil Mencatat (Simulasi Lokal):\n\nÇó Jenis: ${parsed.type}\nÇó Nominal: Rp ${amt.toLocaleString('id-ID')}\nÇó Keterangan: "${parsed.description}"`);
+        alert(`🤖 AI Berhasil Mencatat (Simulasi Lokal):\n\n• Jenis: ${parsed.type}\n• Nominal: Rp ${amt.toLocaleString('id-ID')}\n• Keterangan: "${parsed.description}"`);
       } else {
         const response = await fetch('/api/transactions', {
           method: 'POST',
@@ -1778,7 +1778,7 @@ export default function AdminDashboard() {
           })
         });
         if (!response.ok) throw new Error('Gagal menyimpan transaksi AI');
-        alert(`🤖 AI Berhasil Mencatat:\n\nÇó Nominal: Rp ${amt.toLocaleString('id-ID')}\nÇó Keterangan: "${parsed.description}"`);
+        alert(`🤖 AI Berhasil Mencatat:\n\n• Nominal: Rp ${amt.toLocaleString('id-ID')}\n• Keterangan: "${parsed.description}"`);
         await fetchPreviewUserData(previewUserId);
       }
       setPrevAiText('');
@@ -1805,21 +1805,21 @@ export default function AdminDashboard() {
             amount: 189500,
             categoryId: 'c5', // Belanja
             categoryName: 'Belanja',
-            categoryEmoji: 'ƒæò'
+            categoryEmoji: '🛍️'
           },
           {
             description: 'Kopi & Croissant Starbucks',
             amount: 72000,
             categoryId: 'c1', // Makanan
             categoryName: 'Makanan',
-            categoryEmoji: 'ƒì£'
+            categoryEmoji: '🍜£'
           },
           {
             description: 'Bensin Pertalite Pertamina',
             amount: 100000,
             categoryId: 'c2', // Transport
             categoryName: 'Transport',
-            categoryEmoji: 'ƒÜù'
+            categoryEmoji: '🚀ù'
           }
         ];
 
@@ -1845,7 +1845,7 @@ export default function AdminDashboard() {
         }
 
         await fetchPreviewUserData(previewUserId);
-        alert(`🟢 AI Vision Berhasil!\n\nStruk dibaca:\nÇó Toko/Kegiatan: ${selected.description}\nÇó Nominal: Rp ${selected.amount.toLocaleString('id-ID')}\nÇó Kategori: ${selected.categoryEmoji} ${selected.categoryName}\nÇó Dompet: ƒæ¢ ${defaultW.name}`);
+        alert(`🟢 AI Vision Berhasil!\n\nStruk dibaca:\n• Toko/Kegiatan: ${selected.description}\n• Nominal: Rp ${selected.amount.toLocaleString('id-ID')}\n• Kategori: ${selected.categoryEmoji} ${selected.categoryName}\n• Dompet: 💼 ${defaultW.name}`);
         setPreviewUserTab('beranda');
       } catch (err: any) {
         alert(`❌ Gagal membaca struk: ${err.message}`);
@@ -2524,7 +2524,7 @@ export default function AdminDashboard() {
                     outline: 'none'
                   }}
                 />
-                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '0.85rem' }}>ƒöì</span>
+                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '0.85rem' }}>🔍ì</span>
               </div>
             </div>
 
@@ -2801,7 +2801,7 @@ export default function AdminDashboard() {
                   className="btn btn-outline"
                   style={{ padding: '8px 16px', fontSize: '0.85rem', fontWeight: '700', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  <span>ƒöä</span> Refresh Data
+                  <span>🔄</span> Refresh Data
                 </button>
               </div>
             </div>
@@ -2825,7 +2825,7 @@ export default function AdminDashboard() {
             {/* Pending Users List */}
             {users.filter(u => u.is_approved === false).length === 0 ? (
               <div className="card animate-slide-up" style={{ textAlign: 'center', padding: '48px 24px', background: 'rgba(13, 20, 38, 0.65)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: '18px' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>ƒÄë</div>
+                <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🎬ë</div>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#ffffff', margin: '0 0 6px 0' }}>
                   Semua Pendaftaran Sudah Disetujui!
                 </h3>
@@ -2871,9 +2871,9 @@ export default function AdminDashboard() {
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px', fontSize: '0.82rem', color: '#94a3b8', flexWrap: 'wrap' }}>
-                          <span>ƒôº <strong style={{ color: '#38bdf8' }}>{u.email}</strong></span>
-                          <span>ƒô▒ {u.phone || 'No HP belum diisi'}</span>
-                          <span>ƒôà Daftar: {u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Baru Saja'}</span>
+                          <span>📊º <strong style={{ color: '#38bdf8' }}>{u.email}</strong></span>
+                          <span>📊▒ {u.phone || 'No HP belum diisi'}</span>
+                          <span>📊à Daftar: {u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Baru Saja'}</span>
                         </div>
                       </div>
                     </div>
@@ -2949,7 +2949,7 @@ export default function AdminDashboard() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <h3 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                    ÜÖ∩╕Å Atur Harga Paket Langganan (Basic & Pro)
+                    ⚙️ Atur Harga Paket Langganan (Basic & Pro)
                   </h3>
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px', margin: 0 }}>
                     Sesuaikan nominal harga dan periode paket yang tampil di halaman pendaftaran & dashboard pengguna secara dinamis.
@@ -2961,7 +2961,7 @@ export default function AdminDashboard() {
                   className="btn btn-primary"
                   style={{ padding: '10px 24px', fontWeight: '800', fontSize: '0.88rem', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', border: 'none', borderRadius: '10px', cursor: isSavingPricing ? 'not-allowed' : 'pointer', boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)' }}
                 >
-                  {isSavingPricing ? 'Menyimpan...' : 'ƒÆ╛ Simpan Perubahan Harga'}
+                  {isSavingPricing ? 'Menyimpan...' : '💾╛ Simpan Perubahan Harga'}
                 </button>
               </div>
 
@@ -2969,7 +2969,7 @@ export default function AdminDashboard() {
                 {/* Basic Tier Card */}
                 <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#ffffff' }}>ƒôª Paket Basic</span>
+                    <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#ffffff' }}>📊ª Paket Basic</span>
                     <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '2px 8px', borderRadius: '6px', background: 'rgba(100, 116, 139, 0.2)', color: '#94a3b8' }}>FREE TIER / DASAR</span>
                   </div>
 
@@ -3008,7 +3008,7 @@ export default function AdminDashboard() {
                 {/* Pro Tier Card */}
                 <div style={{ background: 'rgba(245, 158, 11, 0.03)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#fbbf24' }}>ƒÆÄ Paket Pro</span>
+                    <span style={{ fontWeight: '800', fontSize: '1.05rem', color: '#fbbf24' }}>💾Ä Paket Pro</span>
                     <span style={{ fontSize: '0.72rem', fontWeight: '800', padding: '2px 8px', borderRadius: '6px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000' }}>PALING POPULER</span>
                   </div>
 
@@ -3170,7 +3170,7 @@ export default function AdminDashboard() {
                           <td>
                             {isFree ? (
                               <span className="shadcn-badge" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-                                ✨ Free Access VIP
+                                ⭐ Free Access VIP
                               </span>
                             ) : isPro ? (
                               <span className="shadcn-badge shadcn-badge-approved">
@@ -3246,7 +3246,7 @@ export default function AdminDashboard() {
                           <span>Status Masa Aktif</span>
                           {isFree ? (
                             <span className="shadcn-badge" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#fbbf24', border: '1px solid rgba(245, 158, 11, 0.3)', fontSize: '0.72rem' }}>
-                              ✨ Free Access VIP
+                              ⭐ Free Access VIP
                             </span>
                           ) : isPro ? (
                             <span className="shadcn-badge shadcn-badge-approved" style={{ fontSize: '0.72rem' }}>
@@ -3378,7 +3378,7 @@ export default function AdminDashboard() {
                           </div>
                         ) : (
                           <span style={{ fontSize: '0.82rem', fontWeight: '700', color: '#059669', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            ✨ Selesai (Pro Aktif)
+                            ✅ Selesai (Pro Aktif)
                           </span>
                         )}
                       </td>
@@ -3395,7 +3395,7 @@ export default function AdminDashboard() {
                   <div className="mobile-card-header">
                     <div>
                       <div style={{ fontWeight: '800', color: '#ffffff', fontSize: '1rem' }}>{p.user}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{p.time} Çó ID: {p.userId}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{p.time} • ID: {p.userId}</div>
                     </div>
                     {p.status === 'approved' ? (
                       <span className="shadcn-badge shadcn-badge-approved" style={{ fontSize: '0.72rem' }}>
@@ -3453,7 +3453,7 @@ export default function AdminDashboard() {
                       </>
                     ) : (
                       <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#059669', display: 'inline-flex', alignItems: 'center', gap: '4px', margin: 'auto' }}>
-                        ✨ Selesai (Pro Aktif)
+                        ✅ Selesai (Pro Aktif)
                       </span>
                     )}
                   </div>
@@ -3476,7 +3476,7 @@ export default function AdminDashboard() {
                 className="btn btn-outline"
                 style={{ padding: '8px 16px', fontSize: '0.85rem' }}
               >
-                ƒöä Refresh Log
+                🔄 Refresh Log
               </button>
             </div>
 
@@ -3529,7 +3529,7 @@ export default function AdminDashboard() {
                   <div className="mobile-card-body">
                     <div className="mobile-card-row">
                       <span>Provider & Action</span>
-                      <span style={{ color: '#c084fc', fontWeight: '600' }}>{l.provider} Çó <code>{l.action}</code></span>
+                      <span style={{ color: '#c084fc', fontWeight: '600' }}>{l.provider} • <code>{l.action}</code></span>
                     </div>
                     <div className="mobile-card-row">
                       <span>Total Tokens</span>
@@ -3624,7 +3624,7 @@ export default function AdminDashboard() {
                   className="btn btn-outline"
                   style={{ padding: '8px 16px', fontSize: '0.85rem' }}
                 >
-                  ƒöä Refresh
+                  🔄 Refresh
                 </button>
                 <button
                   onClick={handleOpenAddTutorial}
@@ -3678,8 +3678,8 @@ export default function AdminDashboard() {
                       >
                         <option value="Bot Telegram">🤖 Bot Telegram</option>
                         <option value="Scan AI Struk">📸 Scan AI Struk</option>
-                        <option value="Dompet & Budget">ƒæ¢ Dompet & Budget</option>
-                        <option value="Dasar">ƒö░ Dasar & Onboarding</option>
+                        <option value="Dompet & Budget">💼 Dompet & Budget</option>
+                        <option value="Dasar">🔍░ Dasar & Onboarding</option>
                         <option value="Laporan & Ekspor">📊 Laporan & Ekspor</option>
                         <option value="Umum">💡 Tips & Trik Umum</option>
                       </select>
@@ -3720,7 +3720,7 @@ export default function AdminDashboard() {
                   {tutorialYoutubeUrlInput.trim() && (
                     <div style={{ marginTop: '8px', padding: '14px', background: 'rgba(0, 0, 0, 0.4)', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                       <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#34d399', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span>û╢∩╕Å</span> Preview Player YouTube:
+                        <span>▶️</span> Preview Player YouTube:
                       </div>
                       <div style={{ position: 'relative', width: '100%', maxWidth: '420px', paddingBottom: '56.25%', height: 0, borderRadius: '10px', overflow: 'hidden', background: '#000' }}>
                         <iframe
@@ -3749,7 +3749,7 @@ export default function AdminDashboard() {
                       className="btn btn-primary"
                       style={{ padding: '9px 24px', fontWeight: '700', fontSize: '0.85rem' }}
                     >
-                      {isSavingTutorial ? 'Menyimpan...' : (editingTutorialId ? 'ƒÆ╛ Simpan Perubahan' : '₧ò Tambahkan Video')}
+                      {isSavingTutorial ? 'Menyimpan...' : (editingTutorialId ? '💾╛ Simpan Perubahan' : '₧ò Tambahkan Video')}
                     </button>
                   </div>
                 </form>
@@ -3760,7 +3760,7 @@ export default function AdminDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <input
                 type="text"
-                placeholder="ƒöì Cari video tutorial..."
+                placeholder="🔍ì Cari video tutorial..."
                 value={tutorialSearchQuery}
                 onChange={e => setTutorialSearchQuery(e.target.value)}
                 style={{ maxWidth: '360px', width: '100%', padding: '8px 14px', fontSize: '0.85rem' }}
@@ -3893,7 +3893,7 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <div className="admin-header" style={{ marginBottom: '24px' }}>
-                <h2>ƒæ¢ Keuangan Saya (Admin)</h2>
+                <h2>💼 Keuangan Saya (Admin)</h2>
                 <p style={{ color: 'var(--text-muted)' }}>Kelola pencatatan keuangan pribadi, anggaran, dan dompet Anda sendiri secara langsung.</p>
               </div>
             )}
@@ -3944,7 +3944,7 @@ export default function AdminDashboard() {
                         <div className="stat-sub">Bulan berjalan</div>
                       </div>
                       <div className="stat-card">
-                        <span className="stat-label" style={{ color: 'var(--warning)' }}>ƒÄ» Sisa Budget</span>
+                        <span className="stat-label" style={{ color: 'var(--warning)' }}>🎬» Sisa Budget</span>
                         <div className="stat-value">Rp {previewTotalBudgetRemaining.toLocaleString('id-ID')}</div>
                         <div className="stat-sub">Limit: Rp {previewTotalBudgetLimit.toLocaleString('id-ID')}</div>
                       </div>
@@ -4029,7 +4029,7 @@ export default function AdminDashboard() {
                       
                       {previewTransactions.length === 0 ? (
                         <div className="empty-state" style={{ border: 'none' }}>
-                          <span className="empty-icon">ƒÆ╕</span>
+                          <span className="empty-icon">💾╕</span>
                           <h4>Belum ada transaksi</h4>
                           <p>Gunakan tab Transaksi untuk mencatat pengeluaran atau pemasukan baru.</p>
                         </div>
@@ -4047,10 +4047,10 @@ export default function AdminDashboard() {
                                     <span style={{ fontSize: '1.4rem' }}>{cat?.emoji || '💰'}</span>
                                     <div>
                                       <div style={{ fontWeight: '700' }}>{t.description}</div>
-                                      <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>{cat?.name || 'Lainnya'} Çó {dateStr}</div>
+                                      <div style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>{cat?.name || 'Lainnya'} • {dateStr}</div>
                                     </div>
                                   </td>
-                                  <td>{t.source === 'telegram' ? '🤖 Telegram' : 'ƒÆ╗ Web'}</td>
+                                  <td>{t.source === 'telegram' ? '🤖 Telegram' : '💾╗ Web'}</td>
                                   <td className={`tx-amount ${t.type}`} style={{ color: t.type === 'expense' ? 'var(--error)' : 'var(--success)', fontWeight: '700' }}>
                                     {t.type === 'expense' ? '-' : '+'}Rp {Number(t.amount).toLocaleString('id-ID')}
                                   </td>
@@ -4085,7 +4085,7 @@ export default function AdminDashboard() {
                           />
                         </div>
                         <button type="submit" className="btn btn-primary" disabled={prevIsParsingAi}>
-                          {prevIsParsingAi ? '🤖 Memproses...' : '✨ Kirim ke AI'}
+                          {prevIsParsingAi ? '🤖 Memproses...' : '🤖 Kirim ke AI'}
                         </button>
                       </form>
                     </div>
@@ -4113,12 +4113,12 @@ export default function AdminDashboard() {
                       }}>
                         {isParsingReceipt ? (
                           <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '2rem' }}>ƒöä</span>
+                            <span style={{ fontSize: '2rem' }}>🔄</span>
                             <span style={{ fontWeight: '600', color: 'var(--primary)' }}>Memindai struk dengan AI Vision...</span>
                           </div>
                         ) : (
                           <>
-                            <span style={{ fontSize: '2.5rem' }}>ƒô╖</span>
+                            <span style={{ fontSize: '2.5rem' }}>📊╖</span>
                             <div style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-main)' }}>
                               Klik untuk memilih file struk simulasi
                             </div>
@@ -4236,7 +4236,7 @@ export default function AdminDashboard() {
                             </div>
                             <div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: '600', marginBottom: '4px' }}>
-                                <span style={{ color: 'var(--error)' }}>ƒö┤ Pengeluaran</span>
+                                <span style={{ color: 'var(--error)' }}>🔍┤ Pengeluaran</span>
                                 <span>Rp {repTotalExpense.toLocaleString('id-ID')}</span>
                               </div>
                               <div style={{ height: '8px', backgroundColor: 'var(--border)', borderRadius: '100px', overflow: 'hidden' }}>
@@ -4249,7 +4249,7 @@ export default function AdminDashboard() {
                         {/* Summary Card: Savings Rate Gauge */}
                         <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                           <div>
-                            <h4 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>ƒôê SAVINGS RATE</h4>
+                            <h4 style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>📊ê SAVINGS RATE</h4>
                             <div style={{ fontSize: '1.6rem', fontWeight: '800', color: repNetSavings >= 0 ? 'var(--primary)' : 'var(--error)' }}>
                               {repNetSavings >= 0 ? '+' : ''}Rp {repNetSavings.toLocaleString('id-ID')}
                             </div>
@@ -4267,12 +4267,12 @@ export default function AdminDashboard() {
 
                         {/* Summary Card: Category Distribution Breakdown */}
                         <div style={{ border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '160px', overflowY: 'auto' }}>
-                          <h4 style={{ margin: '0 0 4px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>ƒìò PROPORSI PENGELUARAN</h4>
+                          <h4 style={{ margin: '0 0 4px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>🍜ò PROPORSI PENGELUARAN</h4>
                           {Object.keys(categorySpentMap).length === 0 ? (
                             <p style={{ fontSize: '0.8rem', color: 'var(--text-light)', margin: 0 }}>Belum ada data pengeluaran.</p>
                           ) : (
                             Object.entries(categorySpentMap).map(([catId, amount]) => {
-                              const catObj = previewCategories.find(c => c.id === catId) || { name: 'Lainnya', emoji: 'ƒôª' };
+                              const catObj = previewCategories.find(c => c.id === catId) || { name: 'Lainnya', emoji: '📊ª' };
                               const pct = repTotalExpense > 0 ? Math.round((amount / repTotalExpense) * 100) : 0;
                               return (
                                 <div key={catId} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem' }}>
@@ -4507,7 +4507,7 @@ export default function AdminDashboard() {
                             <div className="stat-card" style={{ border: w.is_default ? '2px solid var(--primary)' : '1px solid var(--border)', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
                               <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span>ƒæ¢</span>
+                                  <span>💼</span>
                                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                     {w.is_default && <span style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)', fontSize: '0.7rem', fontWeight: '700', padding: '2px 8px', borderRadius: '100px' }}>DEFAULT</span>}
                                     <span onClick={() => { setEditingWalletId(w.id); setEditingWalletName(w.name); setEditingWalletBalance(String(w.balance)); }} style={{ cursor: 'pointer', fontSize: '0.85rem' }} title="Edit Dompet">✏️</span>
@@ -4763,7 +4763,7 @@ export default function AdminDashboard() {
                 <h2 style={{ fontSize: '1.6rem', fontWeight: '800', margin: 0, color: 'var(--text-main)' }}>AI Configuration</h2>
               </div>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '32px' }}>
-                Konfigurasi AI central untuk semua edge function. API key dan model dipilih di sini Çö user biasa tidak bisa mengubah.
+                Konfigurasi AI central untuk semua edge function. API key dan model dipilih di sini — user biasa tidak bisa mengubah.
               </p>
 
               <form onSubmit={handleSaveAIConfig} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -4799,7 +4799,7 @@ export default function AdminDashboard() {
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <input
                       id="aiApiKey"
-                      type={showAiApiKey ? 'text' : 'password'}
+                      type={showAiApiKey ? '👁️' : '🙈'}
                       style={{
                         width: '100%',
                         backgroundColor: 'rgba(10, 15, 30, 0.85)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.12)',
@@ -4830,7 +4830,7 @@ export default function AdminDashboard() {
                         justifyContent: 'center'
                       }}
                     >
-                      {showAiApiKey ? 'ƒæü∩╕Å' : 'ƒæü∩╕ÅÇìƒù¿∩╕Å'}
+                      {showAiApiKey ? '👁️' : '🙈'}
                     </button>
                   </div>
                 </div>
@@ -4856,7 +4856,7 @@ export default function AdminDashboard() {
                       transition: 'background 0.2s'
                     }}
                   >
-                    {isFetchingModels ? 'ƒöä Loading Models...' : 'ƒöä Fetch Models'}
+                    {isFetchingModels ? '🔄 Loading Models...' : '🔄 Fetch Models'}
                   </button>
                 </div>
 
@@ -4890,7 +4890,7 @@ export default function AdminDashboard() {
                           cursor: 'pointer'
                         }}
                       >
-                        {preset === 'combo' ? 'ƒöÑ combo (Auto-Switch)' : preset}
+                        {preset === 'combo' ? '⚡ combo (Auto-Switch)' : preset}
                       </button>
                     ))}
                   </div>
@@ -4954,7 +4954,7 @@ export default function AdminDashboard() {
                       transition: 'background 0.2s'
                     }}
                   >
-                    ƒÆ╛ {isSavingAiConfig ? 'Menyimpan...' : 'Simpan Pengaturan AI'}
+                    💾╛ {isSavingAiConfig ? 'Menyimpan...' : 'Simpan Pengaturan AI'}
                   </button>
                 </div>
 
@@ -5009,7 +5009,7 @@ export default function AdminDashboard() {
                           transition: 'background 0.2s'
                         }}
                       >
-                        {isTestingAi ? 'ƒöä Mengirim...' : 'ƒÜÇ Kirim'}
+                        {isTestingAi ? '🔄 Mengirim...' : '🚀Ç Kirim'}
                       </button>
                     </div>
                   </div>
@@ -5051,7 +5051,7 @@ export default function AdminDashboard() {
                             <li>Browser modern di website HTTPS (<code>https://www.mencatat.my.id</code>) juga memblokir pemanggilan langsung ke <code>http://</code> (Mixed Content Security).</li>
                           </ul>
                           <p style={{ margin: '0 0 6px 0', fontWeight: '700', color: '#38bdf8' }}>
-                            ƒÜÇ Solusi Termudah agar 9Router Anda dapat diakses 24/7 dari domain ini:
+                            🚀Ç Solusi Termudah agar 9Router Anda dapat diakses 24/7 dari domain ini:
                           </p>
                           <ol style={{ margin: 0, paddingLeft: '20px', color: '#e2e8f0' }}>
                             <li>Jalankan <strong>Cloudflare Tunnel</strong> di komputer tempat 9Router berjalan:
@@ -5060,7 +5060,7 @@ export default function AdminDashboard() {
                             <li>Atau aktifkan <strong>Tailscale Funnel</strong>:
                               <br /><code style={{ background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: '4px' }}>tailscale funnel 20128</code>
                             </li>
-                            <li>Salin URL HTTPS publik yang dihasilkan (contoh: <code>https://your-tunnel.trycloudflare.com/v1</code>) ke kolom <strong>Base URL</strong> di atas, lalu klik <strong>ƒÆ╛ Simpan Pengaturan AI</strong>.</li>
+                            <li>Salin URL HTTPS publik yang dihasilkan (contoh: <code>https://your-tunnel.trycloudflare.com/v1</code>) ke kolom <strong>Base URL</strong> di atas, lalu klik <strong>💾╛ Simpan Pengaturan AI</strong>.</li>
                           </ol>
                         </div>
                       ) : null}
@@ -5326,10 +5326,10 @@ export default function AdminDashboard() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: '800', margin: 0, color: 'var(--text-main)' }}>
-                  ƒû╝∩╕Å Detail Bukti Transfer
+                  🧾 Detail Bukti Transfer
                 </h3>
                 <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '2px 0 0 0' }}>
-                  {selectedProofModal.user} Çó <strong style={{ color: '#059669' }}>{selectedProofModal.amount}</strong>
+                  {selectedProofModal.user} • <strong style={{ color: '#059669' }}>{selectedProofModal.amount}</strong>
                 </p>
               </div>
               <button 

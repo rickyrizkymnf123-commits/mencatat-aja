@@ -1,151 +1,171 @@
 import { ParsedTransaction } from '@/types';
-import { createAdminClient } from '@/lib/supabase/server';
 
 /**
  * Normalizes Indonesian currency strings like 15rb, 1,5jt, 500k into pure numbers.
  */
-export function normalizeIndonesianAmount(text: string): number {
-  if (!text) return 0;
-  const lower = text.toLowerCase().trim();
+export function normalizeIndonesianAmount(rawNum: string | number, unit?: string): number {
+  if (!rawNum) return 0;
+  let s = String(rawNum).trim().replace(/\s/g, '');
 
-  // Match pattern like 1.5jt, 1,5jt, 500k, 15rb, 15000
-  let match = lower.match(/([\d\.,\s]+)\s*(juta|jt|rb|ribu|k)?/i);
-  if (!match) return 0;
-
-  let numStr = match[1].replace(/\s/g, '');
-  const unit = match[2]?.toLowerCase();
-
-  // Replace comma with dot if decimal
-  if (numStr.includes(',') && !numStr.includes('.')) {
-    numStr = numStr.replace(',', '.');
-  } else if (numStr.includes('.') && numStr.includes(',')) {
-    // Standard IDR 1.500.000,00 format
-    numStr = numStr.replace(/\./g, '').replace(',', '.');
-  } else if ((numStr.match(/\./g) || []).length > 1) {
-    // 1.500.000 format
-    numStr = numStr.replace(/\./g, '');
+  if (s.includes(',') && !s.includes('.')) {
+    s = s.replace(',', '.');
+  } else if (s.includes('.') && s.includes(',')) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else if ((s.match(/\./g) || []).length > 1) {
+    s = s.replace(/\./g, '');
   }
 
-  let num = parseFloat(numStr);
-  if (isNaN(num)) return 0;
+  let val = parseFloat(s);
+  if (isNaN(val)) return 0;
 
-  if (unit === 'jt' || unit === 'juta') {
-    num *= 1000000;
-  } else if (unit === 'rb' || unit === 'ribu' || unit === 'k') {
-    num *= 1000;
+  const u = (unit || '').toLowerCase().trim();
+  if (u === 'jt' || u === 'juta') {
+    val *= 1000000;
+  } else if (u === 'rb' || u === 'ribu' || u === 'k') {
+    val *= 1000;
   }
-
-  return Math.round(num);
+  return Math.round(val);
 }
 
 /**
- * Parse natural language text using Gemini / OpenAI / Fallback regex
+ * Parse natural language text using 9Router / Gemini / Smart Regex
  */
 export async function parseTransactionText(text: string, categories: string[] = []): Promise<ParsedTransaction | null> {
-  const categoryListStr = categories.length > 0 ? categories.join(', ') : 'Makanan, Transport, Hiburan, Tagihan, Kesehatan, Belanja, Pendidikan, Gaji, Other';
+  if (!text || !text.trim()) return null;
 
-  const systemPrompt = `Kamu adalah parser keuangan Indonesia yang presisi. Ubah input teks pengguna menjadi JSON terstruktur tanpa markdown codeblock.
-Format JSON yang WAJIB dihasilkan:
+  // 1. Try 9Router Universal Gateway / AI if active
+  try {
+    const { generateAiCompletion, DEFAULT_9ROUTER_BASE_URL, DEFAULT_9ROUTER_MODEL } = await import('@/lib/ai');
+    const categoryListStr = categories.length > 0 ? categories.join(', ') : 'Makanan, Transport, Hiburan, Tagihan, Kesehatan, Belanja, Pendidikan, Gaji, Other';
+    const prompt = `Kamu adalah parser keuangan Indonesia presisi. Ekstrak data transaksi keuangan berikut menjadi format JSON tanpa markdown:
+Teks: "${text}"
+Pilihan Kategori: ${categoryListStr}
+
+Format JSON:
 {
   "jenis": "pemasukan" | "pengeluaran" | "transfer",
   "nominal": number,
   "kategori": string,
   "catatan": string
-}
+}`;
 
-Aturan parsing nominal Indonesia:
-- "15rb", "15ribu", "15k" = 15000
-- "1.5jt", "1,5jt", "1.5juta" = 1500000
-- "500k" = 500000
-- "2.500.000" = 2500000
+    const aiRes = await generateAiCompletion({
+      baseUrl: process.env.AI_BASE_URL || DEFAULT_9ROUTER_BASE_URL,
+      apiKey: process.env.AI_API_KEY || 'sk-none',
+      model: process.env.AI_MODEL || DEFAULT_9ROUTER_MODEL,
+      prompt,
+    }).catch(() => null);
 
-Pilihan Kategori: ${categoryListStr}.
-Jika teks tidak jelas / bukan transaksi keuangan, kembalikan null atau object dengan nominal = 0.`;
-
-  // Try calling active provider or Gemini API
-  const geminiApiKey = process.env.GEMINI_API_KEY;
-  if (geminiApiKey) {
-    try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `${systemPrompt}\n\nInput Teks: "${text}"` }]
-            }
-          ],
-          generationConfig: {
-            responseMimeType: 'application/json'
-          }
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (jsonText) {
-          const parsed = JSON.parse(jsonText);
-          if (parsed && parsed.nominal > 0) {
-            return {
-              jenis: parsed.jenis || 'pengeluaran',
-              nominal: parsed.nominal,
-              kategori: parsed.kategori || 'Lainnya',
-              catatan: parsed.catatan || text
-            };
-          }
-        }
+    if (aiRes && aiRes.text) {
+      let clean = aiRes.text.trim();
+      if (clean.startsWith('```')) {
+        clean = clean.replace(/^```[a-z]*\s*/i, '').replace(/```\s*$/, '').trim();
       }
-    } catch (err) {
-      console.warn('Gemini API call failed, falling back to smart regex parser:', err);
+      const firstBrace = clean.indexOf('{');
+      const lastBrace = clean.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        clean = clean.substring(firstBrace, lastBrace + 1);
+      }
+      const parsed = JSON.parse(clean);
+      if (parsed && Number(parsed.nominal) > 0) {
+        return {
+          jenis: parsed.jenis || 'pengeluaran',
+          nominal: Number(parsed.nominal),
+          kategori: parsed.kategori || 'Lainnya',
+          catatan: parsed.catatan || text,
+        };
+      }
     }
+  } catch (err) {
+    // Fallthrough to smart regex parser
   }
 
-  // Smart Regex Fallback Parser for Indonesia
+  // 2. High-precision Smart Regex Parser for Indonesia
   return smartRegexParser(text, categories);
 }
 
-function smartRegexParser(text: string, categories: string[]): ParsedTransaction | null {
+export function smartRegexParser(text: string, categories: string[] = []): ParsedTransaction | null {
+  if (!text) return null;
   const lower = text.toLowerCase().trim();
 
-  // Determine type
+  // 1. Determine type
   let jenis: 'pemasukan' | 'pengeluaran' | 'transfer' = 'pengeluaran';
-  if (lower.includes('gaji') || lower.includes('pemasukan') || lower.includes('dapat') || lower.includes('terima') || lower.includes('cashback') || lower.includes('transfer dari')) {
+  if (
+    lower.includes('gaji') ||
+    lower.includes('pemasukan') ||
+    lower.includes('dapat ') ||
+    lower.includes('terima ') ||
+    lower.includes('cashback') ||
+    lower.includes('transfer dari') ||
+    lower.includes('tf dari')
+  ) {
     jenis = 'pemasukan';
-  } else if (lower.includes('transfer ke') || lower.includes('pindah ke') || lower.includes('kirim ke')) {
+  } else if (
+    lower.includes('transfer ke') ||
+    lower.includes('transfer ') ||
+    lower.includes('tf ke') ||
+    lower.includes('pindah ke') ||
+    lower.includes('kirim ke')
+  ) {
     jenis = 'transfer';
   }
 
-  // Extract nominal
-  const amountMatch = lower.match(/([\d\.,\s]+)\s*(juta|jt|rb|ribu|k)?/i);
-  if (!amountMatch) return null;
+  // 2. Extract nominal
+  let nominal = 0;
+  let matchedStr = '';
 
-  const nominal = normalizeIndonesianAmount(amountMatch[0]);
+  const patternWithUnit = /(\d+(?:[\.,]\d+)?)\s*(juta|jt|rb|ribu|k)\b/i;
+  const patternRp = /(?:rp\.?\s*)(\d+(?:[\.,]\d+)?)\s*(juta|jt|rb|ribu|k)?/i;
+  const patternFormattedNum = /\b(\d{1,3}(?:\.\d{3})+)\b/;
+  const patternPlainNum = /\b(\d{4,10})\b/;
+
+  let m = lower.match(patternWithUnit);
+  if (m) {
+    nominal = normalizeIndonesianAmount(m[1], m[2]);
+    matchedStr = m[0];
+  } else if ((m = lower.match(patternRp))) {
+    nominal = normalizeIndonesianAmount(m[1], m[2]);
+    matchedStr = m[0];
+  } else if ((m = lower.match(patternFormattedNum))) {
+    nominal = normalizeIndonesianAmount(m[1]);
+    matchedStr = m[0];
+  } else if ((m = lower.match(patternPlainNum))) {
+    nominal = normalizeIndonesianAmount(m[1]);
+    matchedStr = m[0];
+  }
+
   if (nominal <= 0) return null;
 
-  // Clean note
+  // 3. Extract description
   let catatan = text
-    .replace(amountMatch[0], '')
-    .replace(/rp/gi, '')
+    .replace(new RegExp(matchedStr, 'i'), '')
+    .replace(/\brp\.?\s*/gi, '')
+    .replace(/\s+/g, ' ')
     .trim();
-  if (!catatan) catatan = text;
 
-  // Predict Category
+  if (!catatan) catatan = text.trim();
+
+  // 4. Categorize
   let kategori = 'Pengeluaran';
   if (jenis === 'pemasukan') {
     kategori = 'Gaji';
+  } else if (jenis === 'transfer') {
+    kategori = 'Transfer';
   } else {
-    if (lower.includes('bakso') || lower.includes('makan') || lower.includes('kopi') || lower.includes('nasi') || lower.includes('ayam')) {
+    if (lower.match(/\b(bakso|makan|kopi|nasi|ayam|sate|soto|mie|jus|burger|pizza|martabak|snack|roti|warteg|resto|kafe|cafe)\b/i)) {
       kategori = 'Makanan';
-    } else if (lower.includes('bensin') || lower.includes('gojek') || lower.includes('grab') || lower.includes('parkir') || lower.includes('tol')) {
+    } else if (lower.match(/\b(bensin|pertalite|pertamax|gojek|gocar|grab|parkir|tol|angkot|busway|ojek|kereta|mrt|service|oli)\b/i)) {
       kategori = 'Transport';
-    } else if (lower.includes('listrik') || lower.includes('air') || lower.includes('wifi') || lower.includes('pulsa') || lower.includes('token')) {
+    } else if (lower.match(/\b(listrik|pln|air|pdam|wifi|indihome|pulsa|kuota|token|iuran|bpjs|tagihan)\b/i)) {
       kategori = 'Tagihan';
-    } else if (lower.includes('baju') || lower.includes('sepatu') || lower.includes('belanja') || lower.includes('tokopedia') || lower.includes('shopee')) {
+    } else if (lower.match(/\b(baju|celana|sepatu|belanja|tokopedia|shopee|lazada|tiktok|mall|indomaret|alfamart|superindo)\b/i)) {
       kategori = 'Belanja';
-    } else if (lower.includes('obat') || lower.includes('dokter') || lower.includes('vitamin')) {
+    } else if (lower.match(/\b(obat|dokter|vitamin|klinik|apotek|rumahsakit|rs|paracetamol)\b/i)) {
       kategori = 'Kesehatan';
+    } else if (lower.match(/\b(bioskop|nonton|game|steam|topup|netflix|spotify|hiburan|liburan|hotel)\b/i)) {
+      kategori = 'Hiburan';
+    } else if (lower.match(/\b(buku|kursus|les|sekolah|kuliah|spp|ujian|pendidikan)\b/i)) {
+      kategori = 'Pendidikan';
     } else if (categories.length > 0) {
       kategori = categories[0];
     }
@@ -163,58 +183,25 @@ function smartRegexParser(text: string, categories: string[]): ParsedTransaction
  * Receipt OCR parser for Pro users sending photo messages
  */
 export async function parseReceiptPhoto(photoBase64: string, categories: string[] = []): Promise<ParsedTransaction | null> {
-  const geminiApiKey = process.env.GEMINI_API_KEY;
-
-  if (geminiApiKey) {
-    try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                { text: `Analisa foto struk ini. Kembalikan JSON terstruktur dengan format:
-{
-  "merchant": string,
-  "nominal_total": number,
-  "kategori_utama": string,
-  "catatan": string,
-  "items": [
-    { "nama": string, "harga": number, "kategori": string }
-  ]
-}` },
-                {
-                  inlineData: {
-                    mimeType: 'image/jpeg',
-                    data: photoBase64
-                  }
-                }
-              ]
-            }
-          ],
-          generationConfig: { responseMimeType: 'application/json' }
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (jsonText) {
-          const parsed = JSON.parse(jsonText);
-          return {
-            jenis: 'pengeluaran',
-            nominal: parsed.nominal_total || 0,
-            kategori: parsed.kategori_utama || 'Belanja',
-            catatan: `Struk: ${parsed.merchant || 'Merchant'} (${parsed.items?.length || 1} item)`,
-            items: parsed.items || []
-          };
-        }
-      }
-    } catch (err) {
-      console.error('Receipt OCR error:', err);
+  // Try calling AI vision if available
+  try {
+    const { parseReceiptImage } = await import('@/lib/ai');
+    const parsed = await parseReceiptImage(photoBase64, categories);
+    if (parsed && parsed.totalAmount > 0) {
+      return {
+        jenis: 'pengeluaran',
+        nominal: parsed.totalAmount,
+        kategori: parsed.category || 'Belanja',
+        catatan: parsed.description || `Struk Belanja (${parsed.items?.length || 1} item)`,
+        items: (parsed.items || []).map((i: any) => ({
+          nama: i.name,
+          harga: i.price,
+          kategori: i.category || 'Belanja',
+        })),
+      };
     }
+  } catch (err) {
+    console.warn('Vision OCR fallback:', err);
   }
 
   // Fallback demo result for receipt OCR
@@ -226,8 +213,8 @@ export async function parseReceiptPhoto(photoBase64: string, categories: string[
     items: [
       { nama: 'Air Mineral 1.5L', harga: 6500, kategori: 'Makanan' },
       { nama: 'Roti Tawar', harga: 22000, kategori: 'Makanan' },
-      { nama: 'Sabun Mandi', harga: 50000, kategori: 'Belanja' }
-    ]
+      { nama: 'Sabun Mandi', harga: 50000, kategori: 'Belanja' },
+    ],
   };
 }
 
