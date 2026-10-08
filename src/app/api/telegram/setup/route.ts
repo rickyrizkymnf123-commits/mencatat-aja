@@ -93,7 +93,7 @@ export async function POST(request: Request) {
       supabaseUrl.includes('your-supabase-project-id') || 
       supabaseUrl.includes('placeholder-project');
 
-    // 1. Check uniqueness in DB (only if not in local mock mode)
+    // 1. Auto-detach token from any previous user if it was previously registered
     if (!isPlaceholder) {
       try {
         const { data: allProfiles } = await supabaseAdmin
@@ -103,9 +103,13 @@ export async function POST(request: Request) {
           
         if (allProfiles) {
           const { decrypt } = await import('@/lib/crypto');
-          const isDuplicate = allProfiles.some(p => p.id !== targetUserId && decrypt(p.telegram_bot_token) === token);
-          if (isDuplicate) {
-            return NextResponse.json({ error: 'Token ini sudah digunakan oleh pengguna lain!' }, { status: 400 });
+          for (const p of allProfiles) {
+            if (p.id !== targetUserId && decrypt(p.telegram_bot_token) === token) {
+              await supabaseAdmin
+                .from('profiles')
+                .update({ telegram_bot_token: null, telegram_chat_id: null })
+                .eq('id', p.id);
+            }
           }
         }
       } catch (err) {
