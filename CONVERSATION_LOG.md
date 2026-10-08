@@ -48,3 +48,16 @@
   2. Menjalankan pengujian build penuh (`npm run build`) dan seluruh 37 halaman berhasil ter-compile secara sempurna tanpa error.
   3. Commit dan push perubahan langsung ke repository GitHub (`main`).
 - **Hasil**: Tampilan User Dashboard kini kembali 100% rapi, modern, dan bergaya Dark Mode Obsidian dengan seluruh komponen kartu, chart, dan navigasi ter-render secara optimal.
+
+## [2026-10-08] Perbaikan Login Superadmin & Pemulihan Dashboard Lengkap Asli
+- **User Requests**:
+  1. "kenapa fitur fitur yang ada di users jadi berubah , tidak seperti yang awal jawab dulu ?" & "masih sama kenapa"
+  2. "kata sandi admin ini salah kenapa" (Error pada `rickyrizkymnf123@gmail.com` / `Ds2026`).
+- **Root Cause Problem**:
+  1. **Login Error**: Di backend sebelumnya terdapat typo penulisan email superadmin (`rickyizkymnf123@gmail.com` tanpa huruf `r`) sehingga input email user asli `rickyrizkymnf123@gmail.com` gagal dicocokkan dengan kredensial superadmin otomatis dan password di database auth belum tersinkronisasi.
+  2. **Dashboard Features Missing**: Dashboard sempat dipecah ke sub-routes (`/dashboard/budget`, dll.) dan kehilangan tab-tab interaktif aslinya (Tutorial Video, Scan Struk AI, Kelola Langganan, Onboarding Checklist, Telegram Bot & Reminder, Filter Detail).
+- **Solusi & Hasil**:
+  1. **Sinkronisasi Password Supabase**: Mengupdate password `Ds2026` untuk akun `rickyrizkymnf123@gmail.com` dan `rickyizkymnf123@gmail.com` secara langsung di Supabase Auth Admin API (`updateUserById`), men-set role superadmin dan status `is_approved: true`.
+  2. **Perbaikan API Login & Register**: Mendukung kedua format email (`rickyrizkymnf123@gmail.com` & `rickyizkymnf123@gmail.com`), memperbaiki schema query yang sebelumnya mencoba mengupdate kolom tidak terdaftar pada tabel `profiles`.
+  3. **Pemulihan Dashboard User Asli**: Mengembalikan file [src/app/dashboard/page.tsx](file:///C:/Users/UC/.gemini/antigravity/scratch/mencatat-id/src/app/dashboard/page.tsx) lengkap dengan seluruh tab dan fiturnya (Beranda, Transaksi, Scan Struk, Kategori, Budget, Dompet, Tutorial Penggunaan, Langganan, Pengaturan Telegram & Reminder).
+  4. **Verifikasi Build**: `npm run build` sukses 100% tanpa error, dan telah di-push ke branch `main`.
