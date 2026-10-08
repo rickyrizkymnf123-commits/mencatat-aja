@@ -74,3 +74,15 @@
   3. Mengimplementasikan auto-link `telegram_chat_id` ketika pengguna berinteraksi pertama kali dengan bot.
   4. Menambahkan respon otomatis yang ramah dan instruksi panduan pencatatan saat user mengetik kata singkat seperti "P", "halo", "test", atau "/start".
   5. Build `npm run build` sukses 100% dan perubahan langsung di-push ke branch `main`.
+
+## [2026-10-08] Perbaikan Parser Transaksi Bot Telegram & Pembersihan Karakter Encoding Rusak
+- **User Requests**:
+  1. "banyak banget bug nya ini ga ada notif ai nya ga balas...": Bot Telegram membalas `🤔 Maaf, transaksi belum terbaca` saat diketik `beli kopi 25rb`.
+  2. "sama banyak tulisan ga jelas kayak hini" (Tangkapan layar admin memperlihatkan karakter mojibake seperti `föä Refresh`, `Çö`, `fæün¬ ÅÇìfù¿n¬ Å`, `föä Fetch Models`, `fÆ Simpan`).
+- **Root Cause & Diagnosa**:
+  1. **Bug Regex Parser**: Pada [src/lib/ai-provider.ts](file:///C:/Users/UC/.gemini/antigravity/scratch/mencatat-id/src/lib/ai-provider.ts), regex nominal `([\d\.,\s]+)` memuat karakter spasi `\s`. Akibatnya teks seperti `"beli kopi 25rb"` mencocokkan spasi sebelum kata `"kopi"` dan mengekstrak nominal 0.
+  2. **Corrupted UTF-8 Mojibake di Admin UI**: Sejumlah label dan tombol di [src/app/admin/page.tsx](file:///C:/Users/UC/.gemini/antigravity/scratch/mencatat-id/src/app/admin/page.tsx) tersimpan dengan karakter non-standard (akibat encoding UTF-8 vs Latin1).
+- **Solusi & Implementasi**:
+  1. Menulis ulang parser nominal Indonesia berpresisi tinggi di [src/lib/ai-provider.ts](file:///C:/Users/UC/.gemini/antigravity/scratch/mencatat-id/src/lib/ai-provider.ts) dengan dukungan penuh untuk `25rb`, `15k`, `500k`, `1.5jt`, `rp 25.000`, transfer, pemasukan, dan kategorisasi otomatis.
+  2. Membersihkan seluruh karakter mojibake (`föä` -> `🔄`, `föÑ` -> `⚡`, `fÆ` -> `💾`, `Çö` -> `—`, ikon mata sandi, badge preset) di seluruh UI Superadmin.
+  3. Menguji build `npm run build` berhasil 100% dan melakukan push ke `main`.
