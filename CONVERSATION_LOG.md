@@ -126,3 +126,27 @@
   5. **Verifikasi**:
      - Uji coba live panggilan audio transkripsi ke 9Router berhasil mengembalikan HTTP 200 dengan transkripsi akurat.
      - `npm run build` sukses 100% tanpa error, dan kode telah di-push ke branch `main`.
+
+## [2026-10-08] Pembatasan Fitur Integrasi Bot Telegram Khusus Paket PRO (Eksklusif PRO)
+- **User Request**: "koneksi teleghram ini hanya untuk pro aja basic mah ga dapat"
+- **Implementasi & Penegakan Kebijakan**:
+  1. **UI Dashboard User (`src/app/dashboard/page.tsx`)**:
+     - Menambahkan badge `PRO ONLY` pada judul **Integrasi Telegram Bot** dan **Pengingat Pencatatan Harian (Notifikasi Telegram)**.
+     - Untuk pengguna paket `Starter` (Basic), form input token BYOB dan tombol koneksi dikunci (*locked*) dan digantikan dengan tampilan kartu eksklusif PRO:
+       - Ikon gembok `🔒` dan penjelasan fitur premium.
+       - Rincian manfaat (Chat Teks Natural, Voice Note AI, Bot Kustom BYOB).
+       - Tombol direct CTA `💎 Upgrade ke Paket Pro Sekarang`.
+     - Pengingat harian otomatis ke Telegram juga dikunci khusus pelanggan PRO.
+  2. **API Endpoint Setup (`src/app/api/telegram/setup/route.ts`)**:
+     - Melakukan pengecekan `plan` akun pengguna dari database Supabase (`profiles`).
+     - Jika plan bukan `Pro` (dan bukan superadmin), request koneksi token ditolak dengan respons HTTP 403: *"Fitur integrasi Bot Telegram hanya tersedia untuk pengguna paket PRO. Silakan upgrade langganan Anda di menu Kelola Langganan."*
+  3. **Webhook Telegram Handler (`src/app/api/telegram/webhook/route.ts`)**:
+     - Memeriksa plan pengguna saat menerima chat/pesan transaksi.
+     - Jika pengguna berstatus `Starter` (Basic), bot Telegram membalas dengan peringatan ramah: *"⚠️ Fitur Bot Telegram Khusus Pengguna PRO! Silakan upgrade ke paket PRO di dashboard web Mencatat Aja untuk menikmati pencatatan via Telegram!"* dan membatalkan pencatatan otomatis.
+  4. **Landing Page Pricing (`src/app/page.tsx`)**:
+     - Memperbarui daftar perbandingan paket:
+       - **Starter**: Dashboard web lengkap, pencatatan manual via web, maksimal 50 transaksi/bulan, kelola dompet & kategori custom.
+       - **Pro**: Integrasi Bot Telegram (Chat & Voice Note AI), Unlimited transaksi & wallet, Foto struk (AI Vision OCR), Google Sheet privat sync, AI Financial Advisor.
+  5. **Verifikasi**:
+     - `npm run build` sukses 100% (33 halaman statis & dinamis ter-generate).
+     - Seluruh perubahan telah di-push ke branch `main`.
