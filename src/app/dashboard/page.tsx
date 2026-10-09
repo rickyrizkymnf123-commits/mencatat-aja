@@ -378,17 +378,39 @@ export default function DashboardPage() {
         const { data } = await supabase.auth.getSession();
         const session = data?.session;
 
-        if (session?.user) {
-          const user = session.user;
-          storedId = user.id;
-          storedEmail = user.email || storedEmail;
-          storedName = user.user_metadata?.full_name || user.email?.split('@')[0] || storedName;
-          storedPhone = user.phone || user.user_metadata?.phone_number || storedPhone;
-          storedRole = user.user_metadata?.role || (['rickyrizkymnf123@gmail.com', 'rickyizkymnf123@gmail.com'].includes(user.email?.toLowerCase() || '') ? 'superadmin' : storedRole);
+        let activeUser = session?.user;
+
+        // If client-side session is null, fetch server cookie session via /api/auth/session
+        if (!activeUser) {
+          try {
+            const sessRes = await fetch('/api/auth/session');
+            if (sessRes.ok) {
+              const sessData = await sessRes.json();
+              if (sessData.authenticated && sessData.user) {
+                activeUser = sessData.user;
+                if (sessData.profile) {
+                  storedPlan = sessData.profile.plan || 'Basic';
+                  storedToken = sessData.profile.telegram_link_token || '';
+                  if (sessData.profile.full_name) storedName = sessData.profile.full_name;
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('Server session fetch notice:', e);
+          }
+        }
+
+        if (activeUser) {
+          storedId = activeUser.id;
+          storedEmail = activeUser.email || storedEmail;
+          storedName = activeUser.user_metadata?.full_name || activeUser.email?.split('@')[0] || storedName;
+          storedPhone = activeUser.phone || activeUser.user_metadata?.phone_number || storedPhone;
+          const isSuper = ['rickyrizkymnf123@gmail.com', 'rickyizkymnf123@gmail.com'].includes(storedEmail.toLowerCase());
+          storedRole = isSuper ? 'superadmin' : (activeUser.user_metadata?.role || storedRole);
           
           // Approval resolution from user_metadata (Source of Truth)
-          if (user.user_metadata?.is_approved !== undefined) {
-            isUserApproved = user.user_metadata.is_approved !== false;
+          if (activeUser.user_metadata?.is_approved !== undefined) {
+            isUserApproved = activeUser.user_metadata.is_approved !== false;
           } else {
             isUserApproved = true;
           }
@@ -398,13 +420,15 @@ export default function DashboardPage() {
           localStorage.setItem('Mencatat Aja_user_name', storedName);
           localStorage.setItem('Mencatat Aja_user_phone', storedPhone);
           localStorage.setItem('Mencatat Aja_role', storedRole);
+          localStorage.setItem('Mencatat Aja_plan', storedPlan);
+          if (storedToken) localStorage.setItem('Mencatat Aja_telegram_token', storedToken);
 
           try {
             // Fetch latest profile status & approval status
             const { data: profile } = await supabase
               .from('profiles')
               .select('*')
-              .eq('id', user.id)
+              .eq('id', activeUser.id)
               .maybeSingle();
             
             if (profile) {
@@ -427,14 +451,14 @@ export default function DashboardPage() {
           localStorage.removeItem('Mencatat Aja_plan');
           localStorage.removeItem('Mencatat Aja_admin_mode');
           setIsLoading(false);
-          router.replace('/auth?mode=login');
+          router.replace('/login');
           return;
         }
       } catch (authErr) {
         console.warn('Supabase auth session fetch error, continuing with stored session:', authErr);
         if (!storedId || !isUUID(storedId)) {
           setIsLoading(false);
-          router.replace('/auth?mode=login');
+          router.replace('/login');
           return;
         }
       }

@@ -1,6 +1,59 @@
 import { NextResponse } from 'next/server';
 import { supabase, supabaseAdmin, supabaseUrl } from '@/lib/supabase';
 
+export async function GET(request: Request) {
+  try {
+    const { createClient, createAdminClient } = await import('@/lib/supabase/server');
+    const serverSupabase = createClient();
+    const { data: { user }, error } = await serverSupabase.auth.getUser();
+
+    if (error || !user) {
+      return NextResponse.json({
+        authenticated: false,
+        ok: false,
+        user: null,
+        profile: null
+      });
+    }
+
+    const adminSupabase = createAdminClient();
+    const { data: profile } = await adminSupabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const cleanEmail = (user.email || '').toLowerCase();
+    const isSuperAdmin = ['rickyrizkymnf123@gmail.com', 'rickyizkymnf123@gmail.com'].includes(cleanEmail) || user.user_metadata?.role === 'superadmin' || profile?.role === 'superadmin';
+    const isApproved = isSuperAdmin ? true : (user.user_metadata?.is_approved !== false);
+
+    return NextResponse.json({
+      authenticated: true,
+      ok: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        phone: user.phone || profile?.phone_number || null,
+        role: isSuperAdmin ? 'superadmin' : (user.user_metadata?.role || profile?.role || 'user'),
+        plan: profile?.plan || 'Starter',
+        is_approved: isApproved,
+        user_metadata: {
+          full_name: profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Nasabah',
+          ...user.user_metadata
+        }
+      },
+      profile
+    });
+  } catch (err: any) {
+    console.error('GET session error:', err);
+    return NextResponse.json({
+      authenticated: false,
+      ok: false,
+      error: err.message
+    }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();

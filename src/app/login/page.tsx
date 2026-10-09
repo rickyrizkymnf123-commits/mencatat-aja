@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Lock, Mail, ShieldCheck, Clock, AlertTriangle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -19,10 +20,11 @@ export default function LoginPage() {
     setMessage('');
 
     try {
+      const cleanEmail = email.toLowerCase().trim();
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: cleanEmail, password }),
       });
 
       const data = await res.json();
@@ -40,6 +42,36 @@ export default function LoginPage() {
         }
         setLoading(false);
         return;
+      }
+
+      // Persist auth state to localStorage for seamless client-side hydration
+      if (data.user) {
+        const u = data.user;
+        const prof = data.profile;
+        const isSuperadmin = ['rickyrizkymnf123@gmail.com', 'rickyizkymnf123@gmail.com'].includes(cleanEmail);
+        const resolvedRole = isSuperadmin ? 'superadmin' : (u.user_metadata?.role || prof?.role || 'user');
+        const resolvedName = prof?.full_name || u.user_metadata?.full_name || cleanEmail.split('@')[0];
+        const resolvedPlan = isSuperadmin ? 'Pro' : (prof?.plan || u.user_metadata?.plan || 'Starter');
+
+        localStorage.setItem('Mencatat Aja_user_id', u.id);
+        localStorage.setItem('Mencatat Aja_user_email', cleanEmail);
+        localStorage.setItem('Mencatat Aja_user_name', resolvedName);
+        localStorage.setItem('Mencatat Aja_user_phone', prof?.phone_number || u.phone || '');
+        localStorage.setItem('Mencatat Aja_role', resolvedRole);
+        localStorage.setItem('Mencatat Aja_plan', resolvedPlan);
+        if (prof?.telegram_link_token) {
+          localStorage.setItem('Mencatat Aja_telegram_token', prof.telegram_link_token);
+        }
+      }
+
+      // Synchronize client-side Supabase session
+      try {
+        await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password
+        });
+      } catch (clientAuthErr) {
+        console.warn('Client supabase signInWithPassword notice:', clientAuthErr);
       }
 
       window.location.href = data.redirectUrl || '/dashboard';
