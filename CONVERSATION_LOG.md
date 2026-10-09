@@ -150,3 +150,28 @@
   5. **Verifikasi**:
      - `npm run build` sukses 100% (33 halaman statis & dinamis ter-generate).
      - Seluruh perubahan telah di-push ke branch `main`.
+
+## [2026-10-09] Perbaikan Bug Auto-Logout Saat Masuk ke Dashboard Setelah Login
+- **User Request**: "ada errror bug lagi di sisi users ketika sudah login malah ke logout pas masuk dashboard"
+- **Diagnosa Root Cause**:
+  1. **Desinkronisasi Sesi Cookie SSR & Client LocalStorage**:
+     - Endpoint server `/api/auth/login` memvalidasi kredensial dan mengatur cookie autentikasi `@supabase/ssr`.
+     - Halaman `/login` sebelumnya langsung mengalihkan (`window.location.href = '/dashboard'`) tanpa menyinkronkan data profil dan `user_id` ke `localStorage`.
+     - Ketika halaman `/dashboard` dimuat di browser, `supabase.auth.getSession()` membaca `localStorage` client yang masih kosong, dan pengecekan fallback sebelumnya langsung memicu `router.replace('/login')` (menganggap sesi kosong / unauthenticated).
+  2. **Endpoint `/api/auth/session` Belum Memiliki Handler GET**:
+     - Upaya pengecekan sesi server-side via `fetch('/api/auth/session')` sebelumnya gagal dengan status HTTP 405 (Method Not Allowed) karena hanya menyediakan handler `POST`.
+- **Solusi & Implementasi**:
+  1. **Handler GET pada `/api/auth/session`**:
+     - Mengimplementasikan `GET /api/auth/session` yang membaca cookie auth `@supabase/ssr` server-side, mencocokkan user aktif dan profil Supabase, lalu mengembalikan status `{ authenticated: true, user, profile }`.
+  2. **Sinkronisasi Sesi Login di `/login`**:
+     - Pada `handleLogin` di [src/app/login/page.tsx](file:///C:/Users/UC/.gemini/antigravity/scratch/mencatat-id/src/app/login/page.tsx), data `user_id`, `email`, `role`, `name`, `plan`, dan token otomatis disimpan ke `localStorage`.
+     - Memanggil `supabase.auth.signInWithPassword` pada client-side Supabase untuk memastikan token auth client dan cookie server ter-sinkronisasi 100%.
+  3. **Multi-Layer Session Hydration di Dashboard**:
+     - Pada `initSessionAndSubscribe` di [src/app/dashboard/page.tsx](file:///C:/Users/UC/.gemini/antigravity/scratch/mencatat-id/src/app/dashboard/page.tsx), sistem memeriksa sesi melalui 3 lapis:
+       - Lapis 1: Client `supabase.auth.getSession()`
+       - Lapis 2: Server Cookie via `GET /api/auth/session`
+       - Lapis 3: Persistent fallback `localStorage`
+     - Pengguna HANYA akan dialihkan ke halaman login jika ketiga lapis verifikasi tersebut benar-benar kosong.
+- **Verifikasi**:
+  - `npm run build` sukses 100% tanpa error.
+  - Perubahan telah di-push ke branch `main`.
